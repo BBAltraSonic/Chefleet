@@ -1,0 +1,956 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "version": "1.0.0",
+  "description": "Comprehensive user flows and navigation architecture for Chefleet mobile app",
+  "roles": ["buyer", "vendor", "admin"],
+  "screens": {
+    "splash": {
+      "id": "splash",
+      "name": "Splash Screen",
+      "type": "system",
+      "role": "all",
+      "inputs": {},
+      "queries": [],
+      "navigation": {
+        "type": "auto",
+        "duration_ms": 2000,
+        "next": ["auth", "buyer_map", "vendor_queue", "admin_dashboard"]
+      }
+    },
+    "auth": {
+      "id": "auth",
+      "name": "Authentication",
+      "type": "onboarding",
+      "role": "all",
+      "inputs": {},
+      "queries": [
+        {
+          "table": "auth.users",
+          "operation": "signIn",
+          "description": "Supabase Auth sign in with email/phone"
+        }
+      ],
+      "navigation": {
+        "type": "push",
+        "next": ["role_selection"]
+      }
+    },
+    "role_selection": {
+      "id": "role_selection",
+      "name": "Role Selection",
+      "type": "onboarding",
+      "role": "all",
+      "inputs": {
+        "user_id": "uuid"
+      },
+      "queries": [
+        {
+          "table": "users_public",
+          "operation": "update",
+          "fields": ["role"],
+          "description": "Set user role in users_public table"
+        }
+      ],
+      "navigation": {
+        "type": "push_replacement",
+        "next": ["buyer_onboarding", "vendor_onboarding"]
+      }
+    },
+    "buyer_onboarding": {
+      "id": "buyer_onboarding",
+      "name": "Buyer Location Permissions",
+      "type": "onboarding",
+      "role": "buyer",
+      "inputs": {
+        "user_id": "uuid"
+      },
+      "queries": [],
+      "navigation": {
+        "type": "push_replacement",
+        "next": ["buyer_map"]
+      }
+    },
+    "buyer_map": {
+      "id": "buyer_map",
+      "name": "Map Discovery (Main)",
+      "type": "main",
+      "role": "buyer",
+      "bottom_nav_index": 0,
+      "inputs": {
+        "user_id": "uuid",
+        "current_location": "LatLng"
+      },
+      "queries": [
+        {
+          "table": "vendors",
+          "operation": "select",
+          "fields": ["id", "name", "location", "rating", "is_active"],
+          "filters": "ST_DWithin(location, current_location, 5000) AND is_active = true",
+          "description": "Fetch vendors within 5km radius using PostGIS"
+        },
+        {
+          "table": "dishes",
+          "operation": "select",
+          "fields": ["id", "vendor_id", "name", "price", "image_url"],
+          "filters": "vendor_id IN (visible_vendors) AND is_available = true",
+          "description": "Fetch available dishes for visible vendors"
+        }
+      ],
+      "realtime": [
+        {
+          "channel": "vendors:location",
+          "description": "Subscribe to vendor availability changes"
+        }
+      ],
+      "navigation": {
+        "type": "bottom_nav",
+        "next": ["vendor_detail", "buyer_favorites", "buyer_orders", "buyer_profile", "active_order"]
+      },
+      "ui_behavior": {
+        "map_height": "60%",
+        "map_height_scrolled": "20%",
+        "map_opacity": 1.0,
+        "map_opacity_scrolled": 0.15,
+        "animation_duration_ms": 200,
+        "pan_debounce_ms": 600
+      }
+    },
+    "vendor_detail": {
+      "id": "vendor_detail",
+      "name": "Vendor Detail",
+      "type": "detail",
+      "role": "buyer",
+      "inputs": {
+        "vendor_id": "uuid"
+      },
+      "queries": [
+        {
+          "table": "vendors",
+          "operation": "select",
+          "fields": ["id", "name", "description", "location", "hours", "rating", "phone"],
+          "filters": "id = vendor_id",
+          "description": "Fetch vendor details"
+        },
+        {
+          "table": "dishes",
+          "operation": "select",
+          "fields": ["id", "name", "description", "price", "image_url", "category"],
+          "filters": "vendor_id = vendor_id AND is_available = true",
+          "description": "Fetch vendor menu"
+        }
+      ],
+      "navigation": {
+        "type": "push",
+        "back": ["buyer_map"],
+        "next": ["dish_detail"]
+      }
+    },
+    "dish_detail": {
+      "id": "dish_detail",
+      "name": "Dish Detail",
+      "type": "detail",
+      "role": "buyer",
+      "inputs": {
+        "dish_id": "uuid",
+        "vendor_id": "uuid"
+      },
+      "queries": [
+        {
+          "table": "dishes",
+          "operation": "select",
+          "fields": ["id", "name", "description", "price", "image_url", "ingredients", "allergens"],
+          "filters": "id = dish_id",
+          "description": "Fetch dish details"
+        }
+      ],
+      "navigation": {
+        "type": "push",
+        "back": ["vendor_detail"],
+        "next": ["order_summary_modal"]
+      }
+    },
+    "order_summary_modal": {
+      "id": "order_summary_modal",
+      "name": "Order Summary",
+      "type": "modal",
+      "role": "buyer",
+      "inputs": {
+        "dish_ids": "uuid[]",
+        "quantities": "int[]",
+        "vendor_id": "uuid",
+        "user_id": "uuid"
+      },
+      "queries": [
+        {
+          "table": "orders",
+          "operation": "insert",
+          "fields": ["user_id", "vendor_id", "total_price", "status", "idempotency_key"],
+          "description": "Create new order with idempotency protection"
+        },
+        {
+          "table": "order_items",
+          "operation": "insert",
+          "fields": ["order_id", "dish_id", "quantity", "price_at_time"],
+          "description": "Insert order items with current pricing"
+        }
+      ],
+      "navigation": {
+        "type": "modal",
+        "on_confirm": ["active_order"],
+        "on_cancel": ["dish_detail"]
+      }
+    },
+    "active_order": {
+      "id": "active_order",
+      "name": "Active Order Detail",
+      "type": "main",
+      "role": "buyer",
+      "fab_trigger": true,
+      "inputs": {
+        "order_id": "uuid"
+      },
+      "queries": [
+        {
+          "table": "orders",
+          "operation": "select",
+          "fields": ["id", "vendor_id", "status", "total_price", "created_at", "pickup_code"],
+          "filters": "id = order_id",
+          "description": "Fetch order details"
+        },
+        {
+          "table": "order_items",
+          "operation": "select",
+          "fields": ["dish_id", "quantity", "price_at_time"],
+          "filters": "order_id = order_id",
+          "description": "Fetch order items"
+        },
+        {
+          "table": "vendors",
+          "operation": "select",
+          "fields": ["name", "location", "phone"],
+          "filters": "id = vendor_id",
+          "description": "Fetch vendor info for directions"
+        }
+      ],
+      "realtime": [
+        {
+          "channel": "orders:id=eq.{order_id}",
+          "description": "Subscribe to order status changes"
+        }
+      ],
+      "navigation": {
+        "type": "push",
+        "back": ["buyer_map"],
+        "next": ["chat", "directions_external"]
+      },
+      "deep_link": "chefleet://order/{order_id}"
+    },
+    "chat": {
+      "id": "chat",
+      "name": "Order Chat",
+      "type": "detail",
+      "role": "buyer,vendor",
+      "inputs": {
+        "order_id": "uuid",
+        "user_id": "uuid"
+      },
+      "queries": [
+        {
+          "table": "messages",
+          "operation": "select",
+          "fields": ["id", "sender_id", "content", "created_at"],
+          "filters": "order_id = order_id ORDER BY created_at ASC",
+          "description": "Fetch message history for order"
+        },
+        {
+          "table": "messages",
+          "operation": "insert",
+          "fields": ["order_id", "sender_id", "content"],
+          "description": "Send new message with rate limiting (5 per 10s)"
+        }
+      ],
+      "realtime": [
+        {
+          "channel": "messages:order_id=eq.{order_id}",
+          "description": "Subscribe to new messages in real-time"
+        }
+      ],
+      "navigation": {
+        "type": "push",
+        "back": ["active_order", "vendor_order_detail"]
+      },
+      "deep_link": "chefleet://chat/{order_id}",
+      "rate_limit": {
+        "messages_per_window": 5,
+        "window_seconds": 10
+      }
+    },
+    "buyer_favorites": {
+      "id": "buyer_favorites",
+      "name": "Favorites",
+      "type": "main",
+      "role": "buyer",
+      "bottom_nav_index": 1,
+      "inputs": {
+        "user_id": "uuid"
+      },
+      "queries": [
+        {
+          "table": "favourites",
+          "operation": "select",
+          "fields": ["vendor_id"],
+          "filters": "user_id = user_id",
+          "description": "Fetch favorited vendor IDs"
+        },
+        {
+          "table": "vendors",
+          "operation": "select",
+          "fields": ["id", "name", "location", "rating", "image_url"],
+          "filters": "id IN (favorited_vendor_ids)",
+          "description": "Fetch vendor details for favorites"
+        }
+      ],
+      "navigation": {
+        "type": "bottom_nav",
+        "next": ["vendor_detail"]
+      }
+    },
+    "buyer_orders": {
+      "id": "buyer_orders",
+      "name": "Order History",
+      "type": "main",
+      "role": "buyer",
+      "bottom_nav_index": 2,
+      "inputs": {
+        "user_id": "uuid"
+      },
+      "queries": [
+        {
+          "table": "orders",
+          "operation": "select",
+          "fields": ["id", "vendor_id", "status", "total_price", "created_at"],
+          "filters": "user_id = user_id AND status IN ('completed', 'cancelled') ORDER BY created_at DESC LIMIT 50",
+          "description": "Fetch order history with pagination"
+        }
+      ],
+      "navigation": {
+        "type": "bottom_nav",
+        "next": ["order_detail_readonly"]
+      }
+    },
+    "buyer_profile": {
+      "id": "buyer_profile",
+      "name": "Buyer Profile",
+      "type": "main",
+      "role": "buyer",
+      "bottom_nav_index": 3,
+      "inputs": {
+        "user_id": "uuid"
+      },
+      "queries": [
+        {
+          "table": "users_public",
+          "operation": "select",
+          "fields": ["id", "name", "email", "phone", "avatar_url"],
+          "filters": "id = user_id",
+          "description": "Fetch user profile"
+        },
+        {
+          "table": "user_addresses",
+          "operation": "select",
+          "fields": ["id", "address_line", "is_default"],
+          "filters": "user_id = user_id",
+          "description": "Fetch saved addresses"
+        }
+      ],
+      "navigation": {
+        "type": "bottom_nav",
+        "next": ["edit_profile", "settings", "addresses"]
+      }
+    },
+    "vendor_onboarding": {
+      "id": "vendor_onboarding",
+      "name": "Vendor Business Setup",
+      "type": "onboarding",
+      "role": "vendor",
+      "inputs": {
+        "user_id": "uuid"
+      },
+      "queries": [
+        {
+          "table": "vendors",
+          "operation": "insert",
+          "fields": ["user_id", "name", "description", "location", "hours", "phone"],
+          "description": "Create vendor profile with PostGIS location"
+        }
+      ],
+      "navigation": {
+        "type": "push",
+        "next": ["vendor_menu_wizard"]
+      }
+    },
+    "vendor_menu_wizard": {
+      "id": "vendor_menu_wizard",
+      "name": "Menu Setup Wizard",
+      "type": "onboarding",
+      "role": "vendor",
+      "inputs": {
+        "vendor_id": "uuid"
+      },
+      "queries": [
+        {
+          "table": "dishes",
+          "operation": "insert",
+          "fields": ["vendor_id", "name", "description", "price", "category", "image_url"],
+          "description": "Add initial dishes (minimum 3)"
+        }
+      ],
+      "navigation": {
+        "type": "push",
+        "next": ["vendor_queue"]
+      }
+    },
+    "vendor_queue": {
+      "id": "vendor_queue",
+      "name": "Order Queue (Main)",
+      "type": "main",
+      "role": "vendor",
+      "inputs": {
+        "vendor_id": "uuid"
+      },
+      "queries": [
+        {
+          "table": "orders",
+          "operation": "select",
+          "fields": ["id", "user_id", "status", "total_price", "created_at"],
+          "filters": "vendor_id = vendor_id AND status IN ('pending', 'accepted', 'ready') ORDER BY created_at ASC",
+          "description": "Fetch active orders"
+        }
+      ],
+      "realtime": [
+        {
+          "channel": "orders:vendor_id=eq.{vendor_id}",
+          "description": "Subscribe to new incoming orders"
+        }
+      ],
+      "navigation": {
+        "type": "main",
+        "next": ["vendor_order_detail", "vendor_menu", "vendor_analytics", "vendor_profile"]
+      },
+      "drawer_navigation": true
+    },
+    "vendor_order_detail": {
+      "id": "vendor_order_detail",
+      "name": "Vendor Order Detail",
+      "type": "detail",
+      "role": "vendor",
+      "inputs": {
+        "order_id": "uuid"
+      },
+      "queries": [
+        {
+          "table": "orders",
+          "operation": "select",
+          "fields": ["id", "user_id", "status", "total_price", "created_at", "pickup_code"],
+          "filters": "id = order_id",
+          "description": "Fetch order details"
+        },
+        {
+          "table": "order_items",
+          "operation": "select",
+          "fields": ["dish_id", "quantity", "price_at_time"],
+          "filters": "order_id = order_id",
+          "description": "Fetch order items"
+        },
+        {
+          "table": "users_public",
+          "operation": "select",
+          "fields": ["name", "phone"],
+          "filters": "id = user_id",
+          "description": "Fetch buyer info"
+        },
+        {
+          "table": "orders",
+          "operation": "update",
+          "fields": ["status", "updated_at"],
+          "description": "Update order status (accept/decline/ready/complete)"
+        }
+      ],
+      "navigation": {
+        "type": "push",
+        "back": ["vendor_queue"],
+        "next": ["chat", "order_cancel_modal"]
+      }
+    },
+    "vendor_menu": {
+      "id": "vendor_menu",
+      "name": "Menu Management",
+      "type": "management",
+      "role": "vendor",
+      "inputs": {
+        "vendor_id": "uuid"
+      },
+      "queries": [
+        {
+          "table": "dishes",
+          "operation": "select",
+          "fields": ["id", "name", "price", "is_available", "category"],
+          "filters": "vendor_id = vendor_id ORDER BY category, name",
+          "description": "Fetch all vendor dishes"
+        },
+        {
+          "table": "dishes",
+          "operation": "update",
+          "fields": ["is_available"],
+          "description": "Toggle dish availability"
+        }
+      ],
+      "navigation": {
+        "type": "drawer",
+        "next": ["add_dish_modal", "edit_dish"]
+      },
+      "fab": {
+        "action": "add_dish",
+        "target": "add_dish_modal"
+      }
+    },
+    "add_dish_modal": {
+      "id": "add_dish_modal",
+      "name": "Add New Dish",
+      "type": "modal",
+      "role": "vendor",
+      "inputs": {
+        "vendor_id": "uuid"
+      },
+      "queries": [
+        {
+          "table": "dishes",
+          "operation": "insert",
+          "fields": ["vendor_id", "name", "description", "price", "category", "image_url", "ingredients", "allergens"],
+          "description": "Create new dish"
+        }
+      ],
+      "navigation": {
+        "type": "modal",
+        "on_confirm": ["vendor_menu"],
+        "on_cancel": ["vendor_menu"]
+      }
+    },
+    "edit_dish": {
+      "id": "edit_dish",
+      "name": "Edit Dish",
+      "type": "detail",
+      "role": "vendor",
+      "inputs": {
+        "dish_id": "uuid"
+      },
+      "queries": [
+        {
+          "table": "dishes",
+          "operation": "select",
+          "fields": ["id", "name", "description", "price", "category", "image_url", "ingredients", "allergens"],
+          "filters": "id = dish_id",
+          "description": "Fetch dish details"
+        },
+        {
+          "table": "dishes",
+          "operation": "update",
+          "fields": ["name", "description", "price", "category", "image_url", "ingredients", "allergens"],
+          "description": "Update dish details"
+        }
+      ],
+      "navigation": {
+        "type": "push",
+        "back": ["vendor_menu"]
+      }
+    },
+    "vendor_analytics": {
+      "id": "vendor_analytics",
+      "name": "Vendor Analytics",
+      "type": "management",
+      "role": "vendor",
+      "inputs": {
+        "vendor_id": "uuid"
+      },
+      "queries": [
+        {
+          "table": "orders",
+          "operation": "select",
+          "fields": ["COUNT(*)", "SUM(total_price)", "AVG(total_price)", "created_at"],
+          "filters": "vendor_id = vendor_id AND status = 'completed' GROUP BY DATE(created_at)",
+          "description": "Aggregate order metrics"
+        }
+      ],
+      "navigation": {
+        "type": "drawer",
+        "back": ["vendor_queue"]
+      }
+    },
+    "vendor_profile": {
+      "id": "vendor_profile",
+      "name": "Vendor Profile",
+      "type": "management",
+      "role": "vendor",
+      "inputs": {
+        "vendor_id": "uuid",
+        "user_id": "uuid"
+      },
+      "queries": [
+        {
+          "table": "vendors",
+          "operation": "select",
+          "fields": ["id", "name", "description", "location", "hours", "phone", "rating"],
+          "filters": "id = vendor_id",
+          "description": "Fetch vendor profile"
+        },
+        {
+          "table": "vendors",
+          "operation": "update",
+          "fields": ["name", "description", "hours", "phone"],
+          "description": "Update vendor profile"
+        }
+      ],
+      "navigation": {
+        "type": "drawer",
+        "next": ["edit_vendor_profile", "settings"]
+      }
+    },
+    "admin_dashboard": {
+      "id": "admin_dashboard",
+      "name": "Admin Dashboard",
+      "type": "main",
+      "role": "admin",
+      "inputs": {},
+      "queries": [
+        {
+          "table": "orders",
+          "operation": "select",
+          "fields": ["COUNT(*)", "status"],
+          "filters": "GROUP BY status",
+          "description": "Order metrics by status"
+        },
+        {
+          "table": "users_public",
+          "operation": "select",
+          "fields": ["COUNT(*)", "role"],
+          "filters": "GROUP BY role",
+          "description": "User count by role"
+        },
+        {
+          "table": "moderation_reports",
+          "operation": "select",
+          "fields": ["COUNT(*)"],
+          "filters": "status = 'pending'",
+          "description": "Pending moderation reports"
+        }
+      ],
+      "navigation": {
+        "type": "main",
+        "next": ["moderation_queue", "user_management", "reports"],
+        "drawer_navigation": true
+      }
+    },
+    "moderation_queue": {
+      "id": "moderation_queue",
+      "name": "Moderation Queue",
+      "type": "management",
+      "role": "admin",
+      "inputs": {},
+      "queries": [
+        {
+          "table": "moderation_reports",
+          "operation": "select",
+          "fields": ["id", "reported_user_id", "reported_content", "reason", "status", "created_at"],
+          "filters": "status = 'pending' ORDER BY created_at ASC",
+          "description": "Fetch pending reports"
+        }
+      ],
+      "navigation": {
+        "type": "drawer",
+        "next": ["moderation_detail"]
+      }
+    },
+    "moderation_detail": {
+      "id": "moderation_detail",
+      "name": "Moderation Report Detail",
+      "type": "detail",
+      "role": "admin",
+      "inputs": {
+        "report_id": "uuid"
+      },
+      "queries": [
+        {
+          "table": "moderation_reports",
+          "operation": "select",
+          "fields": ["id", "reported_user_id", "reporter_id", "reported_content", "reason", "status"],
+          "filters": "id = report_id",
+          "description": "Fetch report details"
+        },
+        {
+          "table": "moderation_reports",
+          "operation": "update",
+          "fields": ["status", "admin_notes"],
+          "description": "Update report status (approve/reject/escalate)"
+        }
+      ],
+      "navigation": {
+        "type": "push",
+        "back": ["moderation_queue"],
+        "next": ["user_management"]
+      }
+    },
+    "user_management": {
+      "id": "user_management",
+      "name": "User Management",
+      "type": "management",
+      "role": "admin",
+      "inputs": {},
+      "queries": [
+        {
+          "table": "users_public",
+          "operation": "select",
+          "fields": ["id", "name", "email", "role", "created_at", "is_active"],
+          "filters": "ORDER BY created_at DESC LIMIT 100",
+          "description": "Fetch users with pagination"
+        }
+      ],
+      "navigation": {
+        "type": "drawer",
+        "next": ["user_detail_admin"]
+      }
+    },
+    "user_detail_admin": {
+      "id": "user_detail_admin",
+      "name": "User Detail (Admin)",
+      "type": "detail",
+      "role": "admin",
+      "inputs": {
+        "user_id": "uuid"
+      },
+      "queries": [
+        {
+          "table": "users_public",
+          "operation": "select",
+          "fields": ["id", "name", "email", "phone", "role", "created_at", "is_active"],
+          "filters": "id = user_id",
+          "description": "Fetch user details"
+        },
+        {
+          "table": "orders",
+          "operation": "select",
+          "fields": ["id", "status", "created_at"],
+          "filters": "user_id = user_id ORDER BY created_at DESC LIMIT 10",
+          "description": "Fetch recent user orders"
+        },
+        {
+          "table": "users_public",
+          "operation": "update",
+          "fields": ["is_active"],
+          "description": "Suspend/activate user account"
+        }
+      ],
+      "navigation": {
+        "type": "push",
+        "back": ["user_management"],
+        "next": ["user_action_modal"]
+      }
+    }
+  },
+  "flows": {
+    "buyer_onboarding": {
+      "id": "buyer_onboarding",
+      "name": "Buyer First-Time Onboarding",
+      "role": "buyer",
+      "screens": [
+        "splash",
+        "auth",
+        "role_selection",
+        "buyer_onboarding",
+        "buyer_map"
+      ],
+      "description": "New buyer completes authentication and reaches main map screen"
+    },
+    "buyer_returning": {
+      "id": "buyer_returning",
+      "name": "Returning Buyer Launch",
+      "role": "buyer",
+      "screens": [
+        "splash",
+        "buyer_map"
+      ],
+      "description": "Authenticated buyer launches app directly to map"
+    },
+    "buyer_browse_order": {
+      "id": "buyer_browse_order",
+      "name": "Browse and Place Order",
+      "role": "buyer",
+      "screens": [
+        "buyer_map",
+        "vendor_detail",
+        "dish_detail",
+        "order_summary_modal",
+        "active_order"
+      ],
+      "description": "Buyer discovers vendor on map, browses menu, and places order"
+    },
+    "buyer_active_order_tracking": {
+      "id": "buyer_active_order_tracking",
+      "name": "Track Active Order",
+      "role": "buyer",
+      "screens": [
+        "active_order",
+        "chat"
+      ],
+      "description": "Buyer monitors order status and chats with vendor"
+    },
+    "buyer_order_history": {
+      "id": "buyer_order_history",
+      "name": "View Order History",
+      "role": "buyer",
+      "screens": [
+        "buyer_orders",
+        "order_detail_readonly"
+      ],
+      "description": "Buyer reviews past orders"
+    },
+    "vendor_onboarding": {
+      "id": "vendor_onboarding",
+      "name": "Vendor Registration and Setup",
+      "role": "vendor",
+      "screens": [
+        "splash",
+        "auth",
+        "role_selection",
+        "vendor_onboarding",
+        "vendor_menu_wizard",
+        "vendor_queue"
+      ],
+      "description": "New vendor completes registration, sets up business, and adds initial menu"
+    },
+    "vendor_order_fulfillment": {
+      "id": "vendor_order_fulfillment",
+      "name": "Order Fulfillment Flow",
+      "role": "vendor",
+      "screens": [
+        "vendor_queue",
+        "vendor_order_detail",
+        "chat"
+      ],
+      "description": "Vendor receives order, accepts, prepares, marks ready, and completes"
+    },
+    "vendor_menu_management": {
+      "id": "vendor_menu_management",
+      "name": "Manage Menu Listings",
+      "role": "vendor",
+      "screens": [
+        "vendor_menu",
+        "add_dish_modal",
+        "edit_dish"
+      ],
+      "description": "Vendor adds, edits, and toggles dish availability"
+    },
+    "admin_moderation": {
+      "id": "admin_moderation",
+      "name": "Content Moderation Workflow",
+      "role": "admin",
+      "screens": [
+        "admin_dashboard",
+        "moderation_queue",
+        "moderation_detail"
+      ],
+      "description": "Admin reviews and resolves moderation reports"
+    },
+    "admin_user_management": {
+      "id": "admin_user_management",
+      "name": "User Account Management",
+      "role": "admin",
+      "screens": [
+        "admin_dashboard",
+        "user_management",
+        "user_detail_admin",
+        "user_action_modal"
+      ],
+      "description": "Admin searches users, views details, and performs account actions"
+    }
+  },
+  "navigation_types": {
+    "push": {
+      "type": "Navigator.push",
+      "description": "Standard stack navigation with back button",
+      "transition": "MaterialPageRoute (slide from right on iOS, fade on Android)"
+    },
+    "push_replacement": {
+      "type": "Navigator.pushReplacement",
+      "description": "Replace current screen in stack (no back navigation)",
+      "use_case": "Onboarding completion, role switching"
+    },
+    "modal": {
+      "type": "showModalBottomSheet",
+      "description": "Bottom sheet modal overlay",
+      "dismissible": true,
+      "transition": "Slide up from bottom"
+    },
+    "bottom_nav": {
+      "type": "BottomNavigationBar state switch",
+      "description": "Switch between main tabs without stack navigation",
+      "preserve_state": true
+    },
+    "drawer": {
+      "type": "Drawer navigation",
+      "description": "Side menu navigation for secondary screens",
+      "trigger": "AppBar hamburger icon"
+    },
+    "fab": {
+      "type": "FloatingActionButton tap",
+      "description": "Center-docked FAB for active order quick access",
+      "position": "centerDocked"
+    },
+    "auto": {
+      "type": "Automatic navigation",
+      "description": "Timed or conditional automatic transition",
+      "use_case": "Splash screen timeout, auth check"
+    }
+  },
+  "deep_links": {
+    "scheme": "chefleet://",
+    "routes": [
+      {
+        "path": "order/:order_id",
+        "screen": "active_order",
+        "description": "Open specific order detail from notification"
+      },
+      {
+        "path": "chat/:order_id",
+        "screen": "chat",
+        "description": "Open chat for specific order"
+      },
+      {
+        "path": "vendor/:vendor_id",
+        "screen": "vendor_detail",
+        "description": "Open vendor profile"
+      }
+    ]
+  },
+  "error_states": {
+    "loading": {
+      "ui": "Shimmer placeholders",
+      "description": "Display during async data fetching"
+    },
+    "error": {
+      "ui": "Error message with retry button",
+      "description": "Network errors, query failures"
+    },
+    "empty": {
+      "ui": "Empty state illustration with action button",
+      "description": "No data available (empty order history, no favorites)"
+    },
+    "offline": {
+      "ui": "Banner at top of screen",
+      "description": "No internet connection warning"
+    },
+    "unauthorized": {
+      "ui": "Redirect to auth screen",
+      "description": "Session expired or invalid token"
+    }
+  }
+}
