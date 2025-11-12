@@ -1,0 +1,52 @@
+[sqlfluff]
+# SQLFluff configuration for Chefleet project
+
+# SQL dialect (postgres for Supabase)
+sql_file_exts = .sql
+
+[sqlfluff:dialect]
+dialect = postgres
+
+[sqlfluff:templater]
+templater = raw
+
+[sqlfluff:indentation]
+# Indentation settings
+indented_joins = false
+indent_unit = space
+tab_space_size = 2
+
+[sqlfluff:rules:L010]
+# Capitalization policy for keywords
+capitalisation_policy = upper
+
+[sqlfluff:rules:L014]
+# Capitalization policy for identifiers
+extended_capitalisation_policy = lower
+
+[sqlfluff:rules:L030]
+# Capitalization policy for functions
+capitalisation_policy = upper
+
+[sqlfluff:rules:L040]
+# Capitalization policy for nulls and booleans
+capitalisation_policy = upper
+
+[sqlfluff:rules:L042]
+# Ensure no undefined variables
+
+[sqlfluff:rules:L052]
+# Rows on separate lines must have a trailing comma
+multiline_newline = true
+comma_style = trailing
+
+[sqlfluff:rules:L063]
+# Consistent use of table aliases
+allow_scalar = false
+
+# Disable certain rules that may conflict with project style
+[sqlfluff:rules:L008]  # Commas
+enabled = false
+
+[sqlfluff:rules:L028]  # References
+enabled = false

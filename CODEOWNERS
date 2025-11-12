@@ -1,0 +1,48 @@
+# This file determines who is responsible for code review for each file.
+
+# Global code owners
+# These users will be responsible for reviewing all changes unless overridden below.
+* @team-leads
+
+# Documentation
+# All documentation files
+*.md @documentation-team
+
+# Flutter/Dart code
+# All Dart files
+lib/ @flutter-team
+test/ @flutter-team
+
+# Supabase configuration
+supabase/ @backend-team
+*.sql @backend-team
+
+# Edge Functions
+functions/ @backend-team
+
+# Platform-specific code
+android/ @mobile-team
+ios/ @mobile-team
+web/ @web-team
+linux/ @desktop-team
+macos/ @desktop-team
+windows/ @desktop-team
+
+# Configuration files
+# GitHub Actions workflows
+.github/workflows/ @devops-team
+
+# Dependencies and build files
+pubspec.yaml @flutter-team
+package.json @backend-team
+
+# Infrastructure
+# CI/CD and deployment
+.github/ @devops-team
+
+# OpenSpec files
+openspec/ @architecture-team
+
+# Default fallback if no other rule matches
+# This will be used for any files not covered above
+* @team-leads

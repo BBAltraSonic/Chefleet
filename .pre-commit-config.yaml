@@ -1,0 +1,129 @@
+# Pre-commit hooks configuration for Chefleet project
+# Install with: pre-commit install
+# Update hooks: pre-commit autoupdate
+# Run on all files: pre-commit run --all-files
+
+repos:
+  # Built-in hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+        description: Trim trailing whitespace
+        exclude: \.md$
+      - id: end-of-file-fixer
+        description: Ensure files end with newline
+      - id: check-yaml
+        description: Check YAML syntax
+      - id: check-json
+        description: Check JSON syntax
+      - id: check-merge-conflict
+        description: Check for merge conflict markers
+      - id: check-case-conflict
+        description: Check for case conflicts
+      - id: check-added-large-files
+        description: Prevent adding large files
+        args: ['--maxkb=1000']
+      - id: mixed-line-ending
+        description: Enforce consistent line endings
+        args: ['--fix=lf']
+
+  # Conventional commits
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v3.0.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]
+        args: [
+          feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert,
+          --optional-scopes, flutter, backend, database, ui, api, auth, maps, chat
+        ]
+
+  # Dart formatting and linting
+  - repo: local
+    hooks:
+      - id: dart-format
+        name: Dart Format
+        entry: dart format .
+        language: system
+        types: [dart]
+        pass_filenames: false
+        description: Format Dart code using dart format
+
+      - id: dart-analyze
+        name: Dart Analyze
+        entry: dart analyze --fatal-infos
+        language: system
+        types: [dart]
+        pass_filenames: false
+        description: Analyze Dart code for issues
+
+  # SQL linting
+  - repo: https://github.com/sqlfluff/sqlfluff
+    rev: 2.3.5
+    hooks:
+      - id: sqlfluff-fix
+        description: Fix SQL formatting
+        types: [sql]
+        args: [--config, .sqlfluff]
+
+  # JavaScript/TypeScript (for Edge Functions)
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: v8.52.0
+    hooks:
+      - id: eslint
+        types: [file]
+        types_or: [javascript, jsx, ts, tsx]
+        exclude: ^(lib/|test/|android/|ios/|web/|linux/|macos/|windows/)
+        args: [--fix, --config, .eslintrc.js]
+
+  # Flutter specific checks
+  - repo: local
+    hooks:
+      - id: flutter-test
+        name: Flutter Test
+        entry: flutter test
+        language: system
+        pass_filenames: false
+        description: Run Flutter unit and widget tests
+        files: ^lib/|^test/
+        types: [dart]
+
+      - id: flutter-clean
+        name: Check for unused imports
+        entry: dart pub deps
+        language: system
+        pass_filenames: false
+        description: Check for unused dependencies
+        args: [--style=tree]
+
+  # Security scanning
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.4.0
+    hooks:
+      - id: detect-secrets
+        description: Detect secrets in code
+        args: [--baseline, .secrets.baseline]
+
+# Pre-commit configuration
+default_language_version:
+  python: python3
+
+# Configure fail_fast
+fail_fast: false
+
+# Minimum pre-commit version
+minimum_pre_commit_version: 2.20.0
+
+# CI configuration
+ci:
+  autofix_commit_msg: |
+    [pre-commit.ci] auto fixes from pre-commit.com hooks
+
+    for more information, see https://pre-commit.ci
+  autofix_prs: true
+  autoupdate_branch: ''
+  autoupdate_commit_msg: '[pre-commit.ci] pre-commit autoupdate'
+  autoupdate_schedule: weekly
+  skip: []
+  submodules: false

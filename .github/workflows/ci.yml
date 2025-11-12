@@ -1,0 +1,377 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  FLUTTER_VERSION: '3.16.0'
+  NODE_VERSION: '18'
+
+jobs:
+  # Code quality checks
+  code-quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Get Flutter dependencies
+        run: flutter pub get
+
+      - name: Get Node.js dependencies
+        run: |
+          if [ -d "functions" ]; then
+            cd functions
+            npm ci
+            cd ..
+          fi
+
+      - name: Check Flutter formatting
+        run: dart format --set-exit-if-changed .
+
+      - name: Analyze Flutter code
+        run: flutter analyze --fatal-infos
+
+      - name: Lint Edge Functions
+        run: |
+          if [ -d "functions" ]; then
+            cd functions
+            npx eslint .
+            cd ..
+          fi
+
+      - name: SQL Linting
+        run: |
+          if [ -d "supabase" ] && [ -d "supabase/migrations" ]; then
+            pip install sqlfluff
+            sqlfluff lint supabase/migrations/
+          fi
+
+  # Security checks
+  security:
+    name: Security Scanning
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Get Node.js dependencies
+        run: |
+          if [ -d "functions" ]; then
+            cd functions
+            npm ci
+            cd ..
+          fi
+
+      - name: Run security audit (Node.js)
+        run: |
+          if [ -d "functions" ]; then
+            cd functions
+            npm audit --audit-level=moderate
+            cd ..
+          fi
+
+      - name: Scan for secrets
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: main
+          head: HEAD
+
+      - name: Dependency vulnerability scan
+        uses: snyk/actions/node@master
+        if: ${{ secrets.SNYK_TOKEN }}
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high
+        continue-on-error: true
+
+  # Testing
+  test:
+    name: Testing
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        flutter-version: ['3.16.0', 'stable']
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ matrix.flutter-version }}
+
+      - name: Get Flutter dependencies
+        run: flutter pub get
+
+      - name: Run Flutter tests
+        run: flutter test --coverage --reporter=expanded
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: coverage/lcov.info
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: true
+
+      - name: Run Edge Functions tests
+        run: |
+          if [ -d "functions" ]; then
+            cd functions
+            npm ci
+            npm test
+            cd ..
+          fi
+
+  # Build verification
+  build:
+    name: Build Verification
+    runs-on: ubuntu-latest
+    needs: [code-quality, security, test]
+    strategy:
+      matrix:
+        platform: [android, web]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+
+      - name: Get Flutter dependencies
+        run: flutter pub get
+
+      - name: Build for ${{ matrix.platform }}
+        run: |
+          case "${{ matrix.platform }}" in
+            android)
+              flutter build apk --release
+              flutter build appbundle --release
+              ;;
+            web)
+              flutter build web --release
+              ;;
+          esac
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.platform }}-build
+          path: |
+            build/app/outputs/flutter-apk/
+            build/web/
+            build/app/outputs/bundle/
+          retention-days: 7
+
+  # Performance testing
+  performance:
+    name: Performance Testing
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+
+      - name: Get Flutter dependencies
+        run: flutter pub get
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v3
+
+      - name: Performance benchmark
+        run: |
+          # Run performance tests if available
+          if [ -d "test/performance" ]; then
+            flutter test test/performance/
+          else
+            echo "No performance tests found"
+          fi
+
+      - name: Bundle size analysis
+        run: |
+          # Analyze web build size
+          if [ -d "build/web" ]; then
+            echo "Web build size analysis:"
+            du -sh build/web/*
+
+            # Fail if build is too large (>5MB)
+            BUILD_SIZE=$(du -s build/web | cut -f1)
+            if [ "$BUILD_SIZE" -gt 5120 ]; then
+              echo "Error: Web build size exceeds 5MB limit"
+              exit 1
+            fi
+          fi
+
+  # Integration tests
+  integration:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: [code-quality, security, test]
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+
+      - name: Get Flutter dependencies
+        run: flutter pub get
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start Supabase locally
+        run: |
+          supabase start
+          supabase db reset
+
+      - name: Run integration tests
+        run: |
+          if [ -d "integration_test" ]; then
+            flutter test integration_test/
+          else
+            echo "No integration tests found"
+          fi
+
+      - name: Stop Supabase
+        if: always()
+        run: supabase stop
+
+  # Quality gate evaluation
+  quality-gate:
+    name: Quality Gate Evaluation
+    runs-on: ubuntu-latest
+    needs: [code-quality, security, test, build, performance]
+    if: always() && github.event_name == 'pull_request'
+    steps:
+      - name: Evaluate quality gates
+        run: |
+          # Check if all required jobs passed
+          QUALITY_GATE_RESULT="PASSED"
+
+          if [ "${{ needs.code-quality.result }}" != "success" ]; then
+            echo "❌ Code quality checks failed"
+            QUALITY_GATE_RESULT="FAILED"
+          fi
+
+          if [ "${{ needs.security.result }}" != "success" ]; then
+            echo "❌ Security checks failed"
+            QUALITY_GATE_RESULT="FAILED"
+          fi
+
+          if [ "${{ needs.test.result }}" != "success" ]; then
+            echo "❌ Tests failed"
+            QUALITY_GATE_RESULT="FAILED"
+          fi
+
+          if [ "${{ needs.build.result }}" != "success" ]; then
+            echo "❌ Build failed"
+            QUALITY_GATE_RESULT="FAILED"
+          fi
+
+          # Performance warnings are non-blocking
+          if [ "${{ needs.performance.result }}" != "success" ]; then
+            echo "⚠️ Performance checks had issues"
+          fi
+
+          echo "Quality Gate Result: $QUALITY_GATE_RESULT"
+
+          if [ "$QUALITY_GATE_RESULT" != "PASSED" ]; then
+            echo "Quality gate failed - blocking merge"
+            exit 1
+          else
+            echo "All quality gates passed - merge allowed"
+          fi
+
+      - name: Comment on PR
+        if: always()
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const QUALITY_GATE_RESULT = "${{ needs.quality-gate.result }}";
+            const QUALITY_GATE_COMMENT = `## Quality Gate Results
+
+            ${QUALITY_GATE_RESULT === 'success' ? '✅' : '❌'} **Overall Status**: ${QUALITY_GATE_RESULT === 'success' ? 'PASSED' : 'FAILED'}
+
+            ### Individual Checks:
+            - Code Quality: ${{ needs.code-quality.result === 'success' ? '✅ PASSED' : '❌ FAILED' }}
+            - Security: ${{ needs.security.result === 'success' ? '✅ PASSED' : '❌ FAILED' }}
+            - Tests: ${{ needs.test.result === 'success' ? '✅ PASSED' : '❌ FAILED' }}
+            - Build: ${{ needs.build.result === 'success' ? '✅ PASSED' : '❌ FAILED' }}
+            - Performance: ${{ needs.performance.result === 'success' ? '✅ PASSED' : '⚠️ WARNINGS' }}
+
+            ${QUALITY_GATE_RESULT === 'success' ? '🎉 This PR is ready for merge!' : '🚫 Please fix the failed checks before merging.'}
+            `;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: QUALITY_GATE_COMMENT
+            });
+
+  # SonarCloud analysis (optional)
+  sonarcloud:
+    name: SonarCloud Analysis
+    runs-on: ubuntu-latest
+    needs: [code-quality, test]
+    if: github.event_name == 'pull_request' && secrets.SONAR_TOKEN
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+
+      - name: Get Flutter dependencies
+        run: flutter pub get
+
+      - name: Generate coverage report
+        run: flutter test --coverage
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
