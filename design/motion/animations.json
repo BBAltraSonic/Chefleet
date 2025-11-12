@@ -1,0 +1,253 @@
+{
+  "metadata": {
+    "version": "1.0.0",
+    "framework": "Flutter",
+    "targetFPS": 60,
+    "physics": "material"
+  },
+  "animationLibrary": {
+    "curves": {
+      "easeInOut": "Curves.easeInOut",
+      "easeInOutCubic": "Curves.easeInOutCubic",
+      "easeOut": "Curves.easeOut",
+      "easeOutBack": "Curves.easeOutBack",
+      "bounceOut": "Curves.bounceOut",
+      "fastOutSlowIn": "Curves.fastOutSlowIn"
+    },
+    "durations": {
+      "instant": 0,
+      "fast": 150,
+      "normal": 200,
+      "slow": 300,
+      "slower": 400,
+      "slowest": 600
+    }
+  },
+  "animations": {
+    "map": {
+      "shrink": {
+        "trigger": "scroll_start",
+        "properties": {
+          "height": {
+            "from": "60%",
+            "to": "20%",
+            "duration": 400,
+            "curve": "easeInOutCubic"
+          }
+        },
+        "reversible": true
+      },
+      "fade": {
+        "trigger": "scroll_progress",
+        "properties": {
+          "opacity": {
+            "from": 1.0,
+            "to": 0.7,
+            "duration": 300,
+            "curve": "easeInOut"
+          }
+        },
+        "reversible": true
+      },
+      "parallax": {
+        "trigger": "scroll",
+        "properties": {
+          "offset": {
+            "factor": 0.5,
+            "axis": "y",
+            "clamp": { "min": 0, "max": 100 }
+          }
+        }
+      }
+    },
+    "fab": {
+      "pulse": {
+        "trigger": "active_order_exists",
+        "repeat": true,
+        "properties": {
+          "scale": {
+            "sequence": [
+              { "value": 1.0, "duration": 1000 },
+              { "value": 1.1, "duration": 1000 }
+            ],
+            "curve": "easeInOut",
+            "totalDuration": 2000
+          }
+        }
+      },
+      "show": {
+        "trigger": "enter_screen",
+        "properties": {
+          "scale": { "from": 0.0, "to": 1.0, "duration": 300, "curve": "bounceOut" },
+          "rotation": { "from": 180, "to": 0, "duration": 300, "curve": "easeOutBack" }
+        }
+      },
+      "dock": {
+        "trigger": "active_order_appears",
+        "properties": {
+          "position": {
+            "from": { "right": 24, "bottom": 24 },
+            "to": { "centerX": 0.5, "bottom": 100 },
+            "duration": 300,
+            "curve": "easeOutBack"
+          }
+        }
+      },
+      "press": {
+        "trigger": "on_tap_down",
+        "properties": {
+          "scale": { "from": 1.0, "to": 0.95, "duration": 100, "curve": "easeOut" }
+        },
+        "autoReverse": true
+      }
+    },
+    "chat": {
+      "messageSend": {
+        "trigger": "message_sent",
+        "properties": {
+          "opacity": { "from": 0.0, "to": 1.0, "duration": 200, "curve": "easeOut" },
+          "slide": { "from": 20, "to": 0, "axis": "y", "duration": 200, "curve": "easeOut" }
+        }
+      },
+      "messageReceive": {
+        "trigger": "message_received",
+        "properties": {
+          "opacity": { "from": 0.0, "to": 1.0, "duration": 250, "curve": "easeOut" },
+          "slide": { "from": -20, "to": 0, "axis": "y", "duration": 300, "curve": "easeOutBack" },
+          "scale": { "from": 0.8, "to": 1.0, "duration": 300, "curve": "bounceOut" }
+        }
+      },
+      "typingIndicator": {
+        "trigger": "other_user_typing",
+        "repeat": true,
+        "properties": {
+          "dots": [
+            { "scale": [1.0, 1.2, 1.0], "delay": 0 },
+            { "scale": [1.0, 1.2, 1.0], "delay": 200 },
+            { "scale": [1.0, 1.2, 1.0], "delay": 400 }
+          ],
+          "duration": 600,
+          "curve": "easeInOut"
+        }
+      }
+    },
+    "navigation": {
+      "screenPush": {
+        "trigger": "navigate_to_screen",
+        "properties": {
+          "slide": { "from": 1.0, "to": 0.0, "axis": "x", "duration": 250, "curve": "easeInOut" },
+          "fade": { "from": 0.0, "to": 1.0, "duration": 200, "curve": "easeOut" }
+        }
+      },
+      "screenPop": {
+        "trigger": "navigate_back",
+        "properties": {
+          "slide": { "from": 0.0, "to": -1.0, "axis": "x", "duration": 250, "curve": "easeInOut" },
+          "fade": { "from": 1.0, "to": 0.0, "duration": 200, "curve": "easeIn" }
+        }
+      },
+      "modalPresent": {
+        "trigger": "show_modal",
+        "properties": {
+          "slide": { "from": 1.0, "to": 0.0, "axis": "y", "duration": 300, "curve": "easeOutCubic" },
+          "fade": { "from": 0.0, "to": 1.0, "duration": 200, "curve": "easeOut" },
+          "scale": { "from": 0.9, "to": 1.0, "duration": 300, "curve": "bounceOut" }
+        }
+      },
+      "modalDismiss": {
+        "trigger": "hide_modal",
+        "properties": {
+          "slide": { "from": 0.0, "to": 1.0, "axis": "y", "duration": 250, "curve": "easeInCubic" },
+          "fade": { "from": 1.0, "to": 0.0, "duration": 150, "curve": "easeIn" }
+        }
+      }
+    },
+    "interactions": {
+      "buttonPress": {
+        "trigger": "button_tap",
+        "properties": {
+          "scale": { "from": 1.0, "to": 0.98, "duration": 100, "curve": "easeOut" },
+          "elevation": { "from": 4, "to": 8, "duration": 100, "curve": "easeOut" }
+        },
+        "autoReverse": true,
+        "autoReverseDelay": 100
+      },
+      "cardPress": {
+        "trigger": "card_tap",
+        "properties": {
+          "scale": { "from": 1.0, "to": 0.98, "duration": 150, "curve": "easeOut" },
+          "elevation": { "from": 8, "to": 12, "duration": 150, "curve": "easeOut" }
+        },
+        "autoReverse": true,
+        "autoReverseDelay": 150
+      },
+      "ripple": {
+        "trigger": "touch_start",
+        "properties": {
+          "radius": { "from": 0, "to": 48, "duration": 300, "curve": "easeOut" },
+          "opacity": { "from": 0.5, "to": 0.0, "duration": 300, "curve": "easeOut" }
+        }
+      }
+    },
+    "loading": {
+      "skeleton": {
+        "trigger": "content_loading",
+        "repeat": true,
+        "properties": {
+          "shimmer": {
+            "gradient": ["rgba(255,255,255,0.1)", "rgba(255,255,255,0.3)", "rgba(255,255,255,0.1)"],
+            "duration": 1500,
+            "curve": "linear"
+          }
+        }
+      },
+      "spinner": {
+        "trigger": "loading_spinner",
+        "repeat": true,
+        "properties": {
+          "rotation": { "from": 0, "to": 360, "duration": 1000, "curve": "linear" }
+        }
+      },
+      "progress": {
+        "trigger": "progress_update",
+        "properties": {
+          "fill": { "from": 0, "to": 1, "duration": 500, "curve": "easeOutCubic" }
+        }
+      }
+    },
+    "gestures": {
+      "pullToRefresh": {
+        "trigger": "pull_refresh_gesture",
+        "properties": {
+          "scale": { "factor": 0.5, "min": 1.0, "max": 1.5 },
+          "rotation": { "factor": 0.3, "min": 0, "max": 360 },
+          "snapBack": { "duration": 300, "curve": "easeOutBack" }
+        }
+      },
+      "swipeAction": {
+        "trigger": "swipe_gesture",
+        "properties": {
+          "slide": { "threshold": 100, "duration": 200, "curve": "easeOutCubic" },
+          "fade": { "threshold": 150, "duration": 150, "curve": "easeOut" }
+        }
+      },
+      "pinchToZoom": {
+        "trigger": "pinch_gesture",
+        "properties": {
+          "scale": { "min": 0.8, "max": 3.0, "duration": 0, "curve": "linear" },
+          "bounds": { "clamp": true, "duration": 300, "curve": "easeOutBack" }
+        }
+      }
+    }
+  },
+  "performance": {
+    "gpuAccelerated": ["transform", "opacity", "clipRect"],
+    "cpuIntensive": ["filter", "mask", "path"],
+    "recommendations": {
+      "preferTransformOverPosition": true,
+      "useOpacityInsteadOfVisibility": true,
+      "hardwareLayerForComplexAnimations": true,
+      "disposeControllers": true
+    }
+  }
+}

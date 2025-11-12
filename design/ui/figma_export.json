@@ -1,0 +1,247 @@
+{
+  "metadata": {
+    "version": "1.0.0",
+    "exportDate": "2025-11-12",
+    "framework": "Flutter",
+    "coordinateSpace": "screen"
+  },
+  "components": {
+    "ChefleetCard": {
+      "type": "container",
+      "dimensions": {
+        "width": "100%",
+        "height": 120,
+        "borderRadius": 16,
+        "padding": 16
+      },
+      "visual": {
+        "backgroundColor": "rgba(255, 255, 255, 0.1)",
+        "border": {
+          "width": 1,
+          "color": "rgba(255, 255, 255, 0.2)"
+        },
+        "backdropFilter": "blur(10)",
+        "elevation": 8
+      },
+      "states": {
+        "default": {
+          "scale": 1.0,
+          "opacity": 1.0
+        },
+        "pressed": {
+          "scale": 0.98,
+          "opacity": 0.9,
+          "transition": { "duration": 100, "curve": "easeOut" }
+        },
+        "disabled": {
+          "opacity": 0.5
+        }
+      }
+    },
+    "ChefleetFAB": {
+      "type": "floatingActionButton",
+      "dimensions": {
+        "width": 56,
+        "height": 56,
+        "borderRadius": 28
+      },
+      "position": {
+        "bottom": 24,
+        "right": 24,
+        "centerDocked": true
+      },
+      "visual": {
+        "backgroundColor": "#FF6B35",
+        "elevation": 12,
+        "shadow": {
+          "offset": { "x": 0, "y": 4 },
+          "blur": 12,
+          "color": "rgba(0, 0, 0, 0.3)"
+        }
+      },
+      "states": {
+        "default": {
+          "scale": 1.0,
+          "rotation": 0
+        },
+        "active": {
+          "scale": 1.05,
+          "rotation": 5,
+          "pulse": {
+            "enabled": true,
+            "scaleRange": [1.0, 1.1],
+            "duration": 2000,
+            "repeat": true
+          }
+        },
+        "pressed": {
+          "scale": 0.95
+        }
+      }
+    },
+    "ChefleetMapHero": {
+      "type": "container",
+      "dimensions": {
+        "width": "100%",
+        "height": { "default": "60%", "scrolled": "20%" }
+      },
+      "visual": {
+        "backgroundColor": "#F5F5F5",
+        "borderRadius": { "bottomLeft": 24, "bottomRight": 24 }
+      },
+      "transitions": {
+        "height": {
+          "duration": 400,
+          "curve": "easeInOutCubic"
+        },
+        "opacity": {
+          "duration": 300,
+          "curve": "easeInOut",
+          "scrolled": 0.7
+        }
+      }
+    },
+    "ChefleetChatBubble": {
+      "type": "container",
+      "variants": {
+        "sent": {
+          "alignment": "right",
+          "dimensions": {
+            "maxWidth": "80%",
+            "borderRadius": { "topLeft": 16, "topRight": 16, "bottomLeft": 16, "bottomRight": 4 }
+          },
+          "visual": {
+            "backgroundColor": "#FF6B35",
+            "textColor": "#FFFFFF"
+          }
+        },
+        "received": {
+          "alignment": "left",
+          "dimensions": {
+            "maxWidth": "80%",
+            "borderRadius": { "topLeft": 16, "topRight": 16, "bottomRight": 16, "bottomLeft": 4 }
+          },
+          "visual": {
+            "backgroundColor": "rgba(255, 255, 255, 0.9)",
+            "textColor": "#333333",
+            "backdropFilter": "blur(10)"
+          }
+        }
+      },
+      "padding": { "horizontal": 16, "vertical": 12 },
+      "margin": { "vertical": 4, "horizontal": 8 }
+    },
+    "ChefleetButton": {
+      "type": "button",
+      "variants": {
+        "primary": {
+          "dimensions": {
+            "height": 48,
+            "borderRadius": 12,
+            "padding": { "horizontal": 24 }
+          },
+          "visual": {
+            "backgroundColor": "#FF6B35",
+            "textColor": "#FFFFFF",
+            "elevation": 4
+          }
+        },
+        "secondary": {
+          "dimensions": {
+            "height": 48,
+            "borderRadius": 12,
+            "padding": { "horizontal": 24 },
+            "border": { "width": 2, "color": "#FF6B35" }
+          },
+          "visual": {
+            "backgroundColor": "transparent",
+            "textColor": "#FF6B35"
+          }
+        },
+        "glass": {
+          "dimensions": {
+            "height": 48,
+            "borderRadius": 12,
+            "padding": { "horizontal": 24 }
+          },
+          "visual": {
+            "backgroundColor": "rgba(255, 255, 255, 0.1)",
+            "textColor": "#FFFFFF",
+            "border": { "width": 1, "color": "rgba(255, 255, 255, 0.3)" },
+            "backdropFilter": "blur(10)"
+          }
+        }
+      },
+      "states": {
+        "default": {
+          "scale": 1.0,
+          "elevation": 4
+        },
+        "pressed": {
+          "scale": 0.98,
+          "elevation": 8
+        },
+        "disabled": {
+          "opacity": 0.5,
+          "scale": 1.0
+        }
+      },
+      "transitions": {
+        "all": { "duration": 200, "curve": "easeOut" }
+      }
+    },
+    "ChefleetInput": {
+      "type": "textField",
+      "dimensions": {
+        "height": 56,
+        "borderRadius": 12,
+        "padding": { "horizontal": 16, "vertical": 8 }
+      },
+      "visual": {
+        "backgroundColor": "rgba(255, 255, 255, 0.1)",
+        "border": { "width": 1, "color": "rgba(255, 255, 255, 0.3)" },
+        "textColor": "#FFFFFF",
+        "placeholderColor": "rgba(255, 255, 255, 0.6)",
+        "backdropFilter": "blur(10)"
+      },
+      "states": {
+        "default": {
+          "borderColor": "rgba(255, 255, 255, 0.3)"
+        },
+        "focused": {
+          "borderColor": "#FF6B35",
+          "borderWidth": 2,
+          "elevation": 4
+        },
+        "error": {
+          "borderColor": "#FF4444",
+          "backgroundColor": "rgba(255, 68, 68, 0.1)"
+        }
+      },
+      "transitions": {
+        "borderColor": { "duration": 200, "curve": "easeOut" }
+      }
+    }
+  },
+  "layoutConstraints": {
+    "safeAreas": {
+      "top": true,
+      "bottom": true,
+      "left": false,
+      "right": false
+    },
+    "padding": {
+      "screen": 16,
+      "section": 24,
+      "component": 8
+    },
+    "spacing": {
+      "xs": 4,
+      "sm": 8,
+      "md": 16,
+      "lg": 24,
+      "xl": 32,
+      "xxl": 48
+    }
+  }
+}

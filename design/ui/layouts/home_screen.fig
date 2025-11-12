@@ -1,0 +1,69 @@
+# Home Screen Layout Specification
+
+## Screen Structure
+- **Total Height**: 100vh (device height)
+- **Total Width**: 100vw (device width)
+- **Coordinate System**: Top-left origin (0,0)
+
+## Components Layout
+
+### 1. ChefleetMapHero (Map Container)
+- **Position**: (0, 0)
+- **Default Dimensions**: width: 100vw, height: 60vh
+- **Scrolled Dimensions**: width: 100vw, height: 20vh
+- **Border Radius**: bottom-left: 24dp, bottom-right: 24dp
+- **Z-Index**: 1
+
+### 2. Glass Navigation Overlay
+- **Position**: overlay on map, bottom: 0
+- **Dimensions**: width: 100vw, height: 80dp
+- **Background**: rgba(255, 255, 255, 0.1) with blur(20)
+- **Border Radius**: top-left: 24dp, top-right: 24dp
+- **Z-Index**: 2
+
+### 3. Feed Grid Container
+- **Position**: starts at 60vh, moves with scroll
+- **Dimensions**: width: 100vw, height: auto
+- **Padding**: 16dp horizontal, 8dp vertical
+- **Column Count**: 2 (responsive: 1 on small screens < 360dp)
+- **Column Spacing**: 12dp
+- **Row Spacing**: 12dp
+- **Z-Index**: 3
+
+### 4. Search Bar
+- **Position**: top: safe-area-top + 16dp, horizontal: 16dp
+- **Dimensions**: width: calc(100vw - 32dp), height: 48dp
+- **Border Radius**: 12dp
+- **Z-Index**: 4
+
+### 5. Filter Chips
+- **Position**: below search bar, horizontal scroll
+- **Dimensions**: chip height: 36dp, spacing: 8dp
+- **Z-Index**: 4
+
+### 6. ChefleetFAB (Floating Action Button)
+- **Default Position**: right: 24dp, bottom: 24dp
+- **Center Docked Position**: center-x, bottom: 100dp (when active order exists)
+- **Dimensions**: 56dp x 56dp, border radius: 28dp
+- **Z-Index**: 5
+
+## Responsive Breakpoints
+- **Small**: < 360dp width (iPhone SE)
+- **Medium**: 360dp - 414dp width (standard phones)
+- **Large**: > 414dp width (larger phones, tablets)
+
+## Animation Bounds
+- **Map Height Animation**: 60vh → 20vh (400ms, easeInOutCubic)
+- **Map Opacity Animation**: 1.0 → 0.7 (300ms, easeInOut)
+- **FAB Position Animation**: bottom 24dp → 100dp (300ms, easeOutBack)
+
+## Gesture Areas
+- **Map**: pan, zoom, tap on markers
+- **Feed**: vertical scroll, horizontal scroll for filters
+- **Search**: tap to focus, text input
+- **FAB**: tap, long press
+
+## Safe Area Insets
+- **Top**: Status bar height + additional 16dp padding
+- **Bottom**: Navigation bar height + 16dp padding
+- **Left/Right**: 0dp (full bleed design)
