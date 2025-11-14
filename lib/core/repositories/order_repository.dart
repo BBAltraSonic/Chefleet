@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:functions_client/functions_client.dart';
 import 'supabase_repository.dart';
 
 class OrderRepository extends SupabaseRepository<Map<String, dynamic>> {
@@ -38,11 +39,16 @@ class OrderRepository extends SupabaseRepository<Map<String, dynamic>> {
   }
 
   @override
-  Exception _handleException(dynamic e) {
+  Exception _handleException(dynamic error) {
     // Custom exception handling for order operations
-    if (e is FunctionException) {
-      return Exception('Edge Function error: ${e.message}');
+    if (error is FunctionException) {
+      return Exception('Edge Function error: ${error.toString()}');
+    } else if (error is PostgrestException) {
+      return Exception('Database error: ${error.message}');
+    } else if (error is AuthException) {
+      return error;
+    } else {
+      return Exception('Order operation failed: ${error.toString()}');
     }
-    return super._handleException(e);
   }
 }

@@ -141,8 +141,15 @@ class QuadTreeNode {
   bool remove(String itemId) {
     if (isLeaf) {
       final initialLength = items.length;
-      items.removeWhere((item) => item.id == itemId);
-      return items.length < initialLength;
+      final removedItems = <QuadTreeItem>[];
+      items.retainWhere((item) {
+        if (item.id == itemId) {
+          removedItems.add(item);
+          return false;
+        }
+        return true;
+      });
+      return removedItems.isNotEmpty;
     } else {
       for (final child in children) {
         if (child.remove(itemId)) {

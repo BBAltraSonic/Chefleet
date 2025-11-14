@@ -54,6 +54,12 @@ android {
         // Priority: .env file > local.properties > empty string
         val mapsApiKey = envProperties.getProperty("MAPS_API_KEY")
             ?: localProperties.getProperty("GOOGLE_MAPS_API_KEY", "")
+
+        // Debug output for troubleshooting
+        println("Maps API key from .env: ${envProperties.getProperty("MAPS_API_KEY")}")
+        println("Maps API key from local.properties: ${localProperties.getProperty("GOOGLE_MAPS_API_KEY")}")
+        println("Final maps API key: $mapsApiKey")
+
         buildConfigField("String", "MAPS_API_KEY", "\"$mapsApiKey\"")
     }
 

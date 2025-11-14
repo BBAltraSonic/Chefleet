@@ -37,7 +37,10 @@
       "Bash(xargs:*)",
       "Bash(flutter test:*)",
       "Bash(flutter doctor:*)",
-      "Bash(flutter build:*)"
+      "Bash(flutter build:*)",
+      "mcp__supabase__list_extensions",
+      "Bash(.env)",
+      "mcp__supabase__list_edge_functions"
     ],
     "deny": [],
     "ask": []

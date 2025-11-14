@@ -376,13 +376,13 @@ class CacheService {
     try {
       final prefs = await SharedPreferences.getInstance();
       int totalSize = 0;
-      
+
       final dishesString = prefs.getString(_dishesKey);
       final vendorsString = prefs.getString(_vendorsKey);
-      
+
       if (dishesString != null) totalSize += dishesString.length;
       if (vendorsString != null) totalSize += vendorsString.length;
-      
+
       return totalSize;
     } catch (e) {
       print('Error calculating cache size: $e');
