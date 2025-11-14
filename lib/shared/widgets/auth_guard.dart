@@ -11,22 +11,42 @@ class AuthGuard extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
-        // Handle navigation based on auth state
-        if (state.isAuthenticated) {
-          // User is authenticated, show main app
-        } else {
-          // User is not authenticated, show auth screen
+        // Show error messages if any
+        if (state.errorMessage != null && state.errorMessage!.isNotEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.errorMessage!),
+              backgroundColor: Theme.of(context).colorScheme.error,
+              action: SnackBarAction(
+                label: 'Dismiss',
+                onPressed: () {
+                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                },
+              ),
+            ),
+          );
+
+          // Clear the error after showing it
+          context.read<AuthBloc>().add(const AuthErrorOccurred(''));
         }
       },
       child: BlocBuilder<AuthBloc, AuthState>(
         builder: (context, state) {
+          // Show loading indicator during initial auth state check
+          if (state.isLoading && state.user == null) {
+            return const Scaffold(
+              backgroundColor: Colors.black,
+              body: Center(
+                child: CircularProgressIndicator(color: Colors.white),
+              ),
+            );
+          }
+
+          // Navigate based on authentication state
           if (state.isAuthenticated) {
             return const MainAppShell();
           } else {
-            return BlocProvider(
-              create: (context) => AuthBloc(),
-              child: const AuthScreen(),
-            );
+            return const AuthScreen();
           }
         },
       ),

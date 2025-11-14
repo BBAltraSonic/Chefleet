@@ -1,21 +1,25 @@
 import 'package:flutter/material.dart';
-import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'base_bloc.dart';
 
-enum NavigationTab {
-  map(0, Icons.map, 'Map'),
-  feed(1, Icons.rss_feed, 'Feed'),
-  orders(2, Icons.shopping_bag, 'Orders'),
-  chat(3, Icons.chat, 'Chat'),
-  profile(4, Icons.person, 'Profile');
+class NavigationTab {
+  const NavigationTab(this.icon, this.label, this.index);
 
-  const NavigationTab(this.index, this.icon, this.label);
-
-  final int index;
   final IconData icon;
   final String label;
+  final int index;
 
+  static const map = NavigationTab(Icons.map, 'Map', 0);
+  static const feed = NavigationTab(Icons.rss_feed, 'Feed', 1);
+  static const orders = NavigationTab(Icons.shopping_bag, 'Orders', 2);
+  static const chat = NavigationTab(Icons.chat, 'Chat', 3);
+  static const profile = NavigationTab(Icons.person, 'Profile', 4);
+
+  static const List<NavigationTab> values = [map, feed, orders, chat, profile];
+}
+
+// Extension for static methods on NavigationTab
+extension NavigationTabExtension on NavigationTab {
   static NavigationTab fromIndex(int index) {
     return NavigationTab.values.firstWhere(
       (tab) => tab.index == index,
@@ -24,10 +28,10 @@ enum NavigationTab {
   }
 
   static List<NavigationTab> get navigationTabs => [
-        map,
-        feed,
-        chat,
-        profile,
+        NavigationTab.map,
+        NavigationTab.feed,
+        NavigationTab.chat,
+        NavigationTab.profile,
       ];
 }
 
@@ -51,6 +55,24 @@ class NavigationStateChanged extends NavigationEvent {
 
   @override
   List<Object?> get props => [state];
+}
+
+class ActiveOrderCountUpdated extends NavigationEvent {
+  const ActiveOrderCountUpdated(this.count);
+
+  final int count;
+
+  @override
+  List<Object?> get props => [count];
+}
+
+class UnreadChatCountUpdated extends NavigationEvent {
+  const UnreadChatCountUpdated(this.count);
+
+  final int count;
+
+  @override
+  List<Object?> get props => [count];
 }
 
 class NavigationState extends AppState {
@@ -84,6 +106,8 @@ class NavigationBloc extends AppBloc<NavigationEvent, NavigationState> {
   NavigationBloc() : super(const NavigationState()) {
     on<NavigationTabChanged>(_onTabChanged);
     on<NavigationStateChanged>(_onStateChanged);
+    on<ActiveOrderCountUpdated>(_onActiveOrderCountUpdated);
+    on<UnreadChatCountUpdated>(_onUnreadChatCountUpdated);
   }
 
   void _onTabChanged(NavigationTabChanged event, Emitter<NavigationState> emit) {
@@ -94,15 +118,23 @@ class NavigationBloc extends AppBloc<NavigationEvent, NavigationState> {
     emit(event.state);
   }
 
+  void _onActiveOrderCountUpdated(ActiveOrderCountUpdated event, Emitter<NavigationState> emit) {
+    emit(state.copyWith(activeOrderCount: event.count));
+  }
+
+  void _onUnreadChatCountUpdated(UnreadChatCountUpdated event, Emitter<NavigationState> emit) {
+    emit(state.copyWith(unreadChatCount: event.count));
+  }
+
   void selectTab(NavigationTab tab) {
     add(NavigationTabChanged(tab));
   }
 
   void updateActiveOrderCount(int count) {
-    emit(state.copyWith(activeOrderCount: count));
+    add(ActiveOrderCountUpdated(count));
   }
 
   void updateUnreadChatCount(int count) {
-    emit(state.copyWith(unreadChatCount: count));
+    add(UnreadChatCountUpdated(count));
   }
 }

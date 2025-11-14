@@ -1,4 +1,4 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide AuthException;
 import 'base_repository.dart';
 import '../exceptions/app_exceptions.dart';
 
@@ -32,7 +32,7 @@ abstract class SupabaseRepository<T> extends DataRepository<T> {
   Future<T?> getById(String id) async {
     try {
       final response = await client.from(tableName).select().eq('id', id).single();
-      return fromMap(response as Map<String, dynamic>);
+      return fromMap(response);
     } catch (e) {
       throw _handleException(e);
     }
@@ -43,7 +43,7 @@ abstract class SupabaseRepository<T> extends DataRepository<T> {
     try {
       final mapData = toMap(item);
       final response = await client.from(tableName).insert(mapData).select().single();
-      return fromMap(response as Map<String, dynamic>);
+      return fromMap(response);
     } catch (e) {
       throw _handleException(e);
     }
@@ -54,7 +54,7 @@ abstract class SupabaseRepository<T> extends DataRepository<T> {
     try {
       final mapData = toMap(item);
       final response = await client.from(tableName).update(mapData).eq('id', mapData['id']).select().single();
-      return fromMap(response as Map<String, dynamic>);
+      return fromMap(response);
     } catch (e) {
       throw _handleException(e);
     }
@@ -89,10 +89,10 @@ abstract class SupabaseRepository<T> extends DataRepository<T> {
   Map<String, dynamic> toMap(T item);
 
   Exception _handleException(dynamic error) {
-    if (error is PostgException) {
+    if (error is PostgrestException) {
       return ServerException(error.message);
     } else if (error is AuthException) {
-      return AuthException(error.message);
+      return error;
     } else {
       return UnknownException(error.toString());
     }

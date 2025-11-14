@@ -1,7 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/auth/screens/auth_screen.dart';
+import '../../features/map/screens/map_screen.dart';
+import '../../features/feed/screens/feed_screen.dart';
+import '../../features/chat/screens/chat_screen.dart';
+import '../../features/profile/screens/profile_screen.dart';
+import '../../features/settings/screens/settings_screen.dart';
+import '../../features/dish/screens/dish_detail_screen.dart';
 import '../blocs/navigation_bloc.dart';
+import '../../../shared/widgets/persistent_navigation_shell.dart';
+import '../../../shared/widgets/profile_guard.dart';
+import '../services/deep_link_service.dart';
 
 class AppRouter {
   static const String initialRoute = '/map';
@@ -12,6 +21,7 @@ class AppRouter {
   static const String chatRoute = '/chat';
   static const String profileRoute = '/profile';
   static const String settingsRoute = '/settings';
+  static const String dishDetailRoute = '/dish';
 
   static late final GoRouter router;
 
@@ -23,8 +33,25 @@ class AppRouter {
           path: authRoute,
           builder: (context, state) => const AuthScreen(),
         ),
+        GoRoute(
+          path: '$dishDetailRoute/:dishId',
+          builder: (context, state) {
+            final dishId = state.pathParameters['dishId']!;
+            return DishDetailScreen(dishId: dishId);
+          },
+        ),
         ShellRoute(
-          builder: (context, state, child) => MainNavigationShell(child: child),
+          builder: (context, state, child) {
+            return ProfileGuard(
+              child: Scaffold(
+                body: child,
+                bottomNavigationBar: const GlassBottomNavigation(),
+                floatingActionButton: const OrdersFloatingActionButton(),
+                floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+              ),
+              requireProfile: false,
+            );
+          },
           routes: [
             GoRoute(
               path: mapRoute,
@@ -36,11 +63,21 @@ class AppRouter {
             ),
             GoRoute(
               path: ordersRoute,
-              builder: (context, state) => const OrdersScreen(),
+              builder: (context, state) {
+                return ProfileGuard(
+                  child: const OrdersScreen(),
+                  requireProfile: true, // Require profile for orders
+                );
+              },
             ),
             GoRoute(
               path: chatRoute,
-              builder: (context, state) => const ChatScreen(),
+              builder: (context, state) {
+                return ProfileGuard(
+                  child: const ChatScreen(),
+                  requireProfile: true, // Require profile for chat
+                );
+              },
             ),
             GoRoute(
               path: profileRoute,
@@ -50,59 +87,27 @@ class AppRouter {
         ),
         GoRoute(
           path: settingsRoute,
-          builder: (context, state) => const SettingsScreen(),
+          builder: (context, state) {
+            return ProfileGuard(
+              child: const SettingsScreen(),
+              requireProfile: false, // Settings accessible without profile
+            );
+          },
         ),
       ],
     );
   }
 
   static void navigateToTab(BuildContext context, NavigationTab tab) {
-    final route = switch (tab) {
-      NavigationTab.map => mapRoute,
-      NavigationTab.feed => feedRoute,
-      NavigationTab.orders => ordersRoute,
-      NavigationTab.chat => chatRoute,
-      NavigationTab.profile => profileRoute,
+    final route = switch (tab.index) {
+      0 => mapRoute,
+      1 => feedRoute,
+      2 => ordersRoute,
+      3 => chatRoute,
+      4 => profileRoute,
+      _ => mapRoute,
     };
     context.go(route);
-  }
-}
-
-// Main navigation shell will use PersistentNavigationShell from shared/widgets
-class MainNavigationShell extends StatelessWidget {
-  const MainNavigationShell({super.key, required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return const Placeholder(); // Will be replaced with proper implementation
-  }
-}
-
-class MapScreen extends StatelessWidget {
-  const MapScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: Text('Map Screen - To be implemented'),
-      ),
-    );
-  }
-}
-
-class FeedScreen extends StatelessWidget {
-  const FeedScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: Text('Feed Screen - To be implemented'),
-      ),
-    );
   }
 }
 
@@ -112,66 +117,13 @@ class OrdersScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Scaffold(
+      backgroundColor: Colors.transparent,
       body: Center(
-        child: Text('Orders Screen - To be implemented'),
+        child: Text(
+          'Orders Screen - To be implemented',
+          style: TextStyle(color: Colors.white),
+        ),
       ),
     );
-  }
-}
-
-class ChatScreen extends StatelessWidget {
-  const ChatScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: Text('Chat Screen - To be implemented'),
-      ),
-    );
-  }
-}
-
-class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: Text('Profile Screen - To be implemented'),
-      ),
-    );
-  }
-}
-
-class SettingsScreen extends StatelessWidget {
-  const SettingsScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: Text('Settings Screen - To be implemented'),
-      ),
-    );
-  }
-}
-
-class GlassBottomNavigation extends StatelessWidget {
-  const GlassBottomNavigation({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Placeholder(); // Will be implemented in task 3.2
-  }
-}
-
-class OrdersFloatingActionButton extends StatelessWidget {
-  const OrdersFloatingActionButton({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Placeholder(); // Will be implemented in task 3.3
   }
 }

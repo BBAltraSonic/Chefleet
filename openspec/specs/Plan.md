@@ -126,9 +126,9 @@ Goal: finalize UX, motion specs, component library, and produce Figma assets for
 
 -   Sub-tasks
 
-    -   [ ] Complete Buyer & Vendor user flows: onboarding, map/feed, dish detail, checkout, active order, chat, vendor onboarding, vendor menu management.
+    -   [x] Complete Buyer & Vendor user flows: onboarding, map/feed, dish detail, checkout, active order, chat, vendor onboarding, vendor menu management.
 
-    -   [ ] Define admin flows: search, moderation, refund/dispute.
+    -   [x] Define admin flows: search, moderation, refund/dispute.
 
 -   Owner: Product / UX
 
@@ -139,11 +139,11 @@ Goal: finalize UX, motion specs, component library, and produce Figma assets for
 
 -   Sub-tasks
 
-    -   [ ] Design Map hero (shrink & fade rules), feed grid, dish card, bottom nav (liquid glass), center pulsing FAB, profile overlay.
+    -   [x] Design Map hero (shrink & fade rules), feed grid, dish card, bottom nav (liquid glass), center pulsing FAB, profile overlay.
 
-    -   [ ] Create annotated motion specs: map 60% → 20% shrink, AnimatedOpacity fade, map→feed debounce 600ms, FAB pulsing when active order exists.
+    -   [x] Create annotated motion specs: map 60% → 20% shrink, AnimatedOpacity fade, map→feed debounce 600ms, FAB pulsing when active order exists.
 
-    -   [ ] Vendor dashboard UI: order queue, order card states, quick replies.
+    -   [x] Vendor dashboard UI: order queue, order card states, quick replies.
 
 -   Owner: UI Designer
 
@@ -233,13 +233,13 @@ Goal: implement buyer app flows: onboarding, map/feed, dish detail, order creati
 
     -   [x] Integrate Google Maps SDK (Android & iOS) + Routes API key config.
 
-    -   [ ] Implement pin clustering, map hero behavior (animated shrink/fade), and map bounds→feed query debounce (600ms).
+    -   [x] Implement pin clustering, map hero behavior (animated shrink/fade), and map bounds→feed query debounce (600ms).
 
-    -   [ ] Implement feed as grid of dish cards (only `dishes.available = TRUE`).
+    -   [x] Implement feed as grid of dish cards (only `dishes.available = TRUE`).
 
-    -   [ ] Implement "pin → mini card" interaction.
+    -   [x] Implement "pin → mini card" interaction.
 
-    -   [ ] Cache last feed & vendor list locally.
+    -   [x] Cache last feed & vendor list locally.
 
 -   Owner: Frontend
 

@@ -33,14 +33,14 @@ class AppTheme {
       elevation: 0,
       type: BottomNavigationBarType.fixed,
       selectedItemColor: primaryColor,
-      unselectedItemColor: Colors.grey600,
+      unselectedItemColor: Colors.grey,
     ),
     floatingActionButtonTheme: const FloatingActionButtonThemeData(
       backgroundColor: primaryColor,
       foregroundColor: Colors.white,
       elevation: 8,
     ),
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       color: glassWhite,
       elevation: 0,
       shape: RoundedRectangleBorder(
@@ -70,14 +70,14 @@ class AppTheme {
       elevation: 0,
       type: BottomNavigationBarType.fixed,
       selectedItemColor: primaryColor,
-      unselectedItemColor: Colors.grey400,
+      unselectedItemColor: Colors.grey,
     ),
     floatingActionButtonTheme: const FloatingActionButtonThemeData(
       backgroundColor: primaryColor,
       foregroundColor: Colors.white,
       elevation: 8,
     ),
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       color: glassDark,
       elevation: 0,
       shape: RoundedRectangleBorder(
