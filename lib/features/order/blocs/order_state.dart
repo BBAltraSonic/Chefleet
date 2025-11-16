@@ -6,6 +6,10 @@ enum OrderStatus {
   success,
   error,
   placing,
+  paymentPending,
+  paymentProcessing,
+  paymentFailed,
+  paymentConfirmed,
 }
 
 class OrderState extends Equatable {
@@ -19,6 +23,10 @@ class OrderState extends Equatable {
     this.subtotal = 0.0,
     this.tax = 0.0,
     this.total = 0.0,
+    this.paymentMethodId,
+    this.clientSecret,
+    this.paymentIntentId,
+    this.paymentError,
   });
 
   final OrderStatus status;
@@ -30,6 +38,10 @@ class OrderState extends Equatable {
   final double subtotal;
   final double tax;
   final double total;
+  final String? paymentMethodId;
+  final String? clientSecret;
+  final String? paymentIntentId;
+  final String? paymentError;
 
   OrderState copyWith({
     OrderStatus? status,
@@ -41,6 +53,10 @@ class OrderState extends Equatable {
     double? subtotal,
     double? tax,
     double? total,
+    String? paymentMethodId,
+    String? clientSecret,
+    String? paymentIntentId,
+    String? paymentError,
   }) {
     return OrderState(
       status: status ?? this.status,
@@ -52,11 +68,19 @@ class OrderState extends Equatable {
       subtotal: subtotal ?? this.subtotal,
       tax: tax ?? this.tax,
       total: total ?? this.total,
+      paymentMethodId: paymentMethodId ?? this.paymentMethodId,
+      clientSecret: clientSecret ?? this.clientSecret,
+      paymentIntentId: paymentIntentId ?? this.paymentIntentId,
+      paymentError: paymentError ?? this.paymentError,
     );
   }
 
   bool get isEmpty => items.isEmpty;
   bool get isValid => items.isNotEmpty && pickupTime != null;
+  bool get isPaymentReady => paymentMethodId != null;
+  bool get requiresPayment => status == OrderStatus.paymentPending ||
+                           status == OrderStatus.paymentProcessing ||
+                           status == OrderStatus.paymentFailed;
   int get itemCount => items.fold(0, (sum, item) => sum + item.quantity);
 
   @override
@@ -70,6 +94,10 @@ class OrderState extends Equatable {
         subtotal,
         tax,
         total,
+        paymentMethodId,
+        clientSecret,
+        paymentIntentId,
+        paymentError,
       ];
 }
 

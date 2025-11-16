@@ -20,6 +20,11 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
     on<OrderFailed>(_onOrderFailed);
     on<OrderRetried>(_onOrderRetried);
     on<OrderReset>(_onOrderReset);
+    on<PaymentMethodSelected>(_onPaymentMethodSelected);
+    on<OrderPaymentStarted>(_onOrderPaymentStarted);
+    on<OrderPaymentSucceeded>(_onOrderPaymentSucceeded);
+    on<OrderPaymentFailed>(_onOrderPaymentFailed);
+    on<OrderPaymentConfirmed>(_onOrderPaymentConfirmed);
   }
 
   final OrderRepository _orderRepository;
@@ -205,6 +210,50 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
     emit(state.copyWith(
       status: OrderStatus.idle,
       errorMessage: null,
+      paymentMethodId: null,
+      clientSecret: null,
+      paymentIntentId: null,
+      paymentError: null,
+    ));
+  }
+
+  void _onPaymentMethodSelected(PaymentMethodSelected event, Emitter<OrderState> emit) {
+    emit(state.copyWith(
+      paymentMethodId: event.paymentMethodId,
+      paymentError: null,
+    ));
+  }
+
+  void _onOrderPaymentStarted(OrderPaymentStarted event, Emitter<OrderState> emit) {
+    emit(state.copyWith(
+      status: OrderStatus.paymentProcessing,
+      isPlacingOrder: true,
+      paymentError: null,
+    ));
+  }
+
+  void _onOrderPaymentSucceeded(OrderPaymentSucceeded event, Emitter<OrderState> emit) {
+    emit(state.copyWith(
+      status: OrderStatus.paymentConfirmed,
+      clientSecret: event.clientSecret,
+      paymentIntentId: event.paymentIntentId,
+      paymentError: null,
+    ));
+  }
+
+  void _onOrderPaymentFailed(OrderPaymentFailed event, Emitter<OrderState> emit) {
+    emit(state.copyWith(
+      status: OrderStatus.paymentFailed,
+      isPlacingOrder: false,
+      paymentError: event.error,
+    ));
+  }
+
+  void _onOrderPaymentConfirmed(OrderPaymentConfirmed event, Emitter<OrderState> emit) {
+    emit(state.copyWith(
+      status: OrderStatus.success,
+      isPlacingOrder: false,
+      paymentError: null,
     ));
   }
 
@@ -272,5 +321,31 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
 
   void reset() {
     add(OrderReset());
+  }
+
+  void selectPaymentMethod(String paymentMethodId) {
+    add(PaymentMethodSelected(paymentMethodId));
+  }
+
+  void startPayment() {
+    add(OrderPaymentStarted());
+  }
+
+  void confirmPaymentSuccess({
+    required String clientSecret,
+    required String paymentIntentId,
+  }) {
+    add(OrderPaymentSucceeded(
+      clientSecret: clientSecret,
+      paymentIntentId: paymentIntentId,
+    ));
+  }
+
+  void confirmPaymentFailed(String error) {
+    add(OrderPaymentFailed(error));
+  }
+
+  void confirmOrderPayment() {
+    add(OrderPaymentConfirmed());
   }
 }

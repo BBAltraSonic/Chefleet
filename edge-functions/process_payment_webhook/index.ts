@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { Stripe } from "https://esm.sh/stripe@16.12.0";
 
 // CORS headers for browser clients
 const corsHeaders = {
@@ -62,19 +63,30 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Note: In a real implementation, you would use Stripe's SDK to verify the webhook signature
-    // For this example, we're simulating the verification process
-    // import { Stripe } from 'https://esm.sh/stripe@latest';
-    // const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY'));
-    // const event = stripe.webhooks.constructEvent(payload, stripeSignature, webhookSecret);
+    // Initialize Stripe with proper signature verification
+    const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
+    if (!stripeSecretKey) {
+      return new Response(
+        JSON.stringify({ success: false, message: "Stripe secret key not configured" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
-    // For demo purposes, parse the payload manually (NOT SECURE for production)
+    const stripe = new Stripe(stripeSecretKey, {
+      apiVersion: "2024-06-20",
+    });
+
+    // Verify webhook signature securely
     let event;
     try {
-      event = JSON.parse(payload);
-    } catch (parseError) {
+      event = stripe.webhooks.constructEvent(payload, stripeSignature!, webhookSecret);
+    } catch (sigError) {
+      console.error("Webhook signature verification failed:", sigError);
       return new Response(
-        JSON.stringify({ success: false, message: "Invalid payload" }),
+        JSON.stringify({
+          success: false,
+          message: `Webhook signature verification failed: ${sigError.message}`
+        }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
