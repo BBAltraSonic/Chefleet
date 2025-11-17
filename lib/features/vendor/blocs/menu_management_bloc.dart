@@ -54,7 +54,13 @@ class MenuManagementBloc
 
       final response = await _supabaseClient
           .from('dishes')
-          .select()
+          .select('''
+            *,
+            vendors!inner(
+              id,
+              business_name
+            )
+          ''')
           .eq('vendor_id', vendorId)
           .order('created_at', ascending: false);
 

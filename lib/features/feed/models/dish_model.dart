@@ -22,7 +22,15 @@ class Dish extends Equatable {
     this.orderCount = 0,
     this.createdAt,
     this.updatedAt,
-  }) : price = priceCents / 100.0;
+    // Additional fields for menu management
+    this.descriptionLong,
+    this.ingredients,
+    this.dietaryRestrictions,
+    this.preparationTimeMinutes,
+    this.isFeatured = false,
+    this.categoryEnum,
+  }) : price = priceCents / 100.0,
+       preparationTimeMinutes = preparationTimeMinutes ?? prepTimeMinutes;
 
   factory Dish.fromJson(Map<String, dynamic> json) {
     return Dish(
@@ -30,7 +38,7 @@ class Dish extends Equatable {
       vendorId: json['vendor_id'] as String,
       name: json['name'] as String,
       description: json['description'] as String? ?? '',
-      priceCents: json['price_cents'] as int,
+      priceCents: (json['price'] as num?)?.toInt() ?? 0,
       prepTimeMinutes: json['prep_time_minutes'] as int? ?? 0,
       available: json['available'] as bool? ?? true,
       imageUrl: json['image_url'] as String?,
@@ -46,6 +54,13 @@ class Dish extends Equatable {
       orderCount: json['order_count'] as int? ?? 0,
       createdAt: DateTime.tryParse(json['created_at'] as String? ?? ''),
       updatedAt: DateTime.tryParse(json['updated_at'] as String? ?? ''),
+      // Additional fields
+      descriptionLong: json['description_long'] as String?,
+      ingredients: (json['ingredients'] as List<dynamic>?)?.cast<String>(),
+      dietaryRestrictions: (json['dietary_restrictions'] as List<dynamic>?)?.cast<String>(),
+      preparationTimeMinutes: json['preparation_time_minutes'] as int?,
+      isFeatured: json['is_featured'] as bool? ?? false,
+      categoryEnum: json['category_enum'] as String?,
     );
   }
 
@@ -56,9 +71,11 @@ class Dish extends Equatable {
   final int priceCents;
   final double price;
   final int prepTimeMinutes;
+  final int preparationTimeMinutes;
   final bool available;
   final String? imageUrl;
   final String? category;
+  final String? categoryEnum;
   final List<String> tags;
   final int spiceLevel;
   final bool isVegetarian;
@@ -66,8 +83,12 @@ class Dish extends Equatable {
   final bool isGlutenFree;
   final Map<String, dynamic>? nutritionalInfo;
   final List<String> allergens;
+  final List<String>? ingredients;
+  final List<String>? dietaryRestrictions;
+  final String? descriptionLong;
   final double popularityScore;
   final int orderCount;
+  final bool isFeatured;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -161,6 +182,13 @@ class Dish extends Equatable {
     int? orderCount,
     DateTime? createdAt,
     DateTime? updatedAt,
+    // Additional fields
+    String? descriptionLong,
+    List<String>? ingredients,
+    List<String>? dietaryRestrictions,
+    int? preparationTimeMinutes,
+    bool? isFeatured,
+    String? categoryEnum,
   }) {
     return Dish(
       id: id ?? this.id,
@@ -183,6 +211,13 @@ class Dish extends Equatable {
       orderCount: orderCount ?? this.orderCount,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      // Additional fields
+      descriptionLong: descriptionLong ?? this.descriptionLong,
+      ingredients: ingredients ?? this.ingredients,
+      dietaryRestrictions: dietaryRestrictions ?? this.dietaryRestrictions,
+      preparationTimeMinutes: preparationTimeMinutes ?? this.preparationTimeMinutes,
+      isFeatured: isFeatured ?? this.isFeatured,
+      categoryEnum: categoryEnum ?? this.categoryEnum,
     );
   }
 

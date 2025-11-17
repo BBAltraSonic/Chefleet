@@ -276,13 +276,13 @@ Goal: implement buyer app flows: onboarding, map/feed, dish detail, order creati
 
 -   Sub-tasks
 
-    -   [ ] Dish detail screen with quantity, pickup time selector (time windows validated by vendor `open_hours_json`).
+    -   [x] Dish detail screen with quantity, pickup time selector (time windows validated by vendor `open_hours_json`).
 
-    -   [ ] On "Place Order", call `create_order` Edge function with idempotency_key.
+    -   [x] On "Place Order", call `create_order` Edge function with idempotency_key.
 
     -   [x] Edge function validates dish availability, calculates total (server-side), generates pickup_code, inserts `orders` + `order_items`, notifies vendor via realtime and push.
 
-    -   [ ] Frontend receives order response and shows Active Order modal.
+    -   [x] Frontend receives order response and shows Active Order modal.
 
 -   Owner: Frontend / Backend
 
@@ -293,11 +293,11 @@ Goal: implement buyer app flows: onboarding, map/feed, dish detail, order creati
 
 -   Sub-tasks
 
-    -   [ ] FAB pulses if active order exists (any non-final state).
+    -   [x] FAB pulses if active order exists (any non-final state).
 
-    -   [ ] Tapping FAB opens Active Order modal: status timeline, pickup code (first-time visibility rules), vendor ETA, map route overlay.
+    -   [x] Tapping FAB opens Active Order modal: status timeline, pickup code (first-time visibility rules), vendor ETA, map route overlay.
 
-    -   [ ] Add "Contact vendor" button opening in-app chat.
+    -   [x] Add "Contact vendor" button opening in-app chat.
 
 -   Owner: Frontend
 
@@ -308,11 +308,11 @@ Goal: implement buyer app flows: onboarding, map/feed, dish detail, order creati
 
 -   Sub-tasks
 
-    -   [ ] Chat messages use `messages` table; subscribe to `messages:order_id` Realtime channel.
+    -   [x] Chat messages use `messages` table; subscribe to `messages:order_id` Realtime channel.
 
-    -   [ ] Implement optimistic UI (local message marked `pending`), retry on failure, show sent/delivered/failed states.
+    -   [x] Implement optimistic UI (local message marked `pending`), retry on failure, show sent/delivered/failed states.
 
-    -   [ ] Enforce client-side rate limiting UI warning (but server will enforce hard limit).
+    -   [x] Enforce client-side rate limiting UI warning (but server will enforce hard limit).
 
 -   Owner: Frontend / Backend
 
@@ -340,11 +340,11 @@ Goal: vendor onboarding, menu and order management, vendor chat and quick replie
 
 -   Sub-tasks
 
-    -   [ ] Onboarding flow: create vendor record linked to `users_public.id`.
+    -   [x] Onboarding flow: create vendor record linked to `users_public.id`.
 
-    -   [ ] Add drop-pin location selector (lat/lng) and address_text, upload business logo and first dish image.
+    -   [x] Add drop-pin location selector (lat/lng) and address_text, upload business logo and first dish image.
 
-    -   [ ] Validate vendor details (phone verified); create `vendors` row.
+    -   [x] Validate vendor details (phone verified); create `vendors` row.
 
 -   Owner: Frontend / Backend
 
@@ -355,11 +355,11 @@ Goal: vendor onboarding, menu and order management, vendor chat and quick replie
 
 -   Sub-tasks
 
-    -   [ ] CRUD for dishes: add name, description, price_cents, image_url (upload via signed URL), prep_time_minutes, tags, availability toggle.
+    -   [x] CRUD for dishes: add name, description, price_cents, image_url (upload via signed URL), prep_time_minutes, tags, availability toggle.
 
-    -   [ ] Each change updates `dishes` table; RLS ensures vendor only modifies own dishes.
+    -   [x] Each change updates `dishes` table; RLS ensures vendor only modifies own dishes.
 
-    -   [ ] Realtime propagation to buyers (dishes become available/unavailable instantly).
+    -   [x] Realtime propagation to buyers (dishes become available/unavailable instantly).
 
 -   Owner: Frontend / Backend
 
@@ -370,13 +370,13 @@ Goal: vendor onboarding, menu and order management, vendor chat and quick replie
 
 -   Sub-tasks
 
-    -   [ ] Vendor subscribes to `orders:vendor_id` realtime channel.
+    -   [x] Vendor subscribes to `orders:vendor_id` realtime channel.
 
-    -   [ ] Order card with state machine UI: Pending → Accept → Preparing → Ready → Completed. Provide accept/cancel actions (with confirmations).
+    -   [x] Order card with state machine UI: Pending → Accept → Preparing → Ready → Completed. Provide accept/cancel actions (with confirmations).
 
-    -   [ ] Implement "Ready" quick action that triggers push to buyer and moves order status via Edge function.
+    -   [x] Implement "Ready" quick action that triggers push to buyer and moves order status via Edge function.
 
-    -   [ ] Include pickup_code reveal and verification flow: vendor scans or enters pickup code to mark completed.
+    -   [x] Include pickup_code reveal and verification flow: vendor scans or enters pickup code to mark completed.
 
 -   Owner: Frontend / Backend
 
@@ -387,11 +387,11 @@ Goal: vendor onboarding, menu and order management, vendor chat and quick replie
 
 -   Sub-tasks
 
-    -   [ ] Scope chat to `order_id`; show sender role badges.
+    -   [x] Scope chat to `order_id`; show sender role badges.
 
-    -   [ ] Add quick replies and canned messages (configurable).
+    -   [x] Add quick replies and canned messages (configurable).
 
-    -   [ ] Show unread badges and last message preview on order cards.
+    -   [x] Show unread badges and last message preview on order cards.
 
 -   Owner: Frontend
 
@@ -402,9 +402,9 @@ Goal: vendor onboarding, menu and order management, vendor chat and quick replie
 
 -   Sub-tasks
 
-    -   [ ] Use an Edge function to return signed PUT URLs to `vendor_media` bucket.
+    -   [x] Use an Edge function to return signed PUT URLs to `vendor_media` bucket.
 
-    -   [ ] Validate file types & size server-side or via storage rules.
+    -   [x] Validate file types & size server-side or via storage rules.
 
     -   [ ] Generate thumbnails on upload trigger (Edge function or scheduled job).
 

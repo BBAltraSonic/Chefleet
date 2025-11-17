@@ -158,15 +158,23 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
       // Generate idempotency key
       final idempotencyKey = const Uuid().v4();
 
+      // Get vendor_id from first item (all items should be from same vendor)
+      if (state.items.isEmpty) {
+        throw Exception('No items in order');
+      }
+      final vendorId = state.items.first.vendorId;
+
       // Prepare order data for Edge function
       final orderData = {
-        'idempotency_key': idempotencyKey,
-        'items': state.items.map((item) => item.toJson()).toList(),
+        'vendor_id': vendorId,
+        'items': state.items.map((item) => {
+          'dish_id': item.dishId,
+          'quantity': item.quantity,
+          'special_instructions': item.specialInstructions,
+        }).toList(),
         'pickup_time': state.pickupTime?.toIso8601String(),
         'special_instructions': state.specialInstructions,
-        'subtotal': state.subtotal,
-        'tax': state.tax,
-        'total': state.total,
+        'idempotency_key': idempotencyKey,
       };
 
       // Call Edge function

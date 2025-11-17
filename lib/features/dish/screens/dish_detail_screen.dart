@@ -53,48 +53,53 @@ class _DishDetailScreenState extends State<DishDetailScreen> {
 
   Future<void> _loadDishDetails() async {
     try {
-      // TODO: Implement actual data loading from Supabase
-      // For now, create mock data
-      _dish = Dish(
-        id: widget.dishId,
-        vendorId: 'vendor_1',
-        name: 'Spicy Thai Basil Fried Rice',
-        description: 'Authentic Thai-style fried rice with fresh basil, chilies, and your choice of protein. Stir-fried to perfection with aromatic spices and served with a side of cucumber salad.',
-        priceCents: 1299,
-        prepTimeMinutes: 15,
-        available: true,
-        imageUrl: 'https://example.com/dish.jpg',
-        category: 'Thai Cuisine',
-        tags: ['Spicy', 'Rice', 'Quick'],
-        spiceLevel: 3,
-        isVegetarian: false,
-        allergens: ['Soy', 'Fish Sauce', 'Peanuts'],
-        popularityScore: 4.7,
-        orderCount: 234,
-      );
+      final supabase = Supabase.instance.client;
 
+      // Load dish details
+      final dishResponse = await supabase
+          .from('dishes')
+          .select('''
+            *,
+            vendors!inner(
+              id,
+              business_name,
+              description,
+              address,
+              latitude,
+              longitude,
+              logo_url,
+              phone_number,
+              rating,
+              cuisine_type,
+              open_hours_json
+            )
+          ''')
+          .eq('id', widget.dishId)
+          .single();
+
+      if (dishResponse == null) {
+        throw Exception('Dish not found');
+      }
+
+      // Parse dish data
+      _dish = Dish.fromJson(dishResponse);
+
+      // Parse vendor data
+      final vendorData = dishResponse['vendors'] as Map<String, dynamic>;
       _vendor = Vendor(
-        id: 'vendor_1',
-        name: 'Bangkok Street Eats',
-        description: 'Authentic Thai street food made fresh daily',
-        latitude: 37.7749,
-        longitude: -122.4194,
-        dishCount: 25,
+        id: vendorData['id'] as String,
+        name: vendorData['business_name'] as String? ?? 'Unknown Vendor',
+        description: vendorData['description'] as String? ?? '',
+        latitude: (vendorData['latitude'] as num?)?.toDouble() ?? 0.0,
+        longitude: (vendorData['longitude'] as num?)?.toDouble() ?? 0.0,
+        dishCount: 0, // Would need to calculate this
         isActive: true,
-        rating: 4.8,
-        cuisineType: 'Thai Street Food',
-        address: '123 Market St, San Francisco, CA 94103',
-        logoUrl: 'https://example.com/vendor.jpg',
-        phoneNumber: '+1-415-555-0123',
-        openHoursJson: {
-          'monday': {'open': '11:00', 'close': '22:00'},
-          'tuesday': {'open': '11:00', 'close': '22:00'},
-          'wednesday': {'open': '11:00', 'close': '22:00'},
-          'thursday': {'open': '11:00', 'close': '22:00'},
-          'friday': {'open': '11:00', 'close': '23:00'},
-          'saturday': {'open': '11:00', 'close': '23:00'},
-          'sunday': {'open': '12:00', 'close': '21:00'},
-        },
+        rating: (vendorData['rating'] as num?)?.toDouble() ?? 0.0,
+        cuisineType: vendorData['cuisine_type'] as String?,
+        address: vendorData['address'] as String? ?? 'Address not available',
+        logoUrl: vendorData['logo_url'] as String?,
+        phoneNumber: vendorData['phone_number'] as String?,
+        openHoursJson: vendorData['open_hours_json'] as Map<String, dynamic>?,
       );
 
       setState(() {

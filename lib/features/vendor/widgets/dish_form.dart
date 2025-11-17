@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../feed/models/dish_model.dart';
 import '../blocs/menu_management_bloc.dart';
@@ -130,60 +131,153 @@ class _DishFormState extends State<DishForm> {
     }
   }
 
-  void _saveDish() {
+  Future<void> _saveDish() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
 
-    final priceCents = (double.parse(_priceController.text) * 100).round();
-    final prepTime = _prepTimeController.text.isNotEmpty
-        ? int.tryParse(_prepTimeController.text)
-        : null;
-
-    final ingredients = _ingredientsController.text
-        .split(',')
-        .map((s) => s.trim())
-        .where((s) => s.isNotEmpty)
-        .toList();
-
-    final allergens = _allergensController.text
-        .split(',')
-        .map((s) => s.trim())
-        .where((s) => s.isNotEmpty)
-        .toList();
-
-    final dish = Dish(
-      id: widget.dish?.id,
-      vendorId: '', // Will be set by BLoC
-      name: _nameController.text.trim(),
-      description: _descriptionController.text.trim().isNotEmpty
-          ? _descriptionController.text.trim()
-          : null,
-      descriptionLong: _longDescriptionController.text.trim().isNotEmpty
-          ? _longDescriptionController.text.trim()
-          : null,
-      priceCents: priceCents,
-      category: _selectedCategory,
-      categoryEnum: _selectedCategory,
-      imageUrl: _imageUrl,
-      available: _available,
-      isFeatured: _isFeatured,
-      ingredients: ingredients.isNotEmpty ? ingredients : null,
-      allergens: allergens.isNotEmpty ? allergens : null,
-      dietaryRestrictions: _dietaryRestrictions.isNotEmpty ? _dietaryRestrictions : null,
-      preparationTimeMinutes: prepTime,
-      spiceLevel: _spiceLevel > 0 ? _spiceLevel : null,
-      createdAt: widget.dish?.createdAt,
-      updatedAt: DateTime.now(),
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Dialog(
+        child: Padding(
+          padding: EdgeInsets.all(20),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(width: 16),
+              Text('Saving dish...'),
+            ],
+          ),
+        ),
+      ),
     );
 
-    if (widget.dish == null) {
-      context.read<MenuManagementBloc>().add(CreateDish(dish: dish));
-    } else {
-      context.read<MenuManagementBloc>().add(UpdateDish(dish: dish));
-    }
+    try {
+      // Upload image if a new one was selected
+      String? finalImageUrl = _imageUrl;
+      if (_imageFile != null) {
+        finalImageUrl = await _uploadImageToSupabase(_imageFile!);
+        if (finalImageUrl == null) {
+          Navigator.of(context).pop(); // Remove loading dialog
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Failed to upload image'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+          return;
+        }
+      }
 
-    Navigator.of(context).pop();
+      final priceCents = (double.parse(_priceController.text) * 100).round();
+      final prepTime = _prepTimeController.text.isNotEmpty
+          ? int.tryParse(_prepTimeController.text)
+          : null;
+
+      final ingredients = _ingredientsController.text
+          .split(',')
+          .map((s) => s.trim())
+          .where((s) => s.isNotEmpty)
+          .toList();
+
+      final allergens = _allergensController.text
+          .split(',')
+          .map((s) => s.trim())
+          .where((s) => s.isNotEmpty)
+          .toList();
+
+      final dish = Dish(
+        id: widget.dish?.id,
+        vendorId: '', // Will be set by BLoC
+        name: _nameController.text.trim(),
+        description: _descriptionController.text.trim().isNotEmpty
+            ? _descriptionController.text.trim()
+            : null,
+        descriptionLong: _longDescriptionController.text.trim().isNotEmpty
+            ? _longDescriptionController.text.trim()
+            : null,
+        priceCents: priceCents,
+        category: _selectedCategory,
+        categoryEnum: _selectedCategory,
+        imageUrl: finalImageUrl,
+        available: _available,
+        isFeatured: _isFeatured,
+        ingredients: ingredients.isNotEmpty ? ingredients : null,
+        allergens: allergens.isNotEmpty ? allergens : null,
+        dietaryRestrictions: _dietaryRestrictions.isNotEmpty ? _dietaryRestrictions : null,
+        preparationTimeMinutes: prepTime,
+        spiceLevel: _spiceLevel > 0 ? _spiceLevel : null,
+        createdAt: widget.dish?.createdAt,
+        updatedAt: DateTime.now(),
+      );
+
+      if (widget.dish == null) {
+        context.read<MenuManagementBloc>().add(CreateDish(dish: dish));
+      } else {
+        context.read<MenuManagementBloc>().add(UpdateDish(dish: dish));
+      }
+
+      Navigator.of(context).pop(); // Remove loading dialog
+      Navigator.of(context).pop(); // Close form
+    } catch (e) {
+      Navigator.of(context).pop(); // Remove loading dialog
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error saving dish: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<String?> _uploadImageToSupabase(File imageFile) async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) return null;
+
+      // Get vendor ID
+      final vendorResponse = await Supabase.instance.client
+          .from('vendors')
+          .select('id')
+          .eq('owner_id', user.id)
+          .single();
+
+      final vendorId = vendorResponse['id'] as String;
+
+      // Generate unique filename
+      final fileExt = imageFile.path.split('.').last;
+      final fileName = '${vendorId}_${DateTime.now().millisecondsSinceEpoch}.$fileExt';
+
+      // Upload to Supabase Storage
+      final bytes = await imageFile.readAsBytes();
+      await Supabase.instance.client.storage
+          .from('dish-images')
+          .uploadBinary(
+            fileName,
+            bytes,
+            fileOptions: FileOptions(
+              contentType: 'image/$fileExt',
+              upsert: false,
+            ),
+          );
+
+      // Get public URL
+      final imageUrl = Supabase.instance.client.storage
+          .from('dish-images')
+          .getPublicUrl(fileName);
+
+      return imageUrl;
+    } catch (e) {
+      print('Error uploading image: $e');
+      return null;
+    }
   }
 
   @override
