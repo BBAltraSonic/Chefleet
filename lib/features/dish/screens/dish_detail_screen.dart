@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../feed/models/dish_model.dart';
@@ -98,7 +97,7 @@ class _DishDetailScreenState extends State<DishDetailScreen> {
         cuisineType: vendorData['cuisine_type'] as String?,
         address: vendorData['address'] as String? ?? 'Address not available',
         logoUrl: vendorData['logo_url'] as String?,
-        phoneNumber: vendorData['phone_number'] as String?,
+        phoneNumber: vendorData['phone_number'] as String? ?? '',
         openHoursJson: vendorData['open_hours_json'] as Map<String, dynamic>?,
       );
 
@@ -179,71 +178,80 @@ class _DishDetailScreenState extends State<DishDetailScreen> {
   }
 
   Widget _buildDishDetail(OrderState orderState) {
-    return CustomScrollView(
-      slivers: [
-        _buildHeroImage(),
-        _buildContent(orderState),
-      ],
+    return Scaffold(
+      backgroundColor: theme.AppTheme.backgroundColor,
+      body: CustomScrollView(
+        slivers: [
+          _buildHeader(),
+          _buildHeroImage(),
+          _buildContent(orderState),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return SliverToBoxAdapter(
+      child: Container(
+        color: theme.AppTheme.backgroundColor,
+        padding: const EdgeInsets.fromLTRB(16, 48, 16, 8),
+        child: Row(
+          children: [
+            IconButton(
+              icon: Icon(Icons.arrow_back, color: theme.AppTheme.darkText),
+              onPressed: () => Navigator.pop(context),
+            ),
+            Expanded(
+              child: Text(
+                'Dish Details',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: theme.AppTheme.darkText,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            const SizedBox(width: 48),
+          ],
+        ),
+      ),
     );
   }
 
   Widget _buildHeroImage() {
-    return SliverAppBar(
-      expandedHeight: 300,
-      pinned: true,
-      backgroundColor: Colors.transparent,
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back, color: Colors.white),
-        onPressed: () => context.pop(),
-      ),
-      actions: [
-        if (_dish != null && _vendor != null)
-          IconButton(
-            icon: const Icon(Icons.share, color: Colors.white),
-            onPressed: () => _shareDish(),
-          ),
-      ],
-      flexibleSpace: FlexibleSpaceBar(
-        background: Stack(
-          fit: StackFit.expand,
-          children: [
-            if (_dish!.imageUrl != null)
-              Image.network(
-                _dish!.imageUrl!,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color: Colors.grey[300],
-                    child: const Icon(
-                      Icons.restaurant,
-                      size: 100,
-                      color: Colors.grey,
-                    ),
-                  );
-                },
-              )
-            else
-              Container(
-                color: Colors.grey[300],
-                child: const Icon(
-                  Icons.restaurant,
-                  size: 100,
-                  color: Colors.grey,
+    return SliverToBoxAdapter(
+      child: Container(
+        height: 218,
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(theme.AppTheme.radiusMedium),
+          color: theme.AppTheme.surfaceGreen,
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(theme.AppTheme.radiusMedium),
+          child: _dish!.imageUrl != null
+              ? Image.network(
+                  _dish!.imageUrl!,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      color: theme.AppTheme.borderGreen,
+                      child: Icon(
+                        Icons.restaurant,
+                        size: 80,
+                        color: theme.AppTheme.secondaryGreen,
+                      ),
+                    );
+                  },
+                )
+              : Container(
+                  color: theme.AppTheme.borderGreen,
+                  child: Icon(
+                    Icons.restaurant,
+                    size: 80,
+                    color: theme.AppTheme.secondaryGreen,
+                  ),
                 ),
-              ),
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.transparent,
-                    Colors.black.withOpacity(0.7),
-                  ],
-                ),
-              ),
-            ),
-          ],
         ),
       ),
     );
@@ -256,20 +264,31 @@ class _DishDetailScreenState extends State<DishDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildDishHeader(),
-            const SizedBox(height: 24),
-            _buildVendorInfo(),
-            const SizedBox(height: 24),
-            _buildDietaryInfo(),
-            const SizedBox(height: 24),
-            _buildDescription(),
-            const SizedBox(height: 24),
+            Text(
+              _dish!.name,
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                color: theme.AppTheme.darkText,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            if (_dish!.description != null && _dish!.description!.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12, top: 4),
+                child: Text(
+                  _dish!.description!,
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: theme.AppTheme.darkText,
+                  ),
+                ),
+              ),
+            const SizedBox(height: 16),
             _buildQuantitySelector(orderState),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
             _buildPickupTimeSelector(orderState),
-            const SizedBox(height: 32),
+            const SizedBox(height: 12),
             _buildOrderButton(orderState),
-            const SizedBox(height: 32),
+            const SizedBox(height: 20),
           ],
         ),
       ),
@@ -307,7 +326,7 @@ class _DishDetailScreenState extends State<DishDetailScreen> {
                         child: Text(
                           _dish!.formattedPrice,
                           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                            color: theme.AppTheme.primaryColor,
+                            color: theme.AppTheme.primaryGreen,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -368,13 +387,13 @@ class _DishDetailScreenState extends State<DishDetailScreen> {
                 children: _dish!.tags.map((tag) => Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: theme.AppTheme.primaryColor.withOpacity(0.2),
+                    color: theme.AppTheme.primaryGreen.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     tag,
                     style: TextStyle(
-                      color: theme.AppTheme.primaryColor,
+                      color: theme.AppTheme.primaryGreen,
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
                     ),
@@ -576,7 +595,6 @@ class _DishDetailScreenState extends State<DishDetailScreen> {
   }
 
   Widget _buildQuantitySelector(OrderState orderState) {
-    // Find existing item in cart or use default quantity of 1
     final existingItem = orderState.items.firstWhere(
       (item) => item.dishId == widget.dishId,
       orElse: () => OrderItem(
@@ -589,85 +607,79 @@ class _DishDetailScreenState extends State<DishDetailScreen> {
       ),
     );
 
-    return GlassContainer(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Quantity',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: theme.AppTheme.darkText,
+          ),
+        ),
+        const SizedBox(height: 14),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Semantics(
-              header: true,
-              child: Text(
-                'Quantity',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
+            Text(
+              '${existingItem.quantity}',
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: theme.AppTheme.darkText,
               ),
             ),
-            const SizedBox(height: 12),
             Row(
               children: [
-                Semantics(
-                  button: true,
-                  enabled: existingItem.quantity > 1,
-                  label: existingItem.quantity > 1
-                      ? 'Decrease quantity to ${existingItem.quantity - 1}'
-                      : 'Minimum quantity reached',
+                Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: theme.AppTheme.surfaceGreen,
+                    shape: BoxShape.circle,
+                  ),
                   child: IconButton(
+                    padding: EdgeInsets.zero,
                     onPressed: existingItem.quantity > 1
                         ? () => _orderBloc.updateItem(
                               dishId: widget.dishId,
                               quantity: existingItem.quantity - 1,
                             )
                         : null,
-                    icon: const Icon(Icons.remove_circle_outline),
-                    iconSize: 32,
-                    color: existingItem.quantity > 1 ? theme.AppTheme.primaryColor : Colors.grey,
-                  ),
-                ),
-                Semantics(
-                  label: 'Current quantity: ${existingItem.quantity}',
-                  child: Container(
-                    width: 60,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.white.withOpacity(0.3)),
-                    ),
-                    child: Center(
-                      child: Text(
-                        '${existingItem.quantity}',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                    icon: Icon(
+                      Icons.remove,
+                      size: 16,
+                      color: theme.AppTheme.darkText,
                     ),
                   ),
                 ),
-                Semantics(
-                  button: true,
-                  label: 'Increase quantity to ${existingItem.quantity + 1}',
+                Container(
+                  width: 28,
+                  margin: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Text(
+                    '${existingItem.quantity}',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: theme.AppTheme.darkText,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: theme.AppTheme.surfaceGreen,
+                    shape: BoxShape.circle,
+                  ),
                   child: IconButton(
+                    padding: EdgeInsets.zero,
                     onPressed: () => _orderBloc.updateItem(
                       dishId: widget.dishId,
                       quantity: existingItem.quantity + 1,
                     ),
-                    icon: const Icon(Icons.add_circle_outline),
-                    iconSize: 32,
-                    color: theme.AppTheme.primaryColor,
-                  ),
-                ),
-                const Spacer(),
-                Semantics(
-                  label: 'Total price: ${(_dish!.price * existingItem.quantity).toStringAsFixed(2)}',
-                  child: Text(
-                    'Total: ${(_dish!.price * existingItem.quantity).toStringAsFixed(2)}',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: theme.AppTheme.primaryColor,
-                      fontWeight: FontWeight.bold,
+                    icon: Icon(
+                      Icons.add,
+                      size: 16,
+                      color: theme.AppTheme.darkText,
                     ),
                   ),
                 ),
@@ -675,86 +687,91 @@ class _DishDetailScreenState extends State<DishDetailScreen> {
             ),
           ],
         ),
-      ),
+      ],
     );
   }
 
   Widget _buildPickupTimeSelector(OrderState orderState) {
-    return GlassContainer(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Pickup Time',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 12),
-            GestureDetector(
-              onTap: () => _selectPickupTime(orderState),
+    final pickupSlots = [
+      'Today, 12:00 PM - 12:30 PM',
+      'Today, 12:30 PM - 1:00 PM',
+      'Today, 1:00 PM - 1:30 PM',
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Pickup Time',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: theme.AppTheme.darkText,
+          ),
+        ),
+        const SizedBox(height: 12),
+        ...pickupSlots.asMap().entries.map((entry) {
+          final index = entry.key;
+          final slot = entry.value;
+          final isSelected = orderState.pickupTime?.toString().contains(slot.split(' ').first) ?? (index == 0);
+
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: GestureDetector(
+              onTap: () {
+                _orderBloc.setPickupTime(DateTime.now().add(Duration(minutes: 30 * (index + 1))));
+              },
               child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(15),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: orderState.pickupTime != null
-                        ? theme.AppTheme.primaryColor.withOpacity(0.5)
-                        : Colors.white.withOpacity(0.3),
-                  ),
+                  border: Border.all(color: theme.AppTheme.borderGreen),
+                  borderRadius: BorderRadius.circular(theme.AppTheme.radiusMedium),
                 ),
                 child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Icon(
-                      Icons.schedule,
-                      color: orderState.pickupTime != null
-                          ? theme.AppTheme.primaryColor
-                          : Colors.grey[400],
-                    ),
-                    const SizedBox(width: 12),
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            orderState.pickupTime != null
-                                ? _formatPickupTime(orderState.pickupTime!)
-                                : 'ASAP (15-20 min)',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          Text(
-                            orderState.pickupTime != null
-                                ? 'Selected pickup time'
-                                : 'Ready around ${_calculateAsapTime()}',
-                            style: TextStyle(
-                              color: Colors.grey[300],
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
+                      child: Text(
+                        slot,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: theme.AppTheme.darkText,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
-                    Icon(Icons.arrow_forward_ios, color: Colors.grey[400], size: 16),
+                    Container(
+                      width: 20,
+                      height: 20,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: isSelected ? theme.AppTheme.primaryGreen : theme.AppTheme.borderGreen,
+                          width: 2,
+                        ),
+                      ),
+                      child: isSelected
+                          ? Center(
+                              child: Container(
+                                width: 12,
+                                height: 12,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: theme.AppTheme.primaryGreen,
+                                ),
+                              ),
+                            )
+                          : null,
+                    ),
                   ],
                 ),
               ),
             ),
-          ],
-        ),
-      ),
+          );
+        }).toList(),
+      ],
     );
   }
 
   Widget _buildOrderButton(OrderState orderState) {
-    // Check if item is already in cart
     final existingItem = orderState.items.firstWhere(
       (item) => item.dishId == widget.dishId,
       orElse: () => OrderItem(
@@ -767,21 +784,22 @@ class _DishDetailScreenState extends State<DishDetailScreen> {
       ),
     );
 
-    final totalAmount = _dish!.price * existingItem.quantity;
     final isPlacingOrder = orderState.status == OrderStatus.placing;
-    final canPlaceOrder = _dish!.available && orderState.pickupTime != null;
+    final canPlaceOrder = _dish!.available;
 
     return SizedBox(
       width: double.infinity,
+      height: 48,
       child: ElevatedButton(
         onPressed: canPlaceOrder && !isPlacingOrder ? () => _placeOrder(existingItem.quantity) : null,
         style: ElevatedButton.styleFrom(
-          backgroundColor: canPlaceOrder ? theme.AppTheme.primaryColor : Colors.grey,
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 16),
+          backgroundColor: canPlaceOrder ? theme.AppTheme.primaryGreen : Colors.grey,
+          foregroundColor: theme.AppTheme.darkText,
+          padding: const EdgeInsets.symmetric(horizontal: 20),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(theme.AppTheme.radiusMedium),
           ),
+          elevation: 0,
         ),
         child: isPlacingOrder
             ? Row(
@@ -792,7 +810,7 @@ class _DishDetailScreenState extends State<DishDetailScreen> {
                     height: 20,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      valueColor: AlwaysStoppedAnimation<Color>(theme.AppTheme.darkText),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -800,10 +818,11 @@ class _DishDetailScreenState extends State<DishDetailScreen> {
                 ],
               )
             : Text(
-                'Place Order • ${totalAmount.toStringAsFixed(2)}',
-                style: const TextStyle(
-                  fontSize: 18,
+                'Order for Pickup (Cash)',
+                style: TextStyle(
+                  fontSize: 16,
                   fontWeight: FontWeight.bold,
+                  color: theme.AppTheme.darkText,
                 ),
               ),
       ),
@@ -887,7 +906,7 @@ class _DishDetailScreenState extends State<DishDetailScreen> {
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
-              context.pop(); // Go back to map
+              Navigator.pop(context); // Go back to map
             },
             child: const Text('Done'),
           ),

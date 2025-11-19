@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:go_router/go_router.dart';
 import 'dart:math' as math;
 import '../blocs/map_feed_bloc.dart';
 import '../../feed/widgets/dish_card.dart';
 import '../../feed/widgets/vendor_mini_card.dart';
 import '../../feed/models/vendor_model.dart';
 import '../../../shared/widgets/glass_container.dart';
-import '../../../core/router/app_router.dart';
+import '../../dish/screens/dish_detail_screen.dart';
+import '../../../core/theme/app_theme.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -120,7 +120,7 @@ class _MapViewState extends State<MapView> {
     return BlocBuilder<MapFeedBloc, MapFeedState>(
       builder: (context, state) {
         return Scaffold(
-          backgroundColor: Colors.black,
+          backgroundColor: AppTheme.backgroundColor,
           body: Stack(
             children: [
               // Map + Feed with CustomScrollView
@@ -140,26 +140,22 @@ class _MapViewState extends State<MapView> {
                                   state.currentPosition!.latitude,
                                   state.currentPosition!.longitude,
                                 )
-                              : const LatLng(37.7749, -122.4194), // San Francisco default
+                              : const LatLng(37.7749, -122.4194),
                           zoom: 14,
                         ),
                         onMapCreated: (controller) {
                           widget.onMapCreated(controller);
-                          // TODO: Implement custom clustering solution
-                          // context.read<MapFeedBloc>().clusterManager?.setMapId(controller.mapId);
+                          context.read<MapFeedBloc>().add(MapCameraControllerChanged(controller));
                         },
                         onCameraMove: (position) {
-                          // TODO: Implement custom clustering solution
-                          // context.read<MapFeedBloc>().clusterManager?.onCameraMove(position);
+                          context.read<MapFeedBloc>().add(MapCameraMoved(position));
                         },
                         onCameraIdle: () {
-                          // TODO: Implement custom clustering solution
-                          // context.read<MapFeedBloc>().clusterManager?.updateMap();
                           if (widget.mapController != null && mounted) {
                             Future.delayed(const Duration(milliseconds: 600), () {
                               if (widget.mapController != null && mounted) {
                                 widget.mapController!.getVisibleRegion().then((bounds) {
-                                  context.read<MapFeedBloc>().add(MapBoundsChanged(bounds));
+                                  context.read<MapFeedBloc>().add(MapCameraIdle(bounds));
                                 });
                               }
                             });
@@ -173,7 +169,7 @@ class _MapViewState extends State<MapView> {
                         compassEnabled: true,
                         padding: const EdgeInsets.only(
                           bottom: 20,
-                          top: 80, // Account for search bar
+                          top: 80,
                         ),
                       ),
                     ),
@@ -183,9 +179,9 @@ class _MapViewState extends State<MapView> {
                   SliverToBoxAdapter(
                     child: Container(
                       decoration: BoxDecoration(
-                        color: Colors.black,
+                        color: AppTheme.backgroundColor,
                         borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(20),
+                          top: Radius.circular(AppTheme.radiusLarge),
                         ),
                       ),
                       child: _buildFeedContent(context, state),
@@ -193,6 +189,8 @@ class _MapViewState extends State<MapView> {
                   ),
                 ],
               ),
+
+              _buildMapControls(context, state),
 
               // Vendor mini card overlay
               if (state.selectedVendor != null)
@@ -214,26 +212,24 @@ class _MapViewState extends State<MapView> {
                   ),
                 ),
 
-              // Loading overlay
               if (state.isLoading)
                 Container(
-                  color: Colors.black.withOpacity(0.3),
-                  child: const Center(
+                  color: AppTheme.modalOverlay,
+                  child: Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        CircularProgressIndicator(color: Colors.white),
-                        SizedBox(height: 16),
+                        CircularProgressIndicator(color: AppTheme.primaryGreen),
+                        const SizedBox(height: 16),
                         Text(
                           'Loading nearby vendors...',
-                          style: TextStyle(color: Colors.white),
+                          style: TextStyle(color: AppTheme.darkText),
                         ),
                       ],
                     ),
                   ),
                 ),
 
-              // Error message
               if (state.errorMessage != null)
                 Positioned(
                   top: 120,
@@ -243,7 +239,7 @@ class _MapViewState extends State<MapView> {
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: Colors.red.withOpacity(0.9),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
                     ),
                     child: Row(
                       children: [
@@ -256,9 +252,7 @@ class _MapViewState extends State<MapView> {
                           ),
                         ),
                         IconButton(
-                          onPressed: () {
-                            // Clear error
-                          },
+                          onPressed: () {},
                           icon: const Icon(Icons.close, color: Colors.white),
                         ),
                       ],
@@ -275,83 +269,152 @@ class _MapViewState extends State<MapView> {
     Widget _buildMapControls(BuildContext context, MapFeedState state) {
       return Stack(
         children: [
-          // Search bar
           Positioned(
-            top: MediaQuery.of(context).padding.top + 16,
+            top: MediaQuery.of(context).padding.top + 20,
             left: 16,
             right: 16,
-            child: GlassContainer(
-              height: 60,
-              opacity: 0.9,
+            child: Container(
+              height: 48,
+              decoration: BoxDecoration(
+                color: AppTheme.backgroundColor,
+                borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
               child: Row(
                 children: [
-                  const Expanded(
-                    child: TextField(
-                      decoration: InputDecoration(
-                        hintText: 'Search for dishes or vendors...',
-                        prefixIcon: Icon(Icons.search),
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      ),
-                      style: TextStyle(color: Colors.white),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 16, right: 8),
+                    child: Icon(
+                      Icons.search,
+                      color: AppTheme.secondaryGreen,
+                      size: 24,
                     ),
                   ),
-                  IconButton(
-                    onPressed: () {
-                      // Filter action
-                    },
-                    icon: const Icon(Icons.tune, color: Colors.white),
+                  Expanded(
+                    child: TextField(
+                      decoration: InputDecoration(
+                        hintText: 'Search for an address',
+                        hintStyle: TextStyle(
+                          color: AppTheme.secondaryGreen,
+                          fontSize: 16,
+                          fontWeight: FontWeight.normal,
+                        ),
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                      style: TextStyle(
+                        color: AppTheme.darkText,
+                        fontSize: 16,
+                      ),
+                    ),
                   ),
                 ],
               ),
             ),
           ),
 
-          // Current location button
           Positioned(
             right: 16,
-            bottom: 200,
-            child: GlassContainer(
-              width: 48,
-              height: 48,
-              opacity: 0.9,
-              child: IconButton(
-                onPressed: () {
-                  context.read<MapFeedBloc>().add(const MapFeedRefreshed());
-                },
-                icon: const Icon(Icons.my_location, color: Colors.white),
-              ),
-            ),
-          ),
-
-          // Zoom controls
-          Positioned(
-            right: 16,
-            bottom: 140,
-            child: GlassContainer(
-              width: 48,
-              height: 96,
-              opacity: 0.9,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  IconButton(
-                    onPressed: () {
-                      widget.mapController?.animateCamera(CameraUpdate.zoomIn());
-                    },
-                    icon: const Icon(Icons.add, color: Colors.white),
-                    iconSize: 20,
+            bottom: MediaQuery.of(context).padding.bottom + 120,
+            child: Column(
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
-                  const Divider(height: 1, color: Colors.white),
-                  IconButton(
-                    onPressed: () {
-                      widget.mapController?.animateCamera(CameraUpdate.zoomOut());
-                    },
-                    icon: const Icon(Icons.remove, color: Colors.white),
-                    iconSize: 20,
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: AppTheme.backgroundColor,
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(AppTheme.radiusMedium),
+                          ),
+                        ),
+                        child: IconButton(
+                          padding: EdgeInsets.zero,
+                          onPressed: () {
+                            widget.mapController?.animateCamera(CameraUpdate.zoomIn());
+                          },
+                          icon: Icon(
+                            Icons.add,
+                            color: AppTheme.darkText,
+                            size: 24,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: AppTheme.backgroundColor,
+                          borderRadius: const BorderRadius.vertical(
+                            bottom: Radius.circular(AppTheme.radiusMedium),
+                          ),
+                        ),
+                        child: IconButton(
+                          padding: EdgeInsets.zero,
+                          onPressed: () {
+                            widget.mapController?.animateCamera(CameraUpdate.zoomOut());
+                          ),
+                          icon: Icon(
+                            Icons.remove,
+                            color: AppTheme.darkText,
+                            size: 24,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: AppTheme.backgroundColor,
+                    borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: IconButton(
+                    padding: EdgeInsets.zero,
+                    onPressed: () {
+                      context.read<MapFeedBloc>().add(const MapFeedRefreshed());
+                    },
+                    icon: Transform(
+                      alignment: Alignment.center,
+                      transform: Matrix4.rotationY(math.pi),
+                      child: Icon(
+                        Icons.navigation,
+                        color: AppTheme.darkText,
+                        size: 24,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -362,9 +425,8 @@ class _MapViewState extends State<MapView> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Feed header
           Container(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -374,7 +436,7 @@ class _MapViewState extends State<MapView> {
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: Colors.orange.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
                       border: Border.all(color: Colors.orange.withOpacity(0.5)),
                     ),
                     child: Row(
@@ -397,7 +459,7 @@ class _MapViewState extends State<MapView> {
                                 Text(
                                   'Last updated ${_formatTime(state.lastUpdated!)}',
                                   style: TextStyle(
-                                    color: Colors.grey[400],
+                                    color: AppTheme.secondaryGreen,
                                     fontSize: 12,
                                   ),
                                 ),
@@ -407,34 +469,11 @@ class _MapViewState extends State<MapView> {
                       ],
                     ),
                   ),
-                Row(
-                  children: [
-                    const Icon(Icons.restaurant, color: Color(0xFF4CAF50)),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Nearby Dishes',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const Spacer(),
-                    if (state.lastUpdated != null && !state.isOffline)
-                      Text(
-                        'Updated ${_formatTime(state.lastUpdated!)}',
-                        style: TextStyle(
-                          color: Colors.grey[400],
-                          fontSize: 12,
-                        ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 8),
                 Text(
-                  '${state.dishes.length} dishes from ${state.vendors.length} vendors',
-                  style: TextStyle(
-                    color: Colors.grey[400],
-                    fontSize: 14,
+                  'Dishes near you',
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    color: AppTheme.darkText,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ],
@@ -466,10 +505,10 @@ class _MapViewState extends State<MapView> {
                 itemCount: state.dishes.length + (state.isLoadingMore ? 1 : 0),
                 itemBuilder: (context, index) {
                   if (index == state.dishes.length) {
-                    return const Center(
+                    return Center(
                       child: Padding(
-                        padding: EdgeInsets.all(16.0),
-                        child: CircularProgressIndicator(color: Color(0xFF4CAF50)),
+                        padding: const EdgeInsets.all(16.0),
+                        child: CircularProgressIndicator(color: AppTheme.primaryGreen),
                       ),
                     );
                   }
@@ -484,7 +523,12 @@ class _MapViewState extends State<MapView> {
                     dish: dish,
                     vendorName: vendor.displayName,
                     onTap: () {
-                      context.push('${AppRouter.dishDetailRoute}/${dish.id}');
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => DishDetailScreen(dishId: dish.id),
+                        ),
+                      );
                     },
                     distance: _calculateDistance(
                       state.currentPosition?.latitude ?? 0,
@@ -497,7 +541,6 @@ class _MapViewState extends State<MapView> {
               ),
             ),
 
-          // Empty state
           if (state.dishes.isEmpty && !state.isLoading)
             Container(
               padding: const EdgeInsets.all(40),
@@ -506,13 +549,13 @@ class _MapViewState extends State<MapView> {
                   Icon(
                     Icons.restaurant_menu,
                     size: 64,
-                    color: Colors.grey[600],
+                    color: AppTheme.secondaryGreen,
                   ),
                   const SizedBox(height: 16),
                   Text(
                     'No dishes found nearby',
                     style: TextStyle(
-                      color: Colors.grey[400],
+                      color: AppTheme.darkText,
                       fontSize: 18,
                       fontWeight: FontWeight.w500,
                     ),
@@ -521,7 +564,7 @@ class _MapViewState extends State<MapView> {
                   Text(
                     'Try moving the map to explore other areas',
                     style: TextStyle(
-                      color: Colors.grey[500],
+                      color: AppTheme.secondaryGreen,
                       fontSize: 14,
                     ),
                     textAlign: TextAlign.center,

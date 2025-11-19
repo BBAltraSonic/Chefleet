@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../shared/widgets/glass_container.dart';
+import '../../../shared/widgets/glass_container.dart' as glass;
 import '../blocs/active_orders_bloc.dart';
 import '../../chat/screens/chat_detail_screen.dart';
 
@@ -50,42 +49,62 @@ class _ActiveOrderModalState extends State<ActiveOrderModal>
           builder: (context, child) {
             return Transform.scale(
               scale: _scaleAnimation.value,
-              child: Dialog(
-                backgroundColor: Colors.transparent,
-                insetPadding: const EdgeInsets.all(20),
-                child: Container(
-                  constraints: BoxConstraints(
-                    maxHeight: MediaQuery.of(context).size.height * 0.8,
-                  ),
-                  child: GlassContainer(
-                    borderRadius: 20,
+              child: Stack(
+                children: [
+                  GestureDetector(
+                    onTap: () => Navigator.of(context).pop(),
                     child: Container(
-                      padding: const EdgeInsets.all(20),
+                      color: AppTheme.modalOverlay,
+                    ),
+                  ),
+                  Align(
+                    alignment: Alignment.bottomCenter,
+                    child: Container(
+                      constraints: BoxConstraints(
+                        maxHeight: MediaQuery.of(context).size.height * 0.8,
+                      ),
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: Colors.white.withOpacity(0.2),
-                          width: 1,
-                        ),
+                        color: AppTheme.backgroundColor,
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(AppTheme.radiusMedium)),
                       ),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          _buildHeader(),
-                          const SizedBox(height: 20),
-                          if (state.isLoading)
-                            const CircularProgressIndicator()
-                          else if (state.errorMessage != null)
-                            _buildErrorState(state.errorMessage!)
-                          else if (activeOrders.isEmpty)
-                            _buildEmptyState()
-                          else
-                            _buildActiveOrdersList(activeOrders),
+                          Center(
+                            child: Container(
+                              margin: const EdgeInsets.symmetric(vertical: 10),
+                              width: 36,
+                              height: 4,
+                              decoration: BoxDecoration(
+                                color: AppTheme.borderGreen,
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                            ),
+                          ),
+                          Flexible(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                _buildHeader(),
+                                if (state.isLoading)
+                                  const Padding(
+                                    padding: EdgeInsets.all(40),
+                                    child: CircularProgressIndicator(),
+                                  )
+                                else if (state.errorMessage != null)
+                                  _buildErrorState(state.errorMessage!)
+                                else if (activeOrders.isEmpty)
+                                  _buildEmptyState()
+                                else
+                                  Flexible(child: _buildActiveOrdersList(activeOrders)),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
                     ),
                   ),
-                ),
+                ],
               ),
             );
           },
@@ -95,24 +114,15 @@ class _ActiveOrderModalState extends State<ActiveOrderModal>
   }
 
   Widget _buildHeader() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          'Active Orders',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
+      child: Text(
+        'Active Order',
+        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+          fontWeight: FontWeight.bold,
+          color: AppTheme.darkText,
         ),
-        IconButton(
-          onPressed: () => Navigator.of(context).pop(),
-          icon: const Icon(Icons.close),
-          style: IconButton.styleFrom(
-            backgroundColor: Colors.grey.withOpacity(0.1),
-            foregroundColor: Colors.grey[600],
-          ),
-        ),
-      ],
+      ),
     );
   }
 
@@ -197,128 +207,143 @@ class _ActiveOrderModalState extends State<ActiveOrderModal>
   Widget _buildOrderCard(Map<String, dynamic> order) {
     final orderId = order['id'] as String;
     final status = order['status'] as String? ?? 'pending';
-    final totalAmount = (order['total_amount'] as num?)?.toDouble() ?? 0.0;
+    final totalAmount = ((order['total_cents'] as num?)?.toDouble() ?? 0.0) / 100;
     final createdAt = DateTime.parse(order['created_at'] as String);
-    final updatedAt = order['updated_at'] != null
-        ? DateTime.parse(order['updated_at'] as String)
-        : createdAt;
     final vendorName = order['vendors']?['business_name'] as String? ?? 'Vendor';
-    final vendorAddress = order['vendors']?['address'] as String? ?? 'Address not available';
+    final vendorLogo = order['vendors']?['logo_url'] as String?;
     final pickupCode = order['pickup_code'] as String?;
-    final items = order['items'] as List<dynamic>? ?? [];
-    final specialInstructions = order['special_instructions'] as String?;
 
-    return GlassContainer(
-      borderRadius: 16,
-      opacity: 0.1,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: Colors.white.withOpacity(0.2),
-            width: 1,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: AppTheme.borderGreen,
+                    borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                  ),
+                  child: vendorLogo != null
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                          child: Image.network(
+                            vendorLogo,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Icon(Icons.restaurant, color: AppTheme.secondaryGreen);
+                            },
+                          ),
+                        )
+                      : Icon(Icons.restaurant, color: AppTheme.secondaryGreen),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Order from $vendorName',
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.w500,
+                          color: AppTheme.darkText,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (pickupCode != null)
+                        Text(
+                          'Pickup code: $pickupCode',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppTheme.secondaryGreen,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header with vendor name and status
-            Row(
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            decoration: BoxDecoration(
+              border: Border(
+                top: BorderSide(color: AppTheme.borderGreen),
+              ),
+            ),
+            child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Expanded(
-                  child: Text(
-                    vendorName,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                Text(
+                  'Estimated time',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppTheme.secondaryGreen,
                   ),
                 ),
-                _buildStatusBadge(status),
+                Text(
+                  '15 minutes',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppTheme.darkText,
+                  ),
+                ),
               ],
             ),
-            const SizedBox(height: 8),
-
-            // Order ID and time
-            Text(
-              'Order #${orderId.substring(0, 8).toUpperCase()}',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.grey[600],
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            decoration: BoxDecoration(
+              border: Border(
+                top: BorderSide(color: AppTheme.borderGreen),
               ),
             ),
-            Text(
-              'Placed ${_formatDateTime(createdAt)}',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.grey[500],
-              ),
-            ),
-            const SizedBox(height: 8),
-
-            // Total amount
-            Text(
-              '\$${totalAmount.toStringAsFixed(2)}',
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-            ),
-
-            // Order status timeline
-            const SizedBox(height: 12),
-            _buildOrderTimeline(status, createdAt, updatedAt),
-
-            // Pickup code (if available and order is ready)
-            if (pickupCode != null && status == 'ready') ...[
-              const SizedBox(height: 12),
-              _buildPickupCodeSection(pickupCode),
-            ],
-
-            // Vendor location
-            const SizedBox(height: 12),
-            _buildVendorLocationSection(vendorAddress),
-
-            // Items preview
-            if (items.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              _buildOrderItemsPreview(items),
-            ],
-
-            // Special instructions (if any)
-            if (specialInstructions != null && specialInstructions.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              _buildSpecialInstructionsSection(specialInstructions),
-            ],
-
-            // Action buttons
-            const SizedBox(height: 16),
-            Row(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => _viewOrderDetails(order),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                    ),
-                    icon: const Icon(Icons.info_outline, size: 16),
-                    label: const Text('Details'),
+                Text(
+                  'Order total',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppTheme.secondaryGreen,
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () => _openChat(order),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                    ),
-                    icon: const Icon(Icons.chat_outlined, size: 16),
-                    label: const Text('Chat'),
+                Text(
+                  '\$${totalAmount.toStringAsFixed(2)}',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppTheme.darkText,
                   ),
                 ),
               ],
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            height: 40,
+            child: ElevatedButton(
+              onPressed: () => _openChat(order),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryGreen,
+                foregroundColor: AppTheme.darkText,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                ),
+                elevation: 0,
+              ),
+              child: Text(
+                'Chat with vendor',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.darkText,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

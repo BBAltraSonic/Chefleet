@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'dart:ui';
 import '../../core/blocs/navigation_bloc.dart';
+import '../../core/theme/app_theme.dart';
 import '../../features/order/widgets/active_order_modal.dart';
 
 class PersistentNavigationShell extends StatefulWidget {
@@ -17,41 +18,24 @@ class PersistentNavigationShell extends StatefulWidget {
 }
 
 class _PersistentNavigationShellState extends State<PersistentNavigationShell> {
-  late PageController _pageController;
-
-  @override
-  void initState() {
-    super.initState();
-    _pageController = PageController();
-  }
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
+  // No PageController needed when using IndexedStack
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<NavigationBloc, NavigationState>(
-      listener: (context, state) {
-        _pageController.animateToPage(
-          state.currentTab.index,
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeInOut,
+    // Using BlocBuilder instead of BlocListener since we're using IndexedStack
+    // The IndexedStack will automatically update when the navigation state changes
+    return BlocBuilder<NavigationBloc, NavigationState>(
+      builder: (context, state) {
+        return Scaffold(
+          body: IndexedStack(
+            index: state.currentTab.index,
+            children: widget.children,
+          ),
+          bottomNavigationBar: const GlassBottomNavigation(),
+          floatingActionButton: const OrdersFloatingActionButton(),
+          floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
         );
       },
-      child: Scaffold(
-        body: IndexedStack(
-          index: context.select(
-            (NavigationBloc bloc) => bloc.state.currentTab.index,
-          ),
-          children: widget.children,
-        ),
-        bottomNavigationBar: const GlassBottomNavigation(),
-        floatingActionButton: const OrdersFloatingActionButton(),
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      ),
     );
   }
 }
@@ -205,15 +189,11 @@ class _OrdersFloatingActionButtonState extends State<OrdersFloatingActionButton>
             height: 64,
             margin: const EdgeInsets.only(bottom: 16),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+              color: AppTheme.primaryGreen,
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF4F46E5).withOpacity(0.4),
+                  color: AppTheme.primaryGreen.withOpacity(0.3),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
@@ -230,7 +210,7 @@ class _OrdersFloatingActionButtonState extends State<OrdersFloatingActionButton>
                     Icon(
                       Icons.shopping_bag_outlined,
                       size: 24,
-                      color: Colors.white,
+                      color: AppTheme.darkText,
                     ),
                     SizedBox(height: 2),
                   ],

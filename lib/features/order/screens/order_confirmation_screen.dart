@@ -135,111 +135,124 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
     final createdAt = DateTime.parse(order['created_at'] as String);
     final totalAmount = (order['total_amount'] as num?)?.toDouble() ?? 0.0;
 
-    return Column(
+    return Stack(
       children: [
-        // Success Animation Area
-        Expanded(
-          flex: 2,
-          child: Container(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Success Icon
-                Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.check_circle,
-                    size: 60,
-                    color: Colors.green,
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                // Success Message
-                Text(
-                  'Order Confirmed!',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green,
-                  ),
-                ),
-                const SizedBox(height: 8),
-
-                Text(
-                  'Your order has been placed successfully',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Colors.grey[600],
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 8),
-
-                Text(
-                  'Order #${widget.orderId.substring(0, 8).toUpperCase()}',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey[500],
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
+        Container(
+          color: AppTheme.modalOverlay,
         ),
-
-        // Order Details
-        Expanded(
-          flex: 3,
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 10,
-                  offset: const Offset(0, -5),
-                ),
-              ],
+        Column(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                color: AppTheme.backgroundColor,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(AppTheme.radiusMedium)),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Center(
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(vertical: 10),
+                      width: 36,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: AppTheme.borderGreen,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
+                    child: Column(
+                      children: [
+                        Text(
+                          'Order Confirmed',
+                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.darkText,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 8),
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 12, top: 4),
+                          child: Text(
+                            'Your order has been placed and is being prepared. Please use the pickup code below when you arrive.',
+                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                              color: AppTheme.darkText,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        if (pickupCode != null) ...[
+                          const SizedBox(height: 16),
+                          Text(
+                            'Pickup Code',
+                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.darkText,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          Text(
+                            pickupCode,
+                            style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.darkText,
+                              letterSpacing: 2,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                        const SizedBox(height: 16),
+                        Text(
+                          'Estimated Time of Arrival',
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.darkText,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          DateFormat('h:mm a').format(createdAt.add(const Duration(minutes: 15))),
+                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            color: AppTheme.darkText,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 24),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 48,
+                          child: ElevatedButton(
+                            onPressed: () {},
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.primaryGreen,
+                              foregroundColor: AppTheme.darkText,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                              ),
+                              elevation: 0,
+                            ),
+                            child: Text(
+                              'Chat with Vendor',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.darkText,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
-            child: ListView(
-              padding: const EdgeInsets.all(20),
-              children: [
-                // Status and Pickup Code
-                _buildStatusSection(status, pickupCode),
-
-                const SizedBox(height: 24),
-
-                // Vendor Information
-                _buildVendorSection(vendor),
-
-                const SizedBox(height: 24),
-
-                // Order Items
-                _buildOrderItemsSection(items),
-
-                const SizedBox(height: 24),
-
-                // Timing Information
-                _buildTimingSection(createdAt, order),
-
-                const SizedBox(height: 24),
-
-                // Total Amount
-                _buildTotalSection(totalAmount),
-
-                const SizedBox(height: 32),
-
-                // Action Buttons
-                _buildActionButtons(),
-              ],
-            ),
-          ),
+          ],
         ),
       ],
     );
@@ -529,7 +542,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Total Paid',
+              'Total Amount',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
