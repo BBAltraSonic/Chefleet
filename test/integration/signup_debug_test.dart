@@ -7,75 +7,28 @@ void main() {
     late SupabaseClient supabaseClient;
 
     setUpAll(() async {
-      // Initialize Supabase for testing
+      const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
+      const supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
+
+      if (supabaseUrl.isEmpty || supabaseAnonKey.isEmpty) {
+        throw Exception(
+          'Missing test environment variables. '
+          'Please provide SUPABASE_URL and SUPABASE_ANON_KEY via --dart-define.',
+        );
+      }
+
       await Supabase.initialize(
-        url: 'https://ydirqkqkkngasjkbdflh.supabase.co',
-        anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlkaXJxa3Fra25nYXNqa2JkZmxoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQxMjk4NDcsImV4cCI6MjA0OTcwNTg0N30.Mg4UKokQRWkzZQK1L5YAw0yfTBw7A6bLo3YjKb_JnNk',
+        url: supabaseUrl,
+        anonKey: supabaseAnonKey,
       );
       supabaseClient = Supabase.instance.client;
     });
 
-    test('Test direct database query to identify audit triggers', () async {
-      try {
-        // Try to query the information_schema to see what triggers exist
-        // This might fail due to permissions, but it's worth a try
-        final result = await supabaseClient.rpc('execute_sql', params: {
-          'query': '''
-            SELECT trigger_name, event_object_table, action_timing, action_condition, action_statement
-            FROM information_schema.triggers
-            WHERE trigger_schema = 'public'
-            ORDER BY event_object_table, trigger_name
-          '''
-        });
+    // Removed: RPC-DDL test that attempted to query information_schema
+    // Use Supabase Dashboard or CLI for database introspection instead
 
-        print('Triggers found: ${result.data}');
-      } catch (e) {
-        print('Error querying triggers: $e');
-      }
-    });
-
-    test('Test if audit_logs table exists and is accessible', () async {
-      try {
-        final result = await supabaseClient
-            .from('audit_logs')
-            .select('id, table_name, action, created_at')
-            .limit(1);
-
-        print('Audit logs table accessible. Sample data: $result');
-      } catch (e) {
-        print('Error accessing audit_logs table: $e');
-
-        // Try to create the audit_logs table if it doesn't exist
-        try {
-          await supabaseClient.rpc('execute_sql', params: {
-            'query': '''
-              CREATE TABLE IF NOT EXISTS public.audit_logs (
-                  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-                  table_name text NOT NULL,
-                  record_id uuid,
-                  action text NOT NULL CHECK (action IN ('INSERT', 'UPDATE', 'DELETE')),
-                  old_data jsonb,
-                  new_data jsonb,
-                  user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
-                  created_at timestamptz DEFAULT now(),
-                  metadata jsonb DEFAULT '{}'::jsonb
-              );
-
-              ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
-
-              CREATE POLICY IF NOT EXISTS "Allow all operations on audit_logs"
-              ON public.audit_logs FOR ALL USING (true);
-
-              GRANT SELECT, INSERT ON public.audit_logs TO authenticated;
-              GRANT SELECT, INSERT ON public.audit_logs TO service_role;
-            '''
-          });
-          print('Created audit_logs table successfully');
-        } catch (createError) {
-          print('Error creating audit_logs table: $createError');
-        }
-      }
-    });
+    // Removed: RPC-DDL test that attempted to create tables via SQL
+    // Use Supabase migrations for schema changes instead
 
     test('Test user signup with detailed error logging', () async {
       try {
@@ -126,27 +79,7 @@ void main() {
       }
     });
 
-    test('Test if we can disable triggers via SQL', () async {
-      try {
-        // Try to disable all triggers
-        await supabaseClient.rpc('execute_sql', params: {
-          'query': '''
-            -- Disable all triggers on user-related tables
-            ALTER TABLE public.users_public DISABLE TRIGGER ALL;
-            ALTER TABLE public.profiles DISABLE TRIGGER ALL;
-            ALTER TABLE public.auth.users DISABLE TRIGGER ALL;
-
-            -- Or drop specific triggers
-            DROP TRIGGER IF EXISTS users_public_audit_trigger ON public.users_public;
-            DROP TRIGGER IF EXISTS profiles_audit_trigger ON public.profiles;
-            DROP TRIGGER IF EXISTS audit_trigger ON public.auth.users;
-          '''
-        });
-
-        print('Successfully disabled triggers');
-      } catch (e) {
-        print('Error disabling triggers: $e');
-      }
-    });
+    // Removed: RPC-DDL test that attempted to modify triggers
+    // Use Supabase Dashboard or migrations for trigger management
   });
 }
