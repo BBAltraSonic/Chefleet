@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:developer' as developer;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
@@ -22,7 +23,7 @@ class HeroOptimizer {
   final Map<String, _AnimationMetrics> _animationMetrics = {};
 
   /// Performance optimization
-  final Map<String, ui.Image> _imageCache = {};
+  final Map<String, ui.Image?> _imageCache = {};
   final Map<String, Size> _sizeCache = {};
   int _maxImageCacheSize = 50;
   int _maxSizeCacheSize = 200;
@@ -79,9 +80,9 @@ class HeroOptimizer {
         performanceScore *= 1.2;
       }
 
-      // Check for reduced motion settings
-      _reduceAnimations = WidgetsBinding.instance.window.accessibilityFeatures.disableAnimations ||
-                          WidgetsBinding.instance.window.accessibilityOptions.contains('disableAnimations');
+      // Check for reduced motion / accessibility settings
+      final accessibility = WidgetsBinding.instance.platformDispatcher.accessibilityFeatures;
+      _reduceAnimations = accessibility.disableAnimations;
 
       // Determine if this is a low-end device
       _isLowEndDevice = performanceScore < 0.8 || _reduceAnimations;

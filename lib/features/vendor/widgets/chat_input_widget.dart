@@ -331,7 +331,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                   color: (_messageController.text.trim().isNotEmpty || _selectedFile != null)
                       ? Theme.of(context).colorScheme.primary
                       : Theme.of(context).colorScheme.outline.withOpacity(0.3),
-                  shape: const CircleBorder(),
+                  shape: BoxShape.circle,
                 ),
                 child: IconButton(
                   onPressed: (_messageController.text.trim().isNotEmpty || _selectedFile != null) &&

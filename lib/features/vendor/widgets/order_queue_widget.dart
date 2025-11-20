@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../blocs/order_management_bloc.dart';
-import '../blocs/order_management_event.dart';
-import '../blocs/order_management_state.dart';
 import 'order_card.dart';
 
 class OrderQueueWidget extends StatelessWidget {
@@ -229,6 +227,14 @@ class OrderQueueWidget extends StatelessWidget {
                             isSelected: order['id'] == selectedOrderId,
                             onTap: () => onOrderSelected(order['id']),
                             isUrgent: true,
+                            onStatusUpdate: (newStatus) {
+                              context.read<OrderManagementBloc>().add(
+                                    UpdateOrderStatus(
+                                      orderId: order['id'] as String,
+                                      newStatus: newStatus,
+                                    ),
+                                  );
+                            },
                           ),
                         );
                       }),
@@ -251,6 +257,14 @@ class OrderQueueWidget extends StatelessWidget {
                             order: order,
                             isSelected: order['id'] == selectedOrderId,
                             onTap: () => onOrderSelected(order['id']),
+                            onStatusUpdate: (newStatus) {
+                              context.read<OrderManagementBloc>().add(
+                                    UpdateOrderStatus(
+                                      orderId: order['id'] as String,
+                                      newStatus: newStatus,
+                                    ),
+                                  );
+                            },
                           ),
                         );
                       }),
@@ -273,6 +287,14 @@ class OrderQueueWidget extends StatelessWidget {
                             order: order,
                             isSelected: order['id'] == selectedOrderId,
                             onTap: () => onOrderSelected(order['id']),
+                            onStatusUpdate: (newStatus) {
+                              context.read<OrderManagementBloc>().add(
+                                    UpdateOrderStatus(
+                                      orderId: order['id'] as String,
+                                      newStatus: newStatus,
+                                    ),
+                                  );
+                            },
                           ),
                         );
                       }),
@@ -296,6 +318,14 @@ class OrderQueueWidget extends StatelessWidget {
                             isSelected: order['id'] == selectedOrderId,
                             onTap: () => onOrderSelected(order['id']),
                             showProgress: true,
+                            onStatusUpdate: (newStatus) {
+                              context.read<OrderManagementBloc>().add(
+                                    UpdateOrderStatus(
+                                      orderId: order['id'] as String,
+                                      newStatus: newStatus,
+                                    ),
+                                  );
+                            },
                           ),
                         );
                       }),
@@ -319,6 +349,14 @@ class OrderQueueWidget extends StatelessWidget {
                             isSelected: order['id'] == selectedOrderId,
                             onTap: () => onOrderSelected(order['id']),
                             isReady: true,
+                            onStatusUpdate: (newStatus) {
+                              context.read<OrderManagementBloc>().add(
+                                    UpdateOrderStatus(
+                                      orderId: order['id'] as String,
+                                      newStatus: newStatus,
+                                    ),
+                                  );
+                            },
                           ),
                         );
                       }),

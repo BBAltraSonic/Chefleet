@@ -1,7 +1,8 @@
 import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:injectable/injectable.dart';
+
 import '../../../core/models/payment_method.dart';
 import '../../../core/models/wallet.dart';
 import '../../../core/services/payment_service.dart';
@@ -10,7 +11,6 @@ part 'payment_bloc.freezed.dart';
 part 'payment_event.dart';
 part 'payment_state.dart';
 
-@lazySingleton
 class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
   final PaymentService _paymentService;
 
@@ -29,14 +29,14 @@ class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
         paymentSettingsLoaded: (event) => _onPaymentSettingsLoaded(event, emit),
         applePayPaymentProcessed: (event) => _onApplePayPaymentProcessed(event, emit),
         googlePayPaymentProcessed: (event) => _onGooglePayPaymentProcessed(event, emit),
-        paymentError: (event) => _onPaymentError(event, emit),
-        paymentStateReset: (event) => _onPaymentStateReset(event, emit),
+        error: (event) => _onPaymentError(event, emit),
+        reset: (event) => _onPaymentStateReset(event, emit),
       );
     });
   }
 
   Future<void> _onInitialized(
-    PaymentInitialized event,
+    PaymentInitializedEvent event,
     Emitter<PaymentState> emit,
   ) async {
     emit(const PaymentState.loading());
@@ -49,7 +49,7 @@ class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
   }
 
   Future<void> _onPaymentIntentCreated(
-    PaymentIntentCreated event,
+    PaymentIntentCreatedEvent event,
     Emitter<PaymentState> emit,
   ) async {
     emit(const PaymentState.processing());
@@ -79,7 +79,7 @@ class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
   }
 
   Future<void> _onPaymentConfirmed(
-    PaymentConfirmed event,
+    PaymentConfirmedEvent event,
     Emitter<PaymentState> emit,
   ) async {
     emit(const PaymentState.processing());
@@ -95,7 +95,7 @@ class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
   }
 
   Future<void> _onPaymentMethodsLoaded(
-    PaymentMethodsLoaded event,
+    PaymentMethodsLoadedEvent event,
     Emitter<PaymentState> emit,
   ) async {
     emit(const PaymentState.loading());
@@ -108,7 +108,7 @@ class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
   }
 
   Future<void> _onPaymentMethodAdded(
-    PaymentMethodAdded event,
+    PaymentMethodAddedEvent event,
     Emitter<PaymentState> emit,
   ) async {
     try {
@@ -125,7 +125,7 @@ class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
   }
 
   Future<void> _onPaymentMethodRemoved(
-    PaymentMethodRemoved event,
+    PaymentMethodRemovedEvent event,
     Emitter<PaymentState> emit,
   ) async {
     try {
@@ -140,7 +140,7 @@ class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
   }
 
   Future<void> _onDefaultPaymentMethodSet(
-    DefaultPaymentMethodSet event,
+    DefaultPaymentMethodSetEvent event,
     Emitter<PaymentState> emit,
   ) async {
     try {
@@ -155,7 +155,7 @@ class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
   }
 
   Future<void> _onWalletLoaded(
-    WalletLoaded event,
+    WalletLoadedEvent event,
     Emitter<PaymentState> emit,
   ) async {
     emit(const PaymentState.loading());
@@ -168,7 +168,7 @@ class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
   }
 
   Future<void> _onWalletTransactionsLoaded(
-    WalletTransactionsLoaded event,
+    WalletTransactionsLoadedEvent event,
     Emitter<PaymentState> emit,
   ) async {
     try {
@@ -183,7 +183,7 @@ class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
   }
 
   Future<void> _onPaymentSettingsLoaded(
-    PaymentSettingsLoaded event,
+    PaymentSettingsLoadedEvent event,
     Emitter<PaymentState> emit,
   ) async {
     try {
@@ -195,7 +195,7 @@ class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
   }
 
   Future<void> _onApplePayPaymentProcessed(
-    ApplePayPaymentProcessed event,
+    ApplePayPaymentProcessedEvent event,
     Emitter<PaymentState> emit,
   ) async {
     emit(const PaymentState.processing());
@@ -224,7 +224,7 @@ class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
   }
 
   Future<void> _onGooglePayPaymentProcessed(
-    GooglePayPaymentProcessed event,
+    GooglePayPaymentProcessedEvent event,
     Emitter<PaymentState> emit,
   ) async {
     emit(const PaymentState.processing());
@@ -253,14 +253,14 @@ class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
   }
 
   Future<void> _onPaymentError(
-    PaymentError event,
+    PaymentErrorEvent event,
     Emitter<PaymentState> emit,
   ) async {
     emit(PaymentState.error(event.message));
   }
 
   Future<void> _onPaymentStateReset(
-    PaymentStateReset event,
+    PaymentResetEvent event,
     Emitter<PaymentState> emit,
   ) async {
     emit(const PaymentState.initial());

@@ -1,5 +1,4 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:functions_client/functions_client.dart';
 import 'supabase_repository.dart';
 
 class OrderRepository extends SupabaseRepository<Map<String, dynamic>> {

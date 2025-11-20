@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../core/theme/app_theme.dart';
-import '../../shared/widgets/glass_container.dart';
+import '../../../core/theme/app_theme.dart';
 import '../blocs/chat_bloc.dart';
 import '../widgets/chat_bubble.dart';
 import '../widgets/chat_input.dart';
@@ -280,8 +279,11 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (context) => GlassContainer(
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: AppTheme.surfaceGreen,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
         child: Container(
           padding: const EdgeInsets.all(20),
           child: Column(

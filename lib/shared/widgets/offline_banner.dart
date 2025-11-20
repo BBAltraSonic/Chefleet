@@ -1,21 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import '../blocs/connectivity_bloc.dart';
+
+/*
+ * Legacy OfflineBanner implementation that was tightly coupled to a demo
+ * connectivity BLoC. It is kept here for reference but commented out to
+ * avoid compilation issues and unnecessary dependencies while the app moves
+ * to a simpler offline indicator.
+ *
+ * The new implementation lives below this block comment.
+ *
+ * BEGIN LEGACY IMPLEMENTATION
 
 /// A prominent offline banner that shows when the app is offline
-class OfflineBanner extends StatelessWidget {
-  const OfflineBanner({super.key});
+class _LegacyOfflineBanner extends StatelessWidget {
+  const _LegacyOfflineBanner({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<ConnectivityBloc, ConnectivityState>(
-      builder: (context, state) {
-        if (state is ConnectivityOffline || state is ConnectivityRestoring) {
-          return _buildOfflineBanner(context, state);
-        }
-        return const SizedBox.shrink();
-      },
-    );
+    return const SizedBox.shrink();
   }
 
   Widget _buildOfflineBanner(BuildContext context, ConnectivityState state) {
@@ -363,4 +364,71 @@ class ConnectivityRestoring extends ConnectivityState {}
 
 extension EquatableExtension on Object {
   List<Object> get props => [];
+}
+
+*/
+
+/// Lightweight, self-contained offline banner used by the feed and map
+/// experiences. It does not depend on any BLoC – callers decide when to
+/// show it and can optionally wire a retry callback.
+class OfflineBanner extends StatelessWidget {
+  final VoidCallback? onRetry;
+
+  const OfflineBanner({super.key, this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container
+      (
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.red.shade400, Colors.red.shade600],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.wifi_off,
+            color: Colors.white,
+            size: 20,
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Text(
+              "You're offline. Showing cached data.",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          if (onRetry != null) ...[
+            const SizedBox(width: 8),
+            TextButton(
+              onPressed: onRetry,
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.white,
+              ),
+              child: const Text(
+                'Retry',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
 }

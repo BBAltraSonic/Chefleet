@@ -1,10 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:bloc_test/bloc_test.dart';
 import 'package:chefleet/features/map/blocs/map_feed_bloc.dart';
 import 'package:chefleet/features/feed/models/vendor_model.dart';
 import 'package:chefleet/features/feed/models/dish_model.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:geolocator/geolocator.dart';
 
 /// Performance integration tests for map feed functionality
 void main() {
@@ -33,6 +31,9 @@ void main() {
           return Vendor(
             id: 'vendor_$index',
             name: 'Performance Vendor $index',
+            address: 'Test Address $index',
+            description: 'Test Description $index',
+            phoneNumber: '555-000$index',
             latitude: baseLat + latOffset,
             longitude: baseLng + lngOffset,
             dishCount: index % 20 + 1,
@@ -47,7 +48,7 @@ void main() {
             name: 'Performance Dish $index',
             vendorId: vendorId,
             description: 'Test dish for performance testing',
-            price: 8.99 + (index % 50),
+            priceCents: 899 + (index % 50) * 100,
             available: index % 10 != 0, // 90% available
             prepTimeMinutes: 15 + (index % 30),
           );
@@ -83,13 +84,16 @@ void main() {
       test('maintains performance during rapid map movements', () async {
         // Initialize with data
         final vendors = List.generate(500, (index) => Vendor(
-          id: 'vendor_$index',
-          name: 'Vendor $index',
-          latitude: 37.7749 + (index * 0.001),
-          longitude: -122.4194 + (index * 0.001),
-          dishCount: index % 15 + 1,
-          isActive: true,
-        ));
+              id: 'vendor_$index',
+              name: 'Vendor $index',
+              address: 'Test Address $index',
+              description: 'Test Description $index',
+              phoneNumber: '555-000$index',
+              latitude: 37.7749 + (index * 0.001),
+              longitude: -122.4194 + (index * 0.001),
+              dishCount: index % 15 + 1,
+              isActive: true,
+            ));
 
         mapFeedBloc.add(MapFeedInitialized());
 
@@ -133,13 +137,16 @@ void main() {
         for (int cycle = 0; cycle < 5; cycle++) {
           // Load data
           final vendors = List.generate(200, (index) => Vendor(
-            id: 'vendor_${cycle}_$index',
-            name: 'Vendor $cycle-$index',
-            latitude: 37.7749 + (index * 0.002),
-            longitude: -122.4194 + (index * 0.002),
-            dishCount: index % 10 + 1,
-            isActive: true,
-          ));
+                id: 'vendor_${cycle}_$index',
+                name: 'Vendor $cycle-$index',
+                address: 'Test Address $cycle-$index',
+                description: 'Test Description $cycle-$index',
+                phoneNumber: '555-100$index',
+                latitude: 37.7749 + (index * 0.002),
+                longitude: -122.4194 + (index * 0.002),
+                dishCount: index % 10 + 1,
+                isActive: true,
+              ));
 
           mapFeedBloc.add(MapFeedInitialized());
 
@@ -167,13 +174,16 @@ void main() {
 
       test('efficiently manages marker updates', () async {
         final vendors = List.generate(300, (index) => Vendor(
-          id: 'vendor_$index',
-          name: 'Vendor $index',
-          latitude: 37.7749 + (index * 0.001),
-          longitude: -122.4194 + (index * 0.001),
-          dishCount: index % 10 + 1,
-          isActive: true,
-        ));
+              id: 'vendor_$index',
+              name: 'Vendor $index',
+              address: 'Test Address $index',
+              description: 'Test Description $index',
+              phoneNumber: '555-000$index',
+              latitude: 37.7749 + (index * 0.001),
+              longitude: -122.4194 + (index * 0.001),
+              dishCount: index % 10 + 1,
+              isActive: true,
+            ));
 
         mapFeedBloc.add(MapFeedInitialized());
 
@@ -210,13 +220,16 @@ void main() {
 
         for (final count in vendorCounts) {
           final vendors = List.generate(count, (index) => Vendor(
-            id: 'vendor_$index',
-            name: 'Vendor $index',
-            latitude: 37.7749 + (index * 0.0005),
-            longitude: -122.4194 + (index * 0.0005),
-            dishCount: index % 10 + 1,
-            isActive: true,
-          ));
+                id: 'vendor_$index',
+                name: 'Vendor $index',
+                address: 'Test Address $index',
+                description: 'Test Description $index',
+                phoneNumber: '555-000$index',
+                latitude: 37.7749 + (index * 0.0005),
+                longitude: -122.4194 + (index * 0.0005),
+                dishCount: index % 10 + 1,
+                isActive: true,
+              ));
 
           mapFeedBloc.add(MapFeedInitialized());
 
@@ -247,13 +260,16 @@ void main() {
 
       test('maintains stable cluster IDs during movements', () async {
         final vendors = List.generate(200, (index) => Vendor(
-          id: 'vendor_$index',
-          name: 'Stable Vendor $index',
-          latitude: 37.7749 + (index * 0.001),
-          longitude: -122.4194 + (index * 0.001),
-          dishCount: index % 10 + 1,
-          isActive: true,
-        ));
+              id: 'vendor_$index',
+              name: 'Stable Vendor $index',
+              address: 'Test Address $index',
+              description: 'Test Description $index',
+              phoneNumber: '555-000$index',
+              latitude: 37.7749 + (index * 0.001),
+              longitude: -122.4194 + (index * 0.001),
+              dishCount: index % 10 + 1,
+              isActive: true,
+            ));
 
         mapFeedBloc.add(MapFeedInitialized());
 
@@ -265,9 +281,10 @@ void main() {
 
         await Future.delayed(const Duration(milliseconds: 300));
 
-        final initialMarkers = <String>{};
+        final initialMarkers = <String, String>{};
         for (final marker in mapFeedBloc.state.markers.values) {
-          initialMarkers[marker.markerId.value] = marker.infoWindow.title;
+          initialMarkers[marker.markerId.value] =
+              marker.infoWindow.title ?? '';
         }
 
         // Move map slightly and back
@@ -288,9 +305,10 @@ void main() {
           await Future.delayed(const Duration(milliseconds: 100));
         }
 
-        final finalMarkers = <String>{};
+        final finalMarkers = <String, String>{};
         for (final marker in mapFeedBloc.state.markers.values) {
-          finalMarkers[marker.markerId.value] = marker.infoWindow.title;
+          finalMarkers[marker.markerId.value] =
+              marker.infoWindow.title ?? '';
         }
 
         // Most markers should be the same
@@ -357,13 +375,16 @@ void main() {
       test('efficiently loads additional pages', () async {
         // Initialize with some data
         final vendors = List.generate(100, (index) => Vendor(
-          id: 'vendor_$index',
-          name: 'Vendor $index',
-          latitude: 37.7749 + (index * 0.001),
-          longitude: -122.4194 + (index * 0.001),
-          dishCount: 50, // High dish count for pagination
-          isActive: true,
-        ));
+              id: 'vendor_$index',
+              name: 'Vendor $index',
+              address: 'Test Address $index',
+              description: 'Test Description $index',
+              phoneNumber: '555-000$index',
+              latitude: 37.7749 + (index * 0.001),
+              longitude: -122.4194 + (index * 0.001),
+              dishCount: 50, // High dish count for pagination
+              isActive: true,
+            ));
 
         mapFeedBloc.add(MapFeedInitialized());
 
@@ -373,7 +394,7 @@ void main() {
         );
         mapFeedBloc.add(MapBoundsChanged(bounds));
 
-        await Future.delayed(const.Duration(milliseconds: 500));
+        await Future.delayed(const Duration(milliseconds: 500));
 
         final loadMoreStopwatch = Stopwatch()..start();
 

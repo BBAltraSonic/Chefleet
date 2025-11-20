@@ -181,7 +181,9 @@ class DatabaseOptimizer {
           }
 
           // Query not cached, execute it
-          final parameters = parametersList?.length > i ? parametersList![i] : null;
+          final parameters = (parametersList != null && parametersList.length > i)
+              ? parametersList[i]
+              : null;
           final cacheKey = cacheKeys.length > i ? cacheKeys[i] : null;
 
           final queryResult = await optimizedQuery(
@@ -195,7 +197,9 @@ class DatabaseOptimizer {
       } else {
         // Execute all queries without caching
         for (int i = 0; i < queries.length; i++) {
-          final parameters = parametersList?.length > i ? parametersList![i] : null;
+          final parameters = (parametersList != null && parametersList.length > i)
+              ? parametersList[i]
+              : null;
 
           final queryResult = await optimizedQuery(
             query: queries[i],

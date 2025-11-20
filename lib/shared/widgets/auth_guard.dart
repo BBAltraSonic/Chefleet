@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../../features/auth/blocs/auth_bloc.dart';
-import '../widgets/main_app_shell.dart';
-import '../../features/auth/screens/auth_screen.dart';
+import '../../core/router/app_router.dart';
 
+@Deprecated('Auth is now handled by go_router redirects in AppRouter')
 class AuthGuard extends StatelessWidget {
   const AuthGuard({super.key});
 
@@ -11,7 +12,6 @@ class AuthGuard extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
-        // Show error messages if any
         if (state.errorMessage != null && state.errorMessage!.isNotEmpty) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -25,30 +25,20 @@ class AuthGuard extends StatelessWidget {
               ),
             ),
           );
-
-          // Clear the error after showing it
           context.read<AuthBloc>().add(const AuthErrorOccurred(''));
         }
+        
+        if (state.isAuthenticated) {
+          context.go(AppRouter.mapRoute);
+        } else {
+          context.go(AppRouter.authRoute);
+        }
       },
-      child: BlocBuilder<AuthBloc, AuthState>(
-        builder: (context, state) {
-          // Show loading indicator during initial auth state check
-          if (state.isLoading && state.user == null) {
-            return const Scaffold(
-              backgroundColor: Colors.black,
-              body: Center(
-                child: CircularProgressIndicator(color: Colors.white),
-              ),
-            );
-          }
-
-          // Navigate based on authentication state
-          if (state.isAuthenticated) {
-            return const MainAppShell();
-          } else {
-            return const AuthScreen();
-          }
-        },
+      child: const Scaffold(
+        backgroundColor: Colors.black,
+        body: Center(
+          child: CircularProgressIndicator(color: Colors.white),
+        ),
       ),
     );
   }

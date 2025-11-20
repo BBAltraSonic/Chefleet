@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../blocs/vendor_chat_state.dart';
+import '../blocs/vendor_chat_bloc.dart';
 
 class ChatMessageWidget extends StatelessWidget {
   final Map<String, dynamic> message;

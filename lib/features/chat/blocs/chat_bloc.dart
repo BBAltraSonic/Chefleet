@@ -86,7 +86,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
               )
             ''')
             .eq('buyer_id', userId)
-            .in_('status', ['pending', 'accepted', 'preparing', 'ready'])
+            .filter('status', 'in', '{pending,accepted,preparing,ready}')
             .order('created_at', ascending: false);
 
         orders = List<Map<String, dynamic>>.from(response);
@@ -116,7 +116,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
               )
             ''')
             .eq('vendor_id', vendorId)
-            .in_('status', ['pending', 'accepted', 'preparing', 'ready'])
+            .filter('status', 'in', '{pending,accepted,preparing,ready}')
             .order('created_at', ascending: false);
 
         orders = List<Map<String, dynamic>>.from(response);
@@ -223,7 +223,10 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
 
       emit(state.copyWith(
         messages: [...state.messages, optimisticMessage],
-        sendingMessages: [...state.sendingMessages, optimisticMessage['id']],
+        sendingMessages: [
+          ...state.sendingMessages,
+          optimisticMessage['id'] as String,
+        ],
       ));
 
       try {
@@ -268,7 +271,10 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
           sendingMessages: state.sendingMessages
               .where((id) => id != optimisticMessage['id'])
               .toList(),
-          failedMessages: [...state.failedMessages, optimisticMessage['id']],
+          failedMessages: [
+            ...state.failedMessages,
+            optimisticMessage['id'] as String,
+          ],
         ));
       }
     } catch (e) {
@@ -312,19 +318,19 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
           schema: 'public',
           table: 'messages',
           callback: (payload) async {
-            if (payload.new != null && payload.new!['order_id'] == event.orderId) {
-              final newMessage = payload.new!;
+            final newRecord = payload.newRecord;
+            if (newRecord != null && newRecord['order_id'] == event.orderId) {
               final currentUser = _supabaseClient.auth.currentUser;
 
               // Only handle messages from other users
-              if (currentUser != null && newMessage['sender_id'] != currentUser.id) {
+              if (currentUser != null && newRecord['sender_id'] != currentUser.id) {
                 // Send push notification for new message
-                await _sendChatNotification(newMessage, event.orderId);
+                await _sendChatNotification(newRecord, event.orderId);
               }
 
               // Add new message to current messages if we're viewing this order
               if (state.currentOrderId == event.orderId) {
-                final newMessages = [...state.messages, newMessage];
+                final newMessages = [...state.messages, newRecord];
                 emit(state.copyWith(messages: newMessages));
 
                 // Mark messages as read if we're viewing the chat

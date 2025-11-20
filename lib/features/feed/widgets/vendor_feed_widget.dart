@@ -67,7 +67,7 @@ class VendorCard extends StatelessWidget {
       child: InkWell(
         onTap: () {
           context.read<MapFeedBloc>().add(
-                MapFeedVendorSelected(vendorId: vendor.id),
+                MapVendorSelected(vendor),
               );
         },
         borderRadius: BorderRadius.circular(12),

@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import '../blocs/menu_management_bloc.dart';
-import '../blocs/menu_management_event.dart';
-import '../blocs/menu_management_state.dart';
 
 class SearchFilterBar extends StatefulWidget {
   final TextEditingController searchController;
@@ -138,7 +136,7 @@ class _SearchFilterBarState extends State<SearchFilterBar>
               label: const Text('Available Only'),
               onSelected: (selected) {
                 widget.onFilterChanged(
-                  const DishFilters(availableOnly: selected),
+                  DishFilters(availableOnly: selected),
                 );
               },
             ),
@@ -168,9 +166,9 @@ class _SearchFilterBarState extends State<SearchFilterBar>
             Expanded(
               child: DropdownButtonFormField<DishSortOption>(
                 value: DishSortOption.createdDate,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: InputDecoration(
+                  border: const OutlineInputBorder(),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 ),
                 items: DishSortOption.values.map((option) {
                   return DropdownMenuItem(
@@ -275,8 +273,8 @@ class _SearchFilterBarState extends State<SearchFilterBar>
           children: [
             TextField(
               controller: minPriceController,
-              decoration: const InputDecoration(
-                labelText: 'Min Price ($)',
+              decoration: InputDecoration(
+                labelText: 'Min Price (\$)',
                 border: OutlineInputBorder(),
               ),
               keyboardType: TextInputType.number,
@@ -284,8 +282,8 @@ class _SearchFilterBarState extends State<SearchFilterBar>
             const SizedBox(height: 16),
             TextField(
               controller: maxPriceController,
-              decoration: const InputDecoration(
-                labelText: 'Max Price ($)',
+              decoration: InputDecoration(
+                labelText: 'Max Price (\$)',
                 border: OutlineInputBorder(),
               ),
               keyboardType: TextInputType.number,

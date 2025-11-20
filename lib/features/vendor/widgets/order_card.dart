@@ -9,11 +9,21 @@ class OrderCard extends StatelessWidget {
     required this.order,
     required this.onStatusUpdate,
     this.onVerifyPickupCode,
+    this.onTap,
+    this.isSelected = false,
+    this.isUrgent = false,
+    this.showProgress = false,
+    this.isReady = false,
   });
 
   final Map<String, dynamic> order;
-  final Function(String) onStatusUpdate;
-  final Function(String, String)? onVerifyPickupCode;
+  final void Function(String newStatus) onStatusUpdate;
+  final void Function(String orderId, String pickupCode)? onVerifyPickupCode;
+  final VoidCallback? onTap;
+  final bool isSelected;
+  final bool isUrgent;
+  final bool showProgress;
+  final bool isReady;
 
   @override
   Widget build(BuildContext context) {
@@ -23,20 +33,22 @@ class OrderCard extends StatelessWidget {
     final buyer = order['buyer'] as Map<String, dynamic>? ?? {};
     final items = order['items'] as List<dynamic>? ?? [];
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -74,7 +86,7 @@ class OrderCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            _buildOrderItems(items),
+            _buildOrderItems(context, items),
             const SizedBox(height: 12),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -136,13 +148,14 @@ class OrderCard extends StatelessWidget {
               ),
             ],
             const SizedBox(height: 16),
-            _buildActionButtons(status),
+            _buildActionButtons(context, status),
           ],
         ),
+      ),
     );
   }
 
-  Widget _buildOrderItems(List<dynamic> items) {
+  Widget _buildOrderItems(BuildContext context, List<dynamic> items) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -243,7 +256,7 @@ class OrderCard extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButtons(String status) {
+  Widget _buildActionButtons(BuildContext context, String status) {
     switch (status) {
       case 'pending':
         return Row(
@@ -253,7 +266,7 @@ class OrderCard extends StatelessWidget {
                 onPressed: () => onStatusUpdate('cancelled'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: Colors.red,
-                  borderColor: Colors.red,
+                  side: const BorderSide(color: Colors.red),
                 ),
                 child: const Text('Reject'),
               ),

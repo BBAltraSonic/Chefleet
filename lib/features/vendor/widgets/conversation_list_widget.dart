@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../blocs/vendor_chat_state.dart';
+import '../blocs/vendor_chat_bloc.dart';
 
 class ConversationListWidget extends StatelessWidget {
   final List<Map<String, dynamic>> conversations;
@@ -82,9 +82,11 @@ class ConversationTile extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(8),
             border: hasUnread
-                ? Border.left(
-                    color: Theme.of(context).colorScheme.primary,
-                    width: 3,
+                ? Border(
+                    left: BorderSide(
+                      color: Theme.of(context).colorScheme.primary,
+                      width: 3,
+                    ),
                   )
                 : null,
           ),

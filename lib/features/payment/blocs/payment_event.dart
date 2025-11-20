@@ -2,56 +2,56 @@ part of 'payment_bloc.dart';
 
 @freezed
 class PaymentEvent with _$PaymentEvent {
-  const factory PaymentEvent.initialized() = PaymentInitialized;
+  const factory PaymentEvent.initialized() = PaymentInitializedEvent;
 
   const factory PaymentEvent.paymentIntentCreated({
     required String orderId,
     String? paymentMethodId,
-    bool savePaymentMethod = false,
-    bool useSavedMethod = false,
-  }) = PaymentIntentCreated;
+    @Default(false) bool savePaymentMethod,
+    @Default(false) bool useSavedMethod,
+  }) = PaymentIntentCreatedEvent;
 
   const factory PaymentEvent.paymentConfirmed({
     required String clientSecret,
     String? paymentMethodId,
-  }) = PaymentConfirmed;
+  }) = PaymentConfirmedEvent;
 
-  const factory PaymentEvent.paymentMethodsLoaded() = PaymentMethodsLoaded;
+  const factory PaymentEvent.paymentMethodsLoaded() = PaymentMethodsLoadedEvent;
 
   const factory PaymentEvent.paymentMethodAdded({
     required String stripePaymentMethodId,
-  }) = PaymentMethodAdded;
+  }) = PaymentMethodAddedEvent;
 
   const factory PaymentEvent.paymentMethodRemoved({
     required String paymentMethodId,
-  }) = PaymentMethodRemoved;
+  }) = PaymentMethodRemovedEvent;
 
   const factory PaymentEvent.defaultPaymentMethodSet({
     required String paymentMethodId,
-  }) = DefaultPaymentMethodSet;
+  }) = DefaultPaymentMethodSetEvent;
 
-  const factory PaymentEvent.walletLoaded() = WalletLoaded;
+  const factory PaymentEvent.walletLoaded() = WalletLoadedEvent;
 
   const factory PaymentEvent.walletTransactionsLoaded({
-    int limit = 20,
-    int offset = 0,
-  }) = WalletTransactionsLoaded;
+    @Default(20) int limit,
+    @Default(0) int offset,
+  }) = WalletTransactionsLoadedEvent;
 
-  const factory PaymentEvent.paymentSettingsLoaded() = PaymentSettingsLoaded;
+  const factory PaymentEvent.paymentSettingsLoaded() = PaymentSettingsLoadedEvent;
 
   const factory PaymentEvent.applePayPaymentProcessed({
     required String orderId,
     required Map<String, dynamic> applePayPaymentMethod,
-    bool savePaymentMethod = false,
-  }) = ApplePayPaymentProcessed;
+    @Default(false) bool savePaymentMethod,
+  }) = ApplePayPaymentProcessedEvent;
 
   const factory PaymentEvent.googlePayPaymentProcessed({
     required String orderId,
     required Map<String, dynamic> googlePayPaymentData,
-    bool savePaymentMethod = false,
-  }) = GooglePayPaymentProcessed;
+    @Default(false) bool savePaymentMethod,
+  }) = GooglePayPaymentProcessedEvent;
 
-  const factory PaymentEvent.error(String message) = PaymentError;
+  const factory PaymentEvent.error(String message) = PaymentErrorEvent;
 
-  const factory PaymentEvent.reset() = PaymentStateReset;
+  const factory PaymentEvent.reset() = PaymentResetEvent;
 }

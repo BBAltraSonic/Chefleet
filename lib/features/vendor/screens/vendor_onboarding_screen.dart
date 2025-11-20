@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../blocs/vendor_onboarding_bloc.dart';
 import '../models/vendor_model.dart';
@@ -29,8 +30,8 @@ class _VendorOnboardingScreenState extends State<VendorOnboardingScreen> {
   void initState() {
     super.initState();
     _pageController = PageController();
-    _bloc = VendorOnboardingBloc(supabaseClient: context.read<SupabaseClient>());
-    _bloc.add(LoadSavedProgress());
+    _bloc = VendorOnboardingBloc(supabaseClient: Supabase.instance.client);
+    _bloc.loadSavedProgress();
   }
 
   @override
@@ -288,7 +289,7 @@ class _VendorOnboardingScreenState extends State<VendorOnboardingScreen> {
                         ),
                     },
                   )
-                : const Center(
+                : Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -362,46 +363,7 @@ class _VendorOnboardingScreenState extends State<VendorOnboardingScreen> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  if (state.onboardingData.logoUrl != null)
-                    Column(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Image.network(
-                            state.onboardingData.logoUrl!,
-                            height: 120,
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: OutlinedButton.icon(
-                                onPressed: () => _pickImage('logo'),
-                                icon: const Icon(Icons.camera_alt),
-                                label: const Text('Change Logo'),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            IconButton(
-                              onPressed: () {
-                                _bloc.add(const DocumentsUpdated(logoUrl: null));
-                              },
-                              icon: const Icon(Icons.delete_outline),
-                              color: Colors.red,
-                            ),
-                          ],
-                        ],
-                      ],
-                    )
-                  else
-                    OutlinedButton.icon(
-                      onPressed: () => _pickImage('logo'),
-                      icon: const Icon(Icons.cloud_upload),
-                      label: const Text('Upload Logo'),
-                    ),
+                  _buildLogoSection(state),
                 ],
               ),
             ),
@@ -422,46 +384,7 @@ class _VendorOnboardingScreenState extends State<VendorOnboardingScreen> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  if (state.onboardingData.licenseUrl != null)
-                    Column(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Image.network(
-                            state.onboardingData.licenseUrl!,
-                            height: 120,
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: OutlinedButton.icon(
-                                onPressed: () => _pickImage('license'),
-                                icon: const Icon(Icons.camera_alt),
-                                label: const Text('Change License'),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            IconButton(
-                              onPressed: () {
-                                _bloc.add(const DocumentsUpdated(licenseUrl: null));
-                              },
-                              icon: const Icon(Icons.delete_outline),
-                              color: Colors.red,
-                            ),
-                          ],
-                        ],
-                      ],
-                    )
-                  else
-                    OutlinedButton.icon(
-                      onPressed: () => _pickImage('license'),
-                      icon: const Icon(Icons.cloud_upload),
-                      label: const Text('Upload License'),
-                    ),
+                  _buildLicenseSection(state),
                 ],
               ),
             ),
@@ -531,7 +454,7 @@ class _VendorOnboardingScreenState extends State<VendorOnboardingScreen> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
+                  Text(
                     'By submitting this application, you agree to our terms of service and understand that your business will be subject to review before activation.',
                     style: TextStyle(
                       fontSize: 12,
@@ -553,6 +476,94 @@ class _VendorOnboardingScreenState extends State<VendorOnboardingScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildLogoSection(VendorOnboardingState state) {
+    if (state.onboardingData.logoUrl != null) {
+      return Column(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.network(
+              state.onboardingData.logoUrl!,
+              height: 120,
+              width: double.infinity,
+              fit: BoxFit.cover,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => _pickImage('logo'),
+                  icon: const Icon(Icons.camera_alt),
+                  label: const Text('Change Logo'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                onPressed: () {
+                  _bloc.add(const DocumentsUpdated(logoUrl: null));
+                },
+                icon: const Icon(Icons.delete_outline),
+                color: Colors.red,
+              ),
+            ],
+          ),
+        ],
+      );
+    }
+
+    return OutlinedButton.icon(
+      onPressed: () => _pickImage('logo'),
+      icon: const Icon(Icons.cloud_upload),
+      label: const Text('Upload Logo'),
+    );
+  }
+
+  Widget _buildLicenseSection(VendorOnboardingState state) {
+    if (state.onboardingData.licenseUrl != null) {
+      return Column(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.network(
+              state.onboardingData.licenseUrl!,
+              height: 120,
+              width: double.infinity,
+              fit: BoxFit.cover,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => _pickImage('license'),
+                  icon: const Icon(Icons.camera_alt),
+                  label: const Text('Change License'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                onPressed: () {
+                  _bloc.add(const DocumentsUpdated(licenseUrl: null));
+                },
+                icon: const Icon(Icons.delete_outline),
+                color: Colors.red,
+              ),
+            ],
+          ),
+        ],
+      );
+    }
+
+    return OutlinedButton.icon(
+      onPressed: () => _pickImage('license'),
+      icon: const Icon(Icons.cloud_upload),
+      label: const Text('Upload License'),
     );
   }
 
@@ -619,7 +630,9 @@ class _VendorOnboardingScreenState extends State<VendorOnboardingScreen> {
   }
 
   void _goToNextStep() {
-    final nextStep = VendorOnboardingStep.values[state.currentStepIndex + 1];
+    final currentState = _bloc.state;
+    final nextStep =
+        VendorOnboardingStep.values[currentState.currentStepIndex + 1];
     _pageController.animateToPage(
       nextStep.index,
       duration: const Duration(milliseconds: 300),
@@ -629,7 +642,9 @@ class _VendorOnboardingScreenState extends State<VendorOnboardingScreen> {
   }
 
   void _goToPreviousStep() {
-    final previousStep = VendorOnboardingStep.values[state.currentStepIndex - 1];
+    final currentState = _bloc.state;
+    final previousStep =
+        VendorOnboardingStep.values[currentState.currentStepIndex - 1];
     _pageController.animateToPage(
       previousStep.index,
       duration: const Duration(milliseconds: 300),
@@ -639,11 +654,11 @@ class _VendorOnboardingScreenState extends State<VendorOnboardingScreen> {
   }
 
   void _saveProgress() {
-    _bloc.add(OnboardingSaved(onboardingData: state.onboardingData));
+    _bloc.add(OnboardingSaved(onboardingData: _bloc.state.onboardingData));
   }
 
   void _submitOnboarding() {
-    _bloc.add(OnboardingSubmitted(onboardingData: state.onboardingData));
+    _bloc.add(OnboardingSubmitted(onboardingData: _bloc.state.onboardingData));
   }
 
   Future<void> _pickImage(String type) async {

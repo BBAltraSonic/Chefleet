@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../blocs/vendor_chat_state.dart';
 
 class QuickReplyWidget extends StatelessWidget {
   final List<Map<String, dynamic>> quickReplies;

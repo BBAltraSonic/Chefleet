@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import '../../feed/models/dish_model.dart';
 import '../blocs/vendor_dashboard_bloc.dart';
 import '../widgets/order_card.dart';
 import '../widgets/stats_card.dart';
@@ -265,6 +267,7 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen>
                       padding: const EdgeInsets.only(bottom: 12),
                       child: OrderCard(
                         order: order,
+                        onTap: () => context.push('/vendor/orders/${order['id']}'),
                         onStatusUpdate: (newStatus) {
                           context.read<VendorDashboardBloc>().add(
                             UpdateOrderStatus(
@@ -355,9 +358,7 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen>
                 ),
               ),
               TextButton.icon(
-                onPressed: () {
-                  // TODO: Navigate to add menu item screen
-                },
+                onPressed: () => context.push('/vendor/dishes/add'),
                 icon: const Icon(Icons.add),
                 label: const Text('Add Item'),
               ),
@@ -375,6 +376,17 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen>
                         padding: const EdgeInsets.only(bottom: 12),
                         child: MenuItemCard(
                           item: item,
+                          onEdit: () {
+                            // Ensure all required fields for Dish are present or handled
+                            try {
+                              final dish = Dish.fromJson(item);
+                              context.push('/vendor/dishes/edit', extra: dish);
+                            } catch (e) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Error opening dish: $e')),
+                              );
+                            }
+                          },
                           onAvailabilityToggle: (isAvailable) {
                             context.read<VendorDashboardBloc>().add(
                               UpdateMenuItemAvailability(
@@ -526,9 +538,7 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen>
           ),
           const SizedBox(height: 16),
           ElevatedButton.icon(
-            onPressed: () {
-              // TODO: Navigate to add menu item screen
-            },
+            onPressed: () => context.push('/vendor/dishes/add'),
             icon: const Icon(Icons.add),
             label: const Text('Add First Item'),
           ),

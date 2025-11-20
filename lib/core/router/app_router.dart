@@ -1,37 +1,114 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/auth/screens/auth_screen.dart';
+import '../../features/auth/screens/splash_screen.dart';
+import '../../features/auth/screens/role_selection_screen.dart';
+import '../../features/auth/screens/profile_creation_screen.dart';
 import '../../features/map/screens/map_screen.dart';
 import '../../features/feed/screens/feed_screen.dart';
 import '../../features/chat/screens/chat_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
+import '../../features/profile/screens/favourites_screen.dart';
 import '../../features/settings/screens/settings_screen.dart';
+import '../../features/settings/screens/notifications_screen.dart';
 import '../../features/dish/screens/dish_detail_screen.dart';
+import '../../features/vendor/screens/vendor_dashboard_screen.dart';
+import '../../features/vendor/screens/order_detail_screen.dart';
+import '../../features/vendor/screens/dish_edit_screen.dart';
+import '../../features/vendor/screens/availability_management_screen.dart';
+import '../../features/vendor/screens/moderation_tools_screen.dart';
+import '../../features/vendor/screens/vendor_onboarding_screen.dart';
+import '../../features/feed/models/dish_model.dart';
+import '../../features/auth/blocs/auth_bloc.dart';
+import '../../features/auth/blocs/user_profile_bloc.dart';
 import '../blocs/navigation_bloc.dart';
 import '../../../shared/widgets/persistent_navigation_shell.dart';
-import '../../../shared/widgets/profile_guard.dart';
-import '../services/deep_link_service.dart';
 
 class AppRouter {
-  static const String initialRoute = '/map';
+  static const String initialRoute = '/splash';
+  static const String splashRoute = '/splash';
+  static const String roleSelectionRoute = '/role-selection';
   static const String authRoute = '/auth';
+  static const String profileCreationRoute = '/profile-creation';
   static const String mapRoute = '/map';
   static const String feedRoute = '/feed';
   static const String ordersRoute = '/orders';
   static const String chatRoute = '/chat';
   static const String profileRoute = '/profile';
+  static const String favouritesRoute = '/favourites';
+  static const String notificationsRoute = '/notifications';
   static const String settingsRoute = '/settings';
   static const String dishDetailRoute = '/dish';
 
+  // Vendor Routes
+  static const String vendorDashboardRoute = '/vendor';
+  static const String vendorOrderDetailRoute = '/vendor/orders';
+  static const String vendorDishAddRoute = '/vendor/dishes/add';
+  static const String vendorDishEditRoute = '/vendor/dishes/edit';
+  static const String vendorAvailabilityRoute = '/vendor/availability';
+  static const String vendorModerationRoute = '/vendor/moderation';
+  static const String vendorOnboardingRoute = '/vendor/onboarding';
+
   static late final GoRouter router;
 
-  static void initialize() {
+  static void initialize(BuildContext context) {
     router = GoRouter(
       initialLocation: initialRoute,
+      redirect: (BuildContext context, GoRouterState state) {
+        final authBloc = context.read<AuthBloc>();
+        final profileBloc = context.read<UserProfileBloc>();
+        
+        final isAuthenticated = authBloc.state.isAuthenticated;
+        final hasProfile = profileBloc.state.profile.isNotEmpty;
+        
+        final isSplashRoute = state.matchedLocation == splashRoute;
+        final isAuthRoute = state.matchedLocation == authRoute;
+        final isProfileCreationRoute = state.matchedLocation == profileCreationRoute;
+        
+        // If on splash, let it through
+        if (isSplashRoute) return null;
+        
+        // If not authenticated and not on auth route, redirect to auth
+        if (!isAuthenticated && !isAuthRoute) {
+          return authRoute;
+        }
+        
+        // If authenticated but no profile and not on profile creation, redirect to profile creation
+        if (isAuthenticated && !hasProfile && !isProfileCreationRoute) {
+          // Allow access to settings without profile
+          if (state.matchedLocation == settingsRoute || 
+              state.matchedLocation == mapRoute || 
+              state.matchedLocation == feedRoute || 
+              state.matchedLocation == profileRoute) {
+            return null;
+          }
+          return profileCreationRoute;
+        }
+        
+        // If authenticated with profile but on auth route, redirect to map
+        if (isAuthenticated && hasProfile && isAuthRoute) {
+          return mapRoute;
+        }
+        
+        return null;
+      },
       routes: [
+        GoRoute(
+          path: splashRoute,
+          builder: (context, state) => const SplashScreen(),
+        ),
         GoRoute(
           path: authRoute,
           builder: (context, state) => const AuthScreen(),
+        ),
+        GoRoute(
+          path: roleSelectionRoute,
+          builder: (context, state) => const RoleSelectionScreen(),
+        ),
+        GoRoute(
+          path: profileCreationRoute,
+          builder: (context, state) => const ProfileCreationScreen(),
         ),
         GoRoute(
           path: '$dishDetailRoute/:dishId',
@@ -40,59 +117,95 @@ class AppRouter {
             return DishDetailScreen(dishId: dishId);
           },
         ),
+        GoRoute(
+          path: favouritesRoute,
+          builder: (context, state) => const FavouritesScreen(),
+        ),
+        GoRoute(
+          path: notificationsRoute,
+          builder: (context, state) => const NotificationsScreen(),
+        ),
+        GoRoute(
+          path: settingsRoute,
+          builder: (context, state) => const SettingsScreen(),
+        ),
+        // Main app shell with persistent navigation
         ShellRoute(
           builder: (context, state, child) {
-            return ProfileGuard(
-              child: Scaffold(
-                body: child,
-                bottomNavigationBar: const GlassBottomNavigation(),
-                floatingActionButton: const OrdersFloatingActionButton(),
-                floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-              ),
-              requireProfile: false,
+            return PersistentNavigationShell(
+              children: const [
+                MapScreen(),
+                FeedScreen(),
+                OrdersScreen(),
+                ChatScreen(),
+                ProfileScreen(),
+              ],
             );
           },
           routes: [
             GoRoute(
               path: mapRoute,
-              builder: (context, state) => const MapScreen(),
+              pageBuilder: (context, state) => const NoTransitionPage(
+                child: SizedBox.shrink(),
+              ),
             ),
             GoRoute(
               path: feedRoute,
-              builder: (context, state) => const FeedScreen(),
+              pageBuilder: (context, state) => const NoTransitionPage(
+                child: SizedBox.shrink(),
+              ),
             ),
             GoRoute(
               path: ordersRoute,
-              builder: (context, state) {
-                return ProfileGuard(
-                  child: const OrdersScreen(),
-                  requireProfile: true, // Require profile for orders
-                );
-              },
+              pageBuilder: (context, state) => const NoTransitionPage(
+                child: SizedBox.shrink(),
+              ),
             ),
             GoRoute(
               path: chatRoute,
-              builder: (context, state) {
-                return ProfileGuard(
-                  child: const ChatScreen(),
-                  requireProfile: true, // Require profile for chat
-                );
-              },
+              pageBuilder: (context, state) => const NoTransitionPage(
+                child: SizedBox.shrink(),
+              ),
             ),
             GoRoute(
               path: profileRoute,
-              builder: (context, state) => const ProfileScreen(),
+              pageBuilder: (context, state) => const NoTransitionPage(
+                child: SizedBox.shrink(),
+              ),
             ),
           ],
         ),
+        // Vendor Routes
         GoRoute(
-          path: settingsRoute,
+          path: vendorDashboardRoute,
+          builder: (context, state) => const VendorDashboardScreen(),
+        ),
+        GoRoute(
+          path: '$vendorOrderDetailRoute/:orderId',
+          builder: (context, state) => OrderDetailScreen(orderId: state.pathParameters['orderId']!),
+        ),
+        GoRoute(
+          path: vendorDishAddRoute,
+          builder: (context, state) => const DishEditScreen(),
+        ),
+        GoRoute(
+          path: vendorDishEditRoute,
           builder: (context, state) {
-            return ProfileGuard(
-              child: const SettingsScreen(),
-              requireProfile: false, // Settings accessible without profile
-            );
+            final dish = state.extra as Dish?;
+            return DishEditScreen(dish: dish);
           },
+        ),
+        GoRoute(
+          path: '$vendorAvailabilityRoute/:vendorId',
+          builder: (context, state) => AvailabilityManagementScreen(vendorId: state.pathParameters['vendorId']!),
+        ),
+        GoRoute(
+          path: vendorModerationRoute,
+          builder: (context, state) => const ModerationToolsScreen(),
+        ),
+        GoRoute(
+          path: vendorOnboardingRoute,
+          builder: (context, state) => const VendorOnboardingScreen(),
         ),
       ],
     );

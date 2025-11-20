@@ -3,13 +3,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../blocs/vendor_chat_bloc.dart';
-import '../blocs/vendor_chat_event.dart';
-import '../blocs/vendor_chat_state.dart';
 import '../widgets/conversation_list_widget.dart';
 import '../widgets/chat_message_widget.dart';
 import '../widgets/quick_reply_widget.dart';
 import '../widgets/chat_input_widget.dart';
-import '../../core/repositories/supabase_repository.dart';
 
 class VendorChatScreen extends StatefulWidget {
   const VendorChatScreen({super.key});

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../core/theme/app_theme.dart';
+
+import '../../../shared/widgets/glass_container.dart';
 import '../blocs/chat_bloc.dart';
 
 class ChatBubble extends StatelessWidget {
@@ -30,7 +31,7 @@ class ChatBubble extends StatelessWidget {
             : MainAxisAlignment.start,
         children: [
           if (!isFromCurrentUser) ...[
-            _buildRoleBadge(),
+            _buildRoleBadge(context),
             const SizedBox(width: 8),
           ],
           Flexible(
@@ -102,7 +103,7 @@ class ChatBubble extends StatelessWidget {
                             ),
                             if (isFromCurrentUser) ...[
                               const SizedBox(width: 4),
-                              _buildDeliveryStatus(isFailed, isOptimistic),
+                              _buildDeliveryStatus(context, isFailed, isOptimistic),
                             ],
                           ],
                         ),
@@ -112,7 +113,7 @@ class ChatBubble extends StatelessWidget {
                 ),
                 if (isFromCurrentUser) ...[
                   const SizedBox(width: 8),
-                  _buildRoleBadge(),
+                  _buildRoleBadge(context),
                 ],
               ],
             ),
@@ -122,7 +123,7 @@ class ChatBubble extends StatelessWidget {
     );
   }
 
-  Widget _buildRoleBadge() {
+  Widget _buildRoleBadge(BuildContext context) {
     return Container(
       width: 32,
       height: 32,
@@ -140,7 +141,7 @@ class ChatBubble extends StatelessWidget {
     );
   }
 
-  Widget _buildDeliveryStatus(bool isFailed, bool isOptimistic) {
+  Widget _buildDeliveryStatus(BuildContext context, bool isFailed, bool isOptimistic) {
     if (isFailed) {
       return const Icon(
         Icons.error_outline,

@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/payment_method.dart';
 import '../models/wallet.dart';
@@ -16,28 +15,11 @@ class PaymentService {
   );
 
   /// Initialize Stripe with publishable key
+  ///
+  /// Stripe SDK integration has been removed for the current cash-only
+  /// configuration, so this becomes a no-op to keep existing flows stable.
   Future<void> initializeStripe() async {
-    try {
-      // Get Stripe publishable key from environment or Supabase Edge Function
-      final publishableKey = const String.fromEnvironment(
-        'STRIPE_PUBLISHABLE_KEY',
-        // In production, this should come from your environment variables
-        defaultValue: 'pk_test_your_publishable_key_here',
-      );
-
-      await Stripe.instance.applySettings(
-        StripeSettings(
-          publishableKey: publishableKey,
-          merchantIdentifier: 'merchant.com.chefleet',
-          // Enable Apple Pay for iOS
-          applePay: ApplePayParams(
-            merchantId: 'merchant.com.chefleet',
-          ),
-        ),
-      );
-    } catch (e) {
-      throw Exception('Failed to initialize Stripe: $e');
-    }
+    // No-op: payments are handled via Supabase Edge Functions / backend only.
   }
 
   /// Create a payment intent for an order
@@ -83,27 +65,8 @@ class PaymentService {
     required String clientSecret,
     String? paymentMethodId,
   }) async {
-    try {
-      // Create payment method if not provided
-      if (paymentMethodId != null) {
-        await Stripe.instance.confirmPayment(
-          paymentIntentClientSecret: clientSecret,
-          data: PaymentMethodParams.card(
-            paymentMethodData: PaymentMethodData(
-              billingDetails: BillingDetails(
-                // You can pre-fill billing details if available
-                email: _supabase.auth.currentUser?.email,
-              ),
-            ),
-          ),
-        );
-      } else {
-        // If payment method is already attached to the intent
-        await Stripe.instance.retrievePaymentIntent(clientSecret);
-      }
-    } catch (e) {
-      throw Exception('Payment confirmation failed: $e');
-    }
+    // No-op: client-side Stripe SDK is not used in the cash-only flow.
+    // The backend should mark intents as confirmed where applicable.
   }
 
   /// Handle payment action (3D Secure, etc.)
@@ -111,11 +74,7 @@ class PaymentService {
     required String clientSecret,
     required Map<String, dynamic> nextAction,
   }) async {
-    try {
-      await Stripe.instance.handleNextAction(clientSecret);
-    } catch (e) {
-      throw Exception('Payment action handling failed: $e');
-    }
+    // No-op: without Stripe SDK there are no client-side next actions.
   }
 
   /// Get user's saved payment methods
@@ -294,23 +253,9 @@ class PaymentService {
     required Map<String, dynamic> applePayPaymentMethod,
     bool savePaymentMethod = false,
   }) async {
-    try {
-      // Create payment method from Apple Pay token
-      final paymentMethod = await Stripe.instance.createApplePayPaymentMethod(
-        ApplePayParams(
-          paymentMethod: applePayPaymentMethod,
-        ),
-      );
-
-      // Create payment intent with Apple Pay payment method
-      return await createPaymentIntent(
-        orderId: orderId,
-        paymentMethodId: paymentMethod.id,
-        savePaymentMethod: savePaymentMethod,
-      );
-    } catch (e) {
-      throw Exception('Apple Pay payment failed: $e');
-    }
+    throw UnsupportedError(
+      'Apple Pay is not supported in the current cash-only payment configuration.',
+    );
   }
 
   /// Process payment using Google Pay
@@ -319,22 +264,8 @@ class PaymentService {
     required Map<String, dynamic> googlePayPaymentData,
     bool savePaymentMethod = false,
   }) async {
-    try {
-      // Create payment method from Google Pay token
-      final paymentMethod = await Stripe.instance.createGooglePayPaymentMethod(
-        GooglePayParams(
-          paymentMethodData: googlePayPaymentData,
-        ),
-      );
-
-      // Create payment intent with Google Pay payment method
-      return await createPaymentIntent(
-        orderId: orderId,
-        paymentMethodId: paymentMethod.id,
-        savePaymentMethod: savePaymentMethod,
-      );
-    } catch (e) {
-      throw Exception('Google Pay payment failed: $e');
-    }
+    throw UnsupportedError(
+      'Google Pay is not supported in the current cash-only payment configuration.',
+    );
   }
 }

@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
 import '../blocs/payment_bloc.dart';
 import '../widgets/payment_status_widget.dart';
 import '../../order/blocs/order_bloc.dart';
+import '../../order/blocs/order_state.dart';
 import '../../../shared/widgets/glass_container.dart';
+import 'payment_method_selection_screen.dart';
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});
@@ -30,26 +33,16 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       ),
       body: BlocListener<OrderBloc, OrderState>(
         listener: (context, orderState) {
-          orderState.when(
-            paymentConfirmed: () {
-              // Navigate to order confirmation
-              _navigateToOrderConfirmation();
-            },
-            paymentFailed: (error) {
-              setState(() {
-                _paymentProcessing = false;
-              });
-              _showErrorDialog('Payment failed: $error');
-            },
-            // Handle other states
-            idle: () {},
-            loading: () {},
-            success: () {},
-            placing: () {},
-            error: (errorMessage) {},
-            paymentPending: () {},
-            paymentProcessing: () {},
-          );
+          if (orderState.status == OrderStatus.paymentConfirmed) {
+            _navigateToOrderConfirmation();
+          } else if (orderState.status == OrderStatus.paymentFailed) {
+            setState(() {
+              _paymentProcessing = false;
+            });
+            _showErrorDialog(
+              'Payment failed: ${orderState.paymentError ?? 'Unknown error'}',
+            );
+          }
         },
         child: BlocBuilder<OrderBloc, OrderState>(
           builder: (context, orderState) {
@@ -349,7 +342,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          TextField(
+          TextFormField(
             initialValue: orderState.specialInstructions,
             onChanged: (value) {
               context.read<OrderBloc>().updateSpecialInstructions(value);

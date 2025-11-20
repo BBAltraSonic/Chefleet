@@ -26,7 +26,7 @@ class Dish extends Equatable {
     this.descriptionLong,
     this.ingredients,
     this.dietaryRestrictions,
-    this.preparationTimeMinutes,
+    int? preparationTimeMinutes,
     this.isFeatured = false,
     this.categoryEnum,
   }) : price = priceCents / 100.0,

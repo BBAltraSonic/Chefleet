@@ -6,19 +6,19 @@ part 'connectivity_state.dart';
 
 class ConnectivityBloc extends Bloc<ConnectivityEvent, ConnectivityState> {
   ConnectivityBloc() : super(const ConnectivityInitial()) {
-    on<ConnectivityChanged>(_onConnectivityChanged);
-    on<ConnectivityChecked>(_onConnectivityChecked);
+    on<ConnectivityStatusChanged>(_onConnectivityStatusChanged);
+    on<ConnectivityStatusChecked>(_onConnectivityStatusChecked);
   }
 
-  void _onConnectivityChanged(
-    ConnectivityChanged event,
+  void _onConnectivityStatusChanged(
+    ConnectivityStatusChanged event,
     Emitter<ConnectivityState> emit,
   ) {
     emit(ConnectivityChanged(isConnected: event.isConnected));
   }
 
-  void _onConnectivityChecked(
-    ConnectivityChecked event,
+  void _onConnectivityStatusChecked(
+    ConnectivityStatusChecked event,
     Emitter<ConnectivityState> emit,
   ) {
     emit(ConnectivityChanged(isConnected: event.isConnected));

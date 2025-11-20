@@ -72,7 +72,7 @@ class PaymentStatusWidget extends StatelessWidget {
 
           if (showDetails) ...[
             const SizedBox(height: 16),
-            _buildStatusDetails(),
+            _buildStatusDetails(context),
           ],
 
           if (onRetry != null && status == PaymentStatus.failed) ...[
@@ -168,7 +168,7 @@ class PaymentStatusWidget extends StatelessWidget {
     }
   }
 
-  Widget _buildStatusDetails() {
+  Widget _buildStatusDetails(BuildContext context) {
     String description;
 
     switch (status) {

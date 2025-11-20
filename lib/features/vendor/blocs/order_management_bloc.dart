@@ -44,8 +44,8 @@ class OrderManagementBloc
           schema: 'public',
           table: 'orders',
           callback: (payload) {
-            if (payload.new != null) {
-              add(OrderUpdated(orderData: payload.new as Map<String, dynamic>));
+            if (payload.newRecord != null) {
+              add(OrderUpdated(orderData: payload.newRecord as Map<String, dynamic>));
             }
           },
         )
@@ -101,14 +101,13 @@ class OrderManagementBloc
               )
             )
           ''')
-          .eq('vendor_id', vendorId)
-          .order('created_at', ascending: false);
+          .eq('vendor_id', vendorId);
 
       if (event.statusFilter != null) {
         query = query.eq('status', event.statusFilter!);
       }
 
-      final response = await query;
+      final response = await query.order('created_at', ascending: false);
       final orders = List<Map<String, dynamic>>.from(response);
 
       // Calculate status counts

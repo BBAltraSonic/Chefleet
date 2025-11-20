@@ -5,6 +5,7 @@ import '../../features/chat/screens/chat_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
 import 'persistent_navigation_shell.dart';
 
+@Deprecated('Use go_router ShellRoute with PersistentNavigationShell instead')
 class MainAppShell extends StatelessWidget {
   const MainAppShell({super.key});
 

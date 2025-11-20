@@ -133,7 +133,7 @@ class CachedDataIndicator extends StatelessWidget {
     required IconData icon,
     required String label,
     required String value,
-    required Color color,
+    required MaterialColor color,
   }) {
     return Row(
       children: [

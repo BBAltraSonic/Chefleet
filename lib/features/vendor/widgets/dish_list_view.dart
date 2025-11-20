@@ -3,8 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../feed/models/dish_model.dart';
 import '../blocs/menu_management_bloc.dart';
-import '../blocs/menu_management_event.dart';
-import '../blocs/menu_management_state.dart';
 import 'dish_card.dart';
 
 class DishListView extends StatelessWidget {

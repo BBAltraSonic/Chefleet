@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+
 import '../blocs/payment_bloc.dart';
 import '../../../core/models/payment_method.dart';
 import '../../../shared/widgets/glass_container.dart';
@@ -277,19 +277,19 @@ class _PaymentMethodSelectionScreenState extends State<PaymentMethodSelectionScr
     switch (type) {
       case 'card':
         return Icon(
-          FontAwesomeIcons.creditCard,
+          Icons.credit_card,
           color: Theme.of(context).colorScheme.primary,
           size: 24,
         );
       case 'apple_pay':
         return Icon(
-          FontAwesomeIcons.apple,
+          Icons.apple,
           color: Theme.of(context).colorScheme.primary,
           size: 24,
         );
       case 'google_pay':
         return Icon(
-          FontAwesomeIcons.google,
+          Icons.android,
           color: Theme.of(context).colorScheme.primary,
           size: 24,
         );

@@ -1,5 +1,6 @@
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'dart:collection';
+
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 /// Object pool for reusing Marker objects to reduce GC pressure
 class MarkerPool {
@@ -23,13 +24,8 @@ class MarkerPool {
     double rotation = 0.0,
     double alpha = 1.0,
     bool visible = true,
-    bool clickable = true,
-    Set<MarkerType>? markerTypes,
     double zIndex = 0.0,
-    VoidCallback? onTap,
-    VoidCallback? onDrag,
-    VoidCallback? onDragStart,
-    VoidCallback? onDragEnd,
+    void Function()? onTap,
   }) {
     Marker marker;
 
@@ -49,13 +45,8 @@ class MarkerPool {
         rotation: rotation,
         alpha: alpha,
         visible: visible,
-        clickable: clickable,
-        markerTypes: markerTypes ?? const <MarkerType>{},
         zIndex: zIndex,
         onTap: onTap,
-        onDrag: onDrag,
-        onDragStart: onDragStart,
-        onDragEnd: onDragEnd,
       );
     } else {
       marker = Marker(
@@ -69,13 +60,8 @@ class MarkerPool {
         rotation: rotation,
         alpha: alpha,
         visible: visible,
-        clickable: clickable,
-        markerTypes: markerTypes ?? const <MarkerType>{},
         zIndex: zIndex,
         onTap: onTap,
-        onDrag: onDrag,
-        onDragStart: onDragStart,
-        onDragEnd: onDragEnd,
       );
       _totalCreated++;
     }

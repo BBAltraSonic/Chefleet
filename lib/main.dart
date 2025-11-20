@@ -4,17 +4,27 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/theme/app_theme.dart';
 import 'core/blocs/app_bloc_observer.dart';
 import 'core/blocs/navigation_bloc.dart';
+import 'core/router/app_router.dart';
 import 'features/auth/blocs/auth_bloc.dart';
 import 'features/auth/blocs/user_profile_bloc.dart';
-import 'shared/widgets/auth_guard.dart';
-import 'shared/widgets/profile_guard.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
+  const supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
+
+  if (supabaseUrl.isEmpty || supabaseAnonKey.isEmpty) {
+    throw Exception(
+      'Missing required environment variables. '
+      'Please provide SUPABASE_URL and SUPABASE_ANON_KEY via --dart-define.\n'
+      'Example: flutter run --dart-define=SUPABASE_URL=your_url --dart-define=SUPABASE_ANON_KEY=your_key',
+    );
+  }
+
   await Supabase.initialize(
-    url: 'https://psaseinpeedxzydinifx.supabase.co',
-    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBzYXNlaW5wZWVkeHp5ZGluaWZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI3MTU1ODUsImV4cCI6MjA3ODI5MTU4NX0.JEznxunBL4f9tjLz3GNd1Yu3aTuUbUeaywIhGC-V88A',
+    url: supabaseUrl,
+    anonKey: supabaseAnonKey,
   );
 
   Bloc.observer = AppBlocObserver();
@@ -22,8 +32,21 @@ Future<void> main() async {
   runApp(const ChefleetApp());
 }
 
-class ChefleetApp extends StatelessWidget {
+class ChefleetApp extends StatefulWidget {
   const ChefleetApp({super.key});
+
+  @override
+  State<ChefleetApp> createState() => _ChefleetAppState();
+}
+
+class _ChefleetAppState extends State<ChefleetApp> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      AppRouter.initialize(context);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,16 +62,13 @@ class ChefleetApp extends StatelessWidget {
           create: (context) => NavigationBloc(),
         ),
       ],
-      child: MaterialApp(
+      child: MaterialApp.router(
         title: 'Chefleet',
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
         themeMode: ThemeMode.system,
         debugShowCheckedModeBanner: false,
-        home: const ProfileGuard(
-          child: AuthGuard(),
-          requireProfile: false, // Allow access to app without profile initially
-        ),
+        routerConfig: AppRouter.router,
       ),
     );
   }

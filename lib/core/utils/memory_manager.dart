@@ -1,6 +1,15 @@
-import 'dart:developer' as developer;
 import 'dart:async';
 import 'dart:collection';
+import 'dart:developer' as developer;
+import 'dart:math' as math;
+
+/// Memory pressure levels
+enum MemoryPressure {
+  normal, // < 150MB
+  warning, // 150-200MB
+  critical, // 200-250MB
+  emergency, // > 250MB
+}
 
 /// Memory management utilities for optimizing app performance
 class MemoryManager {
@@ -26,14 +35,6 @@ class MemoryManager {
 
   /// Memory pressure callbacks
   final List<Function(MemoryPressure)> _pressureCallbacks = [];
-
-  /// Memory pressure levels
-  enum MemoryPressure {
-    normal,    // < 150MB
-    warning,   // 150-200MB
-    critical,  // 200-250MB
-    emergency, // > 250MB
-  }
 
   /// Current memory pressure level
   MemoryPressure _currentPressure = MemoryPressure.normal;
@@ -354,10 +355,3 @@ class MemoryManager {
     }
   }
 }
-
-extension MathExtension on int {
-  int max(int other) => this > other ? this : other;
-  int min(int other) => this < other ? this : other;
-}
-
-import 'dart:math' as math;

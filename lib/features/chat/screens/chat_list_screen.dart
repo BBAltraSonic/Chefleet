@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../core/theme/app_theme.dart';
+
+import '../../../shared/widgets/glass_container.dart';
 import '../blocs/chat_bloc.dart';
 import '../widgets/chat_list_item.dart';
 import 'chat_detail_screen.dart';

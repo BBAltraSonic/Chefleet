@@ -171,6 +171,10 @@ class MapFeedState extends AppState {
       ];
 }
 
+extension MapFeedStateX on MapFeedState {
+  bool get hasError => errorMessage != null;
+}
+
 class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
   MapFeedBloc() : super(const MapFeedState()) {
     on<MapFeedInitialized>(_onInitialized);
@@ -462,7 +466,7 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
         final dishesResponse = await Supabase.instance.client
             .from('dishes')
             .select('*')
-            .filter('vendor_id', 'in', vendorIds)
+            .inFilter('vendor_id', vendorIds)
             .eq('available', true)
             .order('created_at', ascending: false)
             .range(0, _pageSize - 1);
@@ -577,7 +581,7 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
       final dishesResponse = await Supabase.instance.client
           .from('dishes')
           .select('*')
-          .filter('vendor_id', 'in', vendorIds)
+          .inFilter('vendor_id', vendorIds)
           .eq('available', true)
           .order('created_at', ascending: false)
           .range(start, end);

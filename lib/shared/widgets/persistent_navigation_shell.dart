@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'dart:ui';
 import '../../core/blocs/navigation_bloc.dart';
+import '../../core/router/app_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../features/order/widgets/active_order_modal.dart';
 
@@ -18,12 +19,8 @@ class PersistentNavigationShell extends StatefulWidget {
 }
 
 class _PersistentNavigationShellState extends State<PersistentNavigationShell> {
-  // No PageController needed when using IndexedStack
-
   @override
   Widget build(BuildContext context) {
-    // Using BlocBuilder instead of BlocListener since we're using IndexedStack
-    // The IndexedStack will automatically update when the navigation state changes
     return BlocBuilder<NavigationBloc, NavigationState>(
       builder: (context, state) {
         return Scaffold(
@@ -110,7 +107,10 @@ class GlassBottomNavigation extends StatelessWidget {
 
   Widget _buildNavItem(BuildContext context, NavigationTab tab, bool isSelected) {
     return InkWell(
-      onTap: () => context.read<NavigationBloc>().selectTab(tab),
+      onTap: () {
+        context.read<NavigationBloc>().selectTab(tab);
+        AppRouter.navigateToTab(context, tab);
+      },
       borderRadius: BorderRadius.circular(24),
       child: Container(
         height: double.infinity,

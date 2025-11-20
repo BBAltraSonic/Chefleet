@@ -7,19 +7,19 @@ abstract class ConnectivityEvent extends Equatable {
   List<Object> get props => [];
 }
 
-class ConnectivityChanged extends ConnectivityEvent {
+class ConnectivityStatusChanged extends ConnectivityEvent {
   final bool isConnected;
 
-  const ConnectivityChanged({required this.isConnected});
+  const ConnectivityStatusChanged({required this.isConnected});
 
   @override
   List<Object> get props => [isConnected];
 }
 
-class ConnectivityChecked extends ConnectivityEvent {
+class ConnectivityStatusChecked extends ConnectivityEvent {
   final bool isConnected;
 
-  const ConnectivityChecked({required this.isConnected});
+  const ConnectivityStatusChecked({required this.isConnected});
 
   @override
   List<Object> get props => [isConnected];

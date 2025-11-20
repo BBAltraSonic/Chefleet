@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart'
+    hide ClusterManager, Cluster;
 import 'package:chefleet/core/utils/cluster_manager.dart';
 import 'package:chefleet/core/utils/quadtree.dart';
 import 'package:chefleet/features/feed/models/vendor_model.dart';
@@ -177,7 +178,6 @@ void main() {
       expect(cluster.count, equals(1)); // Default value
     });
   });
-}
 
   group('ClusterManager Performance Tests', () {
     late ClusterManager<Vendor> vendorClusterManager;
@@ -200,6 +200,9 @@ void main() {
         return Vendor(
           id: 'vendor_$index',
           name: 'Test Vendor $index',
+          address: 'Test Address $index',
+          description: 'Test Description $index',
+          phoneNumber: '555-000$index',
           latitude: baseLat + latOffset,
           longitude: baseLng + lngOffset,
           dishCount: index % 20 + 1,
@@ -335,7 +338,7 @@ void main() {
       final stopwatch = Stopwatch()..start();
 
       final quadTree = QuadTree<Vendor>(
-        bounds: const LatLngBounds(
+        bounds: LatLngBounds(
           southwest: LatLng(37.7, -122.5),
           northeast: LatLng(37.8, -122.3),
         ),
@@ -348,6 +351,9 @@ void main() {
         final vendor = Vendor(
           id: 'vendor_$i',
           name: 'Test Vendor $i',
+          address: 'Test Address $i',
+          description: 'Test Description $i',
+          phoneNumber: '555-000$i',
           latitude: 37.7449 + (i % 100) * 0.0001,
           longitude: -122.4194 + (i ~/ 100) * 0.0001,
           dishCount: i % 20 + 1,
@@ -378,7 +384,7 @@ void main() {
 
     test('should query items efficiently', () {
       final quadTree = QuadTree<Vendor>(
-        bounds: const LatLngBounds(
+        bounds: LatLngBounds(
           southwest: LatLng(37.7, -122.5),
           northeast: LatLng(37.8, -122.3),
         ),
@@ -389,6 +395,9 @@ void main() {
         final vendor = Vendor(
           id: 'vendor_$i',
           name: 'Test Vendor $i',
+          address: 'Test Address $i',
+          description: 'Test Description $i',
+          phoneNumber: '555-000$i',
           latitude: 37.7449 + (i % 50) * 0.0002,
           longitude: -122.4194 + (i ~/ 50) * 0.0002,
           dishCount: i % 20 + 1,
@@ -407,7 +416,7 @@ void main() {
       final stopwatch = Stopwatch()..start();
 
       // Perform query
-      final queryBounds = const LatLngBounds(
+      final queryBounds = LatLngBounds(
         southwest: LatLng(37.74, -122.42),
         northeast: LatLng(37.75, -122.41),
       );
@@ -424,7 +433,7 @@ void main() {
 
     test('should remove items efficiently', () {
       final quadTree = QuadTree<Vendor>(
-        bounds: const LatLngBounds(
+        bounds: LatLngBounds(
           southwest: LatLng(37.7, -122.5),
           northeast: LatLng(37.8, -122.3),
         ),
@@ -435,6 +444,9 @@ void main() {
         final vendor = Vendor(
           id: 'vendor_$i',
           name: 'Test Vendor $i',
+          address: 'Test Address $i',
+          description: 'Test Description $i',
+          phoneNumber: '555-000$i',
           latitude: 37.7449 + i * 0.0001,
           longitude: -122.4194 + i * 0.0001,
           dishCount: i % 20 + 1,

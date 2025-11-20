@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:developer' as developer;
 import 'dart:io';
+
+/*
 import 'package:battery_plus/battery_plus.dart';
 
 /// Battery usage optimization utilities for extending device battery life
@@ -499,6 +501,99 @@ extension BatteryOptimizationLevelExtension on BatteryOptimizer.BatteryOptimizat
       case BatteryOptimizer.BatteryOptimizationLevel.powerSaving:
         return 'Reduced performance for extended battery life';
       case BatteryOptimizer.BatteryOptimizationLevel.ultraPower:
+        return 'Minimal performance for maximum battery life';
+    }
+  }
+}
+
+*/
+
+/// Lightweight, no-op BatteryOptimizer used when the battery_plus
+/// plugin is not available. It keeps a minimal surface so callers can
+/// depend on it without pulling in additional native dependencies.
+class BatteryOptimizer {
+  static BatteryOptimizer? _instance;
+  BatteryOptimizer._();
+
+  factory BatteryOptimizer() => _instance ??= BatteryOptimizer._();
+
+  BatteryOptimizationLevel _currentLevel = BatteryOptimizationLevel.balanced;
+
+  Future<void> initialize() async {
+    developer.log(
+      'BatteryOptimizer.initialize() called – using stub implementation',
+      name: 'BatteryOptimizer',
+    );
+  }
+
+  BatteryOptimizationLevel get currentLevel => _currentLevel;
+
+  void setOptimizationLevel(BatteryOptimizationLevel level) {
+    _currentLevel = level;
+  }
+
+  // Simple, conservative defaults so the rest of the app has
+  // something reasonable to work with.
+  Duration getOptimizedUpdateInterval() => const Duration(milliseconds: 33);
+  Duration getBackgroundUpdateInterval() => const Duration(seconds: 60);
+  Duration getNetworkRequestTimeout() => const Duration(milliseconds: 15000);
+  Duration getLocationUpdateInterval() => const Duration(milliseconds: 10000);
+
+  bool shouldEnableHighPerformanceFeatures() => true;
+  bool shouldEnableRealTimeUpdates() => true;
+  bool shouldEnableBackgroundProcessing() => true;
+  bool shouldUseHighAccuracyLocation() => true;
+
+  List<String> getOptimizationRecommendations() => const <String>[];
+
+  Map<String, dynamic> getBatteryStatistics() => const <String, dynamic>{};
+
+  void addOptimizationCallback(Function(BatteryOptimizationLevel) _) {}
+  void removeOptimizationCallback(Function(BatteryOptimizationLevel) _) {}
+  void addLowPowerCallback(Function(bool) _) {}
+  void removeLowPowerCallback(Function(bool) _) {}
+
+  void setOptimizationEnabled(bool enabled) {
+    developer.log(
+      'Battery optimization flag set to $enabled (stub)',
+      name: 'BatteryOptimizer',
+    );
+  }
+
+  void resetStatistics() {}
+  void dispose() {}
+}
+
+enum BatteryOptimizationLevel {
+  performance,
+  balanced,
+  powerSaving,
+  ultraPower,
+}
+
+extension BatteryOptimizationLevelExtensionStub on BatteryOptimizationLevel {
+  String get displayName {
+    switch (this) {
+      case BatteryOptimizationLevel.performance:
+        return 'Performance';
+      case BatteryOptimizationLevel.balanced:
+        return 'Balanced';
+      case BatteryOptimizationLevel.powerSaving:
+        return 'Power Saving';
+      case BatteryOptimizationLevel.ultraPower:
+        return 'Ultra Power';
+    }
+  }
+
+  String get description {
+    switch (this) {
+      case BatteryOptimizationLevel.performance:
+        return 'Maximum performance with higher battery usage';
+      case BatteryOptimizationLevel.balanced:
+        return 'Balanced performance and battery life';
+      case BatteryOptimizationLevel.powerSaving:
+        return 'Reduced performance for extended battery life';
+      case BatteryOptimizationLevel.ultraPower:
         return 'Minimal performance for maximum battery life';
     }
   }

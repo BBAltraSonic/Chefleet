@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../feed/models/dish_model.dart';
 import '../blocs/menu_management_bloc.dart';
-import '../blocs/menu_management_event.dart';
 
 class DishCard extends StatelessWidget {
   final Dish dish;

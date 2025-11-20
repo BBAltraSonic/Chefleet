@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_theme.dart';
-import '../../shared/widgets/glass_container.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../shared/widgets/glass_container.dart';
 
 class MenuItemCard extends StatelessWidget {
   const MenuItemCard({
     super.key,
     required this.item,
     required this.onAvailabilityToggle,
+    this.onEdit,
   });
 
   final Map<String, dynamic> item;
   final Function(bool) onAvailabilityToggle;
+  final VoidCallback? onEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -130,9 +132,7 @@ class MenuItemCard extends StatelessWidget {
             Column(
               children: [
                 IconButton(
-                  onPressed: () {
-                    // TODO: Navigate to edit item screen
-                  },
+                  onPressed: onEdit,
                   icon: const Icon(Icons.edit_outlined),
                   iconSize: 20,
                   visualDensity: VisualDensity.compact,

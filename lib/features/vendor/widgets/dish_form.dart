@@ -6,7 +6,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../feed/models/dish_model.dart';
 import '../blocs/menu_management_bloc.dart';
-import '../blocs/menu_management_event.dart';
 
 class DishForm extends StatefulWidget {
   final Dish? dish;
@@ -192,26 +191,27 @@ class _DishFormState extends State<DishForm> {
           .toList();
 
       final dish = Dish(
-        id: widget.dish?.id,
+        id: widget.dish?.id ?? '',
         vendorId: '', // Will be set by BLoC
         name: _nameController.text.trim(),
         description: _descriptionController.text.trim().isNotEmpty
             ? _descriptionController.text.trim()
-            : null,
+            : '',
         descriptionLong: _longDescriptionController.text.trim().isNotEmpty
             ? _longDescriptionController.text.trim()
             : null,
         priceCents: priceCents,
+        prepTimeMinutes: prepTime,
         category: _selectedCategory,
         categoryEnum: _selectedCategory,
         imageUrl: finalImageUrl,
         available: _available,
         isFeatured: _isFeatured,
         ingredients: ingredients.isNotEmpty ? ingredients : null,
-        allergens: allergens.isNotEmpty ? allergens : null,
+        allergens: allergens,
         dietaryRestrictions: _dietaryRestrictions.isNotEmpty ? _dietaryRestrictions : null,
         preparationTimeMinutes: prepTime,
-        spiceLevel: _spiceLevel > 0 ? _spiceLevel : null,
+        spiceLevel: _spiceLevel,
         createdAt: widget.dish?.createdAt,
         updatedAt: DateTime.now(),
       );

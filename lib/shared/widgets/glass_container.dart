@@ -7,6 +7,7 @@ class GlassContainer extends StatelessWidget {
     required this.child,
     this.width,
     this.height,
+    this.margin,
     this.padding,
     this.borderRadius = 16,
     this.blur = 10,
@@ -18,6 +19,7 @@ class GlassContainer extends StatelessWidget {
   final Widget child;
   final double? width;
   final double? height;
+  final EdgeInsetsGeometry? margin;
   final EdgeInsetsGeometry? padding;
   final double borderRadius;
   final double blur;
@@ -36,6 +38,7 @@ class GlassContainer extends StatelessWidget {
       child: Container(
         width: width,
         height: height,
+        margin: margin,
         padding: padding,
         decoration: BoxDecoration(
           color: containerColor.withOpacity(opacity),

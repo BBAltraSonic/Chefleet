@@ -1,17 +1,10 @@
 import 'package:equatable/equatable.dart';
-import 'package:json_annotation/json_annotation.dart';
 
-part 'wallet.g.dart';
-
-@JsonSerializable()
 class Wallet extends Equatable {
   final String userId;
-  @JsonKey(name: 'balance_cents')
   final int balanceCents;
-  @JsonKey(name: 'pending_balance_cents')
   final int pendingBalanceCents;
   final String currency;
-  @JsonKey(name: 'updated_at')
   final DateTime updatedAt;
 
   const Wallet({
@@ -22,9 +15,25 @@ class Wallet extends Equatable {
     required this.updatedAt,
   });
 
-  factory Wallet.fromJson(Map<String, dynamic> json) => _$WalletFromJson(json);
+  factory Wallet.fromJson(Map<String, dynamic> json) {
+    return Wallet(
+      userId: (json['user_id'] ?? json['userId']) as String,
+      balanceCents: (json['balance_cents'] ?? json['balanceCents'] ?? 0) as int,
+      pendingBalanceCents:
+          (json['pending_balance_cents'] ?? json['pendingBalanceCents'] ?? 0)
+              as int,
+      currency: json['currency'] as String? ?? 'USD',
+      updatedAt: DateTime.parse(json['updated_at'] as String),
+    );
+  }
 
-  Map<String, dynamic> toJson() => _$WalletToJson(this);
+  Map<String, dynamic> toJson() => {
+        'user_id': userId,
+        'balance_cents': balanceCents,
+        'pending_balance_cents': pendingBalanceCents,
+        'currency': currency,
+        'updated_at': updatedAt.toIso8601String(),
+      };
 
   double get balance => balanceCents / 100.0;
   double get pendingBalance => pendingBalanceCents / 100.0;
@@ -33,23 +42,16 @@ class Wallet extends Equatable {
   @override
   List<Object?> get props => [userId, balanceCents, pendingBalanceCents, currency, updatedAt];
 }
-
-@JsonSerializable()
 class WalletTransaction extends Equatable {
   final String id;
   final String userId;
   final String type;
-  @JsonKey(name: 'amount_cents')
   final int amountCents;
-  @JsonKey(name: 'balance_after_cents')
   final int balanceAfterCents;
   final String? description;
-  @JsonKey(name: 'reference_id')
   final String? referenceId;
-  @JsonKey(name: 'reference_type')
   final String? referenceType;
   final Map<String, dynamic>? metadata;
-  @JsonKey(name: 'created_at')
   final DateTime createdAt;
 
   const WalletTransaction({
@@ -65,10 +67,34 @@ class WalletTransaction extends Equatable {
     required this.createdAt,
   });
 
-  factory WalletTransaction.fromJson(Map<String, dynamic> json) =>
-      _$WalletTransactionFromJson(json);
+  factory WalletTransaction.fromJson(Map<String, dynamic> json) {
+    return WalletTransaction(
+      id: json['id'] as String,
+      userId: (json['user_id'] ?? json['userId']) as String,
+      type: json['type'] as String,
+      amountCents: (json['amount_cents'] ?? json['amountCents'] ?? 0) as int,
+      balanceAfterCents:
+          (json['balance_after_cents'] ?? json['balanceAfterCents'] ?? 0) as int,
+      description: json['description'] as String?,
+      referenceId: json['reference_id'] as String?,
+      referenceType: json['reference_type'] as String?,
+      metadata: json['metadata'] as Map<String, dynamic>?,
+      createdAt: DateTime.parse(json['created_at'] as String),
+    );
+  }
 
-  Map<String, dynamic> toJson() => _$WalletTransactionToJson(this);
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'user_id': userId,
+        'type': type,
+        'amount_cents': amountCents,
+        'balance_after_cents': balanceAfterCents,
+        'description': description,
+        'reference_id': referenceId,
+        'reference_type': referenceType,
+        'metadata': metadata,
+        'created_at': createdAt.toIso8601String(),
+      };
 
   double get amount => amountCents / 100.0;
   double get balanceAfter => balanceAfterCents / 100.0;
@@ -105,17 +131,12 @@ class WalletTransaction extends Equatable {
         createdAt,
       ];
 }
-
-@JsonSerializable()
 class PaymentSetting extends Equatable {
   final String key;
   final Map<String, dynamic> value;
   final String? description;
-  @JsonKey(name: 'is_active')
   final bool isActive;
-  @JsonKey(name: 'created_at')
   final DateTime createdAt;
-  @JsonKey(name: 'updated_at')
   final DateTime updatedAt;
 
   const PaymentSetting({
@@ -127,10 +148,25 @@ class PaymentSetting extends Equatable {
     required this.updatedAt,
   });
 
-  factory PaymentSetting.fromJson(Map<String, dynamic> json) =>
-      _$PaymentSettingFromJson(json);
+  factory PaymentSetting.fromJson(Map<String, dynamic> json) {
+    return PaymentSetting(
+      key: json['key'] as String,
+      value: (json['value'] as Map<String, dynamic>?) ?? <String, dynamic>{},
+      description: json['description'] as String?,
+      isActive: (json['is_active'] ?? json['isActive'] ?? true) as bool,
+      createdAt: DateTime.parse(json['created_at'] as String),
+      updatedAt: DateTime.parse(json['updated_at'] as String),
+    );
+  }
 
-  Map<String, dynamic> toJson() => _$PaymentSettingToJson(this);
+  Map<String, dynamic> toJson() => {
+        'key': key,
+        'value': value,
+        'description': description,
+        'is_active': isActive,
+        'created_at': createdAt.toIso8601String(),
+        'updated_at': updatedAt.toIso8601String(),
+      };
 
   T? getValue<T>(String key) {
     return value[key] as T?;

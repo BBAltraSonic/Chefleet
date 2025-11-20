@@ -4,7 +4,7 @@ abstract class VendorOnboardingEvent extends Equatable {
   const VendorOnboardingEvent();
 
   @override
-  List<Object> get props => [];
+  List<Object?> get props => [];
 }
 
 class BusinessInfoUpdated extends VendorOnboardingEvent {
@@ -23,7 +23,7 @@ class BusinessInfoUpdated extends VendorOnboardingEvent {
   });
 
   @override
-  List<Object> get props => [
+  List<Object?> get props => [
         businessName,
         description,
         cuisineType,
@@ -35,18 +35,18 @@ class BusinessInfoUpdated extends VendorOnboardingEvent {
 class LocationUpdated extends VendorOnboardingEvent {
   final String address;
   final String? addressText;
-  final double latitude;
-  final double longitude;
+  final double? latitude;
+  final double? longitude;
 
   const LocationUpdated({
     required this.address,
     this.addressText,
-    required this.latitude,
-    required this.longitude,
+    this.latitude,
+    this.longitude,
   });
 
   @override
-  List<Object> get props => [
+  List<Object?> get props => [
         address,
         addressText,
         latitude,
@@ -64,7 +64,7 @@ class DocumentsUpdated extends VendorOnboardingEvent {
   });
 
   @override
-  List<Object> get props => [logoUrl, licenseUrl];
+  List<Object?> get props => [logoUrl, licenseUrl];
 }
 
 class TermsAccepted extends VendorOnboardingEvent {
@@ -73,7 +73,7 @@ class TermsAccepted extends VendorOnboardingEvent {
   const TermsAccepted({required this.accepted});
 
   @override
-  List<Object> get props => [accepted];
+  List<Object?> get props => [accepted];
 }
 
 class StepChanged extends VendorOnboardingEvent {
@@ -82,7 +82,7 @@ class StepChanged extends VendorOnboardingEvent {
   const StepChanged({required this.step});
 
   @override
-  List<Object> get props => [step];
+  List<Object?> get props => [step];
 }
 
 class OnboardingSubmitted extends VendorOnboardingEvent {
@@ -91,7 +91,7 @@ class OnboardingSubmitted extends VendorOnboardingEvent {
   const OnboardingSubmitted({required this.onboardingData});
 
   @override
-  List<Object> get props => [onboardingData];
+  List<Object?> get props => [onboardingData];
 }
 
 class OnboardingSaved extends VendorOnboardingEvent {
@@ -100,12 +100,12 @@ class OnboardingSaved extends VendorOnboardingEvent {
   const OnboardingSaved({required this.onboardingData});
 
   @override
-  List<Object> get props => [onboardingData];
+  List<Object?> get props => [onboardingData];
 }
 
 class OnboardingReset extends VendorOnboardingEvent {
   const OnboardingReset();
 
   @override
-  List<Object> get props => [];
+  List<Object?> get props => [];
 }

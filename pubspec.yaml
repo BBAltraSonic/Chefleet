@@ -40,7 +40,8 @@ dependencies:
   equatable: ^2.0.5
   freezed_annotation: ^2.4.4
 
-  # Navigation - Using BLoC navigation instead
+  # Navigation
+  go_router: ^14.6.2
 
   # Maps & Location
   google_maps_flutter: ^2.5.3
