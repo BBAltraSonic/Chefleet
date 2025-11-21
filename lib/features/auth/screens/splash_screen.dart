@@ -83,10 +83,11 @@ class _SplashScreenState extends State<SplashScreen>
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
             colors: [
               AppTheme.backgroundColor,
+              AppTheme.surfaceGreen.withOpacity(0.5),
               AppTheme.surfaceGreen,
             ],
           ),
@@ -97,7 +98,7 @@ class _SplashScreenState extends State<SplashScreen>
             children: [
               const Spacer(flex: 2),
 
-              // Animated Logo
+              // Animated Logo with pulse effect
               AnimatedBuilder(
                 animation: _animationController,
                 builder: (context, child) {
@@ -117,9 +118,14 @@ class _SplashScreenState extends State<SplashScreen>
                     color: AppTheme.primaryGreen,
                     boxShadow: [
                       BoxShadow(
-                        color: AppTheme.primaryGreen.withOpacity(0.3),
-                        blurRadius: 30,
-                        spreadRadius: 5,
+                        color: AppTheme.primaryGreen.withOpacity(0.4),
+                        blurRadius: 40,
+                        spreadRadius: 8,
+                      ),
+                      BoxShadow(
+                        color: AppTheme.primaryGreen.withOpacity(0.2),
+                        blurRadius: 60,
+                        spreadRadius: 15,
                       ),
                     ],
                   ),
@@ -132,13 +138,16 @@ class _SplashScreenState extends State<SplashScreen>
               ),
               const SizedBox(height: AppTheme.spacing32),
 
-              // App Name
+              // App Name with slide-in animation
               AnimatedBuilder(
                 animation: _fadeAnimation,
                 builder: (context, child) {
                   return Opacity(
                     opacity: _fadeAnimation.value,
-                    child: child,
+                    child: Transform.translate(
+                      offset: Offset(0, 20 * (1 - _fadeAnimation.value)),
+                      child: child,
+                    ),
                   );
                 },
                 child: Column(
@@ -146,17 +155,33 @@ class _SplashScreenState extends State<SplashScreen>
                     Text(
                       'Chefleet',
                       style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                        fontSize: 40,
+                        fontSize: 48,
                         fontWeight: FontWeight.w800,
-                        letterSpacing: -1,
+                        letterSpacing: -1.5,
+                        height: 1.1,
                       ),
                     ),
-                    const SizedBox(height: AppTheme.spacing8),
-                    Text(
-                      'Homemade food delivered',
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: AppTheme.secondaryGreen,
-                        fontWeight: FontWeight.w500,
+                    const SizedBox(height: AppTheme.spacing12),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppTheme.spacing16,
+                        vertical: AppTheme.spacing4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryGreen.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: AppTheme.primaryGreen.withOpacity(0.3),
+                          width: 1,
+                        ),
+                      ),
+                      child: Text(
+                        'Homemade food delivered',
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: AppTheme.secondaryGreen,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.5,
+                        ),
                       ),
                     ),
                   ],
@@ -164,16 +189,25 @@ class _SplashScreenState extends State<SplashScreen>
               ),
               const Spacer(flex: 3),
 
-              // Loading Indicator
-              const Padding(
-                padding: EdgeInsets.only(bottom: AppTheme.spacing32),
-                child: SizedBox(
-                  width: 32,
-                  height: 32,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 3,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      AppTheme.primaryGreen,
+              // Loading Indicator with fade-in
+              AnimatedBuilder(
+                animation: _fadeAnimation,
+                builder: (context, child) {
+                  return Opacity(
+                    opacity: _fadeAnimation.value * 0.8,
+                    child: child,
+                  );
+                },
+                child: const Padding(
+                  padding: EdgeInsets.only(bottom: AppTheme.spacing32),
+                  child: SizedBox(
+                    width: 36,
+                    height: 36,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 3.5,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        AppTheme.primaryGreen,
+                      ),
                     ),
                   ),
                 ),

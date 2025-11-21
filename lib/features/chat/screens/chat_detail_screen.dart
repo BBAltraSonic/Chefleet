@@ -105,15 +105,29 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
             Text(
               'Order #${widget.orderId.substring(0, 8).toUpperCase()}',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w700,
                 fontSize: 16,
               ),
             ),
-            Text(
-              _formatStatus(widget.orderStatus),
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: _getStatusColor(widget.orderStatus),
-                fontWeight: FontWeight.w500,
+            const SizedBox(height: 2),
+            // Status badge with color
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: _getStatusColor(widget.orderStatus).withOpacity(0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: _getStatusColor(widget.orderStatus),
+                  width: 1,
+                ),
+              ),
+              child: Text(
+                _formatStatus(widget.orderStatus),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: _getStatusColor(widget.orderStatus),
+                  fontWeight: FontWeight.w600,
+                  fontSize: 11,
+                ),
               ),
             ),
           ],
@@ -126,6 +140,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
               _showOrderInfo(context);
             },
             icon: const Icon(Icons.info_outline),
+            tooltip: 'Order Info',
           ),
         ],
       ),
@@ -137,22 +152,6 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
         },
         child: Column(
           children: [
-            // Quick replies section
-            BlocBuilder<ChatBloc, ChatState>(
-              builder: (context, state) {
-                if (_currentUserRole == 'vendor') {
-                  return VendorQuickReplies(
-                    orderId: widget.orderId,
-                    orderStatus: widget.orderStatus,
-                  );
-                } else {
-                  return BuyerQuickReplies(
-                    orderId: widget.orderId,
-                    orderStatus: widget.orderStatus,
-                  );
-                }
-              },
-            ),
             // Messages list
             Expanded(
               child: BlocBuilder<ChatBloc, ChatState>(
@@ -203,7 +202,12 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
                   return ListView.builder(
                     controller: _scrollController,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    padding: const EdgeInsets.only(
+                      top: 16,
+                      bottom: 16,
+                      left: 8,
+                      right: 8,
+                    ),
                     itemCount: messages.length,
                     itemBuilder: (context, index) {
                       final message = messages[index];
@@ -219,6 +223,22 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                   );
                 },
               ),
+            ),
+            // Quick replies section (above input)
+            BlocBuilder<ChatBloc, ChatState>(
+              builder: (context, state) {
+                if (_currentUserRole == 'vendor') {
+                  return VendorQuickReplies(
+                    orderId: widget.orderId,
+                    orderStatus: widget.orderStatus,
+                  );
+                } else {
+                  return BuyerQuickReplies(
+                    orderId: widget.orderId,
+                    orderStatus: widget.orderStatus,
+                  );
+                }
+              },
             ),
             // Message input
             ChatInput(
@@ -368,19 +388,19 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   Color _getStatusColor(String status) {
     switch (status) {
       case 'pending':
-        return Colors.orange;
+        return const Color(0xFFFF9800); // Orange
       case 'accepted':
-        return Colors.blue;
+        return const Color(0xFF2196F3); // Blue
       case 'preparing':
-        return Colors.purple;
+        return const Color(0xFF9C27B0); // Purple
       case 'ready':
-        return Colors.green;
+        return AppTheme.primaryGreen; // Green
       case 'completed':
-        return Colors.grey;
+        return AppTheme.secondaryGreen; // Grey-green
       case 'cancelled':
-        return Colors.red;
+        return const Color(0xFFF44336); // Red
       default:
-        return Colors.grey;
+        return AppTheme.secondaryGreen;
     }
   }
 }

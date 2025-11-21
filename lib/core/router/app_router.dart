@@ -19,6 +19,7 @@ import '../../features/vendor/screens/dish_edit_screen.dart';
 import '../../features/vendor/screens/availability_management_screen.dart';
 import '../../features/vendor/screens/moderation_tools_screen.dart';
 import '../../features/vendor/screens/vendor_onboarding_screen.dart';
+import '../../features/vendor/screens/vendor_quick_tour_screen.dart';
 import '../../features/feed/models/dish_model.dart';
 import '../../features/auth/blocs/auth_bloc.dart';
 import '../../features/auth/blocs/user_profile_bloc.dart';
@@ -42,6 +43,8 @@ class AppRouter {
   static const String notificationsRoute = '/notifications';
   static const String settingsRoute = '/settings';
   static const String dishDetailRoute = '/dish';
+  static const String chatDetailRoute = '/chat/detail';
+  static const String profileEditRoute = '/profile/edit';
 
   // Vendor Routes
   static const String vendorDashboardRoute = '/vendor';
@@ -51,6 +54,7 @@ class AppRouter {
   static const String vendorAvailabilityRoute = '/vendor/availability';
   static const String vendorModerationRoute = '/vendor/moderation';
   static const String vendorOnboardingRoute = '/vendor/onboarding';
+  static const String vendorQuickTourRoute = '/vendor/quick-tour';
 
   static GoRouter create(BuildContext context) {
     return GoRouter(
@@ -129,6 +133,21 @@ class AppRouter {
           path: settingsRoute,
           builder: (context, state) => const SettingsScreen(),
         ),
+        GoRoute(
+          path: '$chatDetailRoute/:orderId',
+          builder: (context, state) {
+            final orderId = state.pathParameters['orderId']!;
+            final orderStatus = state.uri.queryParameters['orderStatus'] ?? 'pending';
+            return ChatDetailScreen(
+              orderId: orderId,
+              orderStatus: orderStatus,
+            );
+          },
+        ),
+        GoRoute(
+          path: profileEditRoute,
+          builder: (context, state) => const ProfileCreationScreen(),
+        ),
         // Main app shell with persistent navigation
         ShellRoute(
           builder: (context, state, child) {
@@ -206,6 +225,10 @@ class AppRouter {
         GoRoute(
           path: vendorOnboardingRoute,
           builder: (context, state) => const VendorOnboardingScreen(),
+        ),
+        GoRoute(
+          path: vendorQuickTourRoute,
+          builder: (context, state) => const VendorQuickTourScreen(),
         ),
       ],
     );
@@ -290,11 +313,7 @@ class OrdersScreen extends StatelessWidget {
                   onTap: () {
                     final orderId = order['id'] as String;
                     final status = order['status'] as String? ?? 'pending';
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => ChatDetailScreen(orderId: orderId, orderStatus: status),
-                      ),
-                    );
+                    context.push('${AppRouter.chatDetailRoute}/$orderId?orderStatus=$status');
                   },
                 );
               },

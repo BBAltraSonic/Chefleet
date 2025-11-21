@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/glass_container.dart';
-import '../../dish/screens/dish_detail_screen.dart';
 import '../../../core/router/app_router.dart';
 
 class FavouritesScreen extends StatefulWidget {
@@ -138,7 +137,9 @@ class _FavouritesScreenState extends State<FavouritesScreen> {
   Widget _buildBody() {
     if (_isLoading) {
       return const Center(
-        child: CircularProgressIndicator(),
+        child: CircularProgressIndicator(
+          color: AppTheme.primaryGreen,
+        ),
       );
     }
 
@@ -203,47 +204,57 @@ class _FavouritesScreenState extends State<FavouritesScreen> {
 
   Widget _buildEmptyState() {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 120,
-            height: 120,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppTheme.surfaceGreen,
-            ),
-            child: const Icon(
-              Icons.favorite_border,
-              size: 60,
-              color: AppTheme.secondaryGreen,
-            ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppTheme.spacing24),
+        child: GlassContainer(
+          borderRadius: AppTheme.radiusXLarge,
+          blur: 18,
+          opacity: 0.8,
+          padding: const EdgeInsets.all(AppTheme.spacing32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 120,
+                height: 120,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppTheme.surfaceGreen,
+                  border: Border.all(
+                    color: AppTheme.primaryGreen,
+                    width: 3,
+                  ),
+                ),
+                child: const Icon(
+                  Icons.favorite_border,
+                  size: 60,
+                  color: AppTheme.primaryGreen,
+                ),
+              ),
+              const SizedBox(height: AppTheme.spacing24),
+              Text(
+                'No Favourites Yet',
+                style: Theme.of(context).textTheme.headlineLarge,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppTheme.spacing12),
+              Text(
+                'Discover amazing dishes and save your favourites for quick access',
+                style: Theme.of(context).textTheme.bodyMedium,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppTheme.spacing32),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () => context.go(AppRouter.feedRoute),
+                  icon: const Icon(Icons.explore),
+                  label: const Text('Explore Dishes'),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: AppTheme.spacing24),
-          Text(
-            'No Favourites Yet',
-            style: Theme.of(context).textTheme.headlineLarge,
-          ),
-          const SizedBox(height: AppTheme.spacing12),
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppTheme.spacing32,
-            ),
-            child: Text(
-              'Discover amazing dishes and save your favourites for quick access',
-              style: Theme.of(context).textTheme.bodyMedium,
-              textAlign: TextAlign.center,
-            ),
-          ),
-          const SizedBox(height: AppTheme.spacing32),
-          ElevatedButton.icon(
-            onPressed: () {
-              context.push(AppRouter.feedRoute);
-            },
-            icon: const Icon(Icons.explore),
-            label: const Text('Explore Dishes'),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -260,21 +271,13 @@ class _FavouritesScreenState extends State<FavouritesScreen> {
     final businessName = vendor?['business_name'] as String? ?? 'Unknown Vendor';
 
     return Container(
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceGreen,
-        borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-      ),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: AppTheme.spacing12),
+      margin: const EdgeInsets.only(bottom: AppTheme.spacing12),
+      child: GlassContainer(
+        borderRadius: AppTheme.radiusLarge,
+        blur: 12,
+        opacity: 0.6,
         child: InkWell(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => DishDetailScreen(dishId: dishId),
-              ),
-            );
-          },
+          onTap: () => context.push('${AppRouter.dishDetailRoute}/$dishId'),
           borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
           child: Padding(
             padding: const EdgeInsets.all(AppTheme.spacing12),
@@ -335,7 +338,7 @@ class _FavouritesScreenState extends State<FavouritesScreen> {
                       if (description.isNotEmpty)
                         Text(
                           description,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: AppTheme.secondaryGreen,
                           ),
                           maxLines: 2,
@@ -359,7 +362,7 @@ class _FavouritesScreenState extends State<FavouritesScreen> {
                             ),
                             child: Text(
                               isAvailable ? 'Available' : 'Unavailable',
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              style: Theme.of(context).textTheme.labelSmall?.copyWith(
                                 color: AppTheme.darkText,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -374,13 +377,14 @@ class _FavouritesScreenState extends State<FavouritesScreen> {
                           const SizedBox(width: 4),
                           Text(
                             '$prepTime min',
-                            style: Theme.of(context).textTheme.bodyMedium,
+                            style: Theme.of(context).textTheme.bodySmall,
                           ),
                           const SizedBox(width: AppTheme.spacing12),
                           Text(
                             '\$${price.toStringAsFixed(2)}',
-                            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
                               color: AppTheme.primaryGreen,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ],

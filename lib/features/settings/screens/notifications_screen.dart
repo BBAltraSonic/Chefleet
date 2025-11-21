@@ -145,7 +145,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(
+              child: CircularProgressIndicator(
+                color: AppTheme.primaryGreen,
+              ),
+            )
           : SingleChildScrollView(
               padding: const EdgeInsets.all(AppTheme.spacing16),
               child: Column(
@@ -161,11 +165,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   // Notification Types Section
                   _buildSectionHeader('Notification Types'),
                   const SizedBox(height: AppTheme.spacing12),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: AppTheme.surfaceGreen,
-                      borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-                    ),
+                  GlassContainer(
+                    borderRadius: AppTheme.radiusLarge,
+                    blur: 12,
+                    opacity: 0.6,
                     child: Column(
                       children: [
                         _buildSwitchTile(
@@ -177,7 +180,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           },
                           icon: Icons.shopping_bag_outlined,
                         ),
-                        const Divider(height: 1),
+                        const Divider(height: 1, indent: 64),
                         _buildSwitchTile(
                           title: 'Chat Messages',
                           subtitle: 'New messages from vendors',
@@ -187,7 +190,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           },
                           icon: Icons.chat_bubble_outline,
                         ),
-                        const Divider(height: 1),
+                        const Divider(height: 1, indent: 64),
                         _buildSwitchTile(
                           title: 'Promotions',
                           subtitle: 'Special offers and deals',
@@ -197,7 +200,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           },
                           icon: Icons.local_offer_outlined,
                         ),
-                        const Divider(height: 1),
+                        const Divider(height: 1, indent: 64),
                         _buildSwitchTile(
                           title: 'Vendor Updates',
                           subtitle: 'New dishes from your favorite vendors',
@@ -215,11 +218,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   // Delivery Methods Section
                   _buildSectionHeader('Delivery Methods'),
                   const SizedBox(height: AppTheme.spacing12),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: AppTheme.surfaceGreen,
-                      borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-                    ),
+                  GlassContainer(
+                    borderRadius: AppTheme.radiusLarge,
+                    blur: 12,
+                    opacity: 0.6,
                     child: Column(
                       children: [
                         _buildSwitchTile(
@@ -231,7 +233,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           },
                           icon: Icons.notifications_outlined,
                         ),
-                        const Divider(height: 1),
+                        const Divider(height: 1, indent: 64),
                         _buildSwitchTile(
                           title: 'Email',
                           subtitle: 'Receive notifications via email',
@@ -241,7 +243,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           },
                           icon: Icons.email_outlined,
                         ),
-                        const Divider(height: 1),
+                        const Divider(height: 1, indent: 64),
                         _buildSwitchTile(
                           title: 'SMS',
                           subtitle: 'Receive text messages (carrier rates apply)',
@@ -257,32 +259,36 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   const SizedBox(height: AppTheme.spacing24),
 
                   // Info Section
-                  Container(
-                    decoration: BoxDecoration(
-                      color: AppTheme.surfaceGreen,
-                      borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(AppTheme.spacing16),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Icon(
+                  GlassContainer(
+                    borderRadius: AppTheme.radiusLarge,
+                    blur: 12,
+                    opacity: 0.6,
+                    padding: const EdgeInsets.all(AppTheme.spacing16),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(AppTheme.spacing8),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryGreen.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                          ),
+                          child: const Icon(
                             Icons.info_outline,
-                            color: AppTheme.secondaryGreen,
+                            color: AppTheme.primaryGreen,
                             size: 20,
                           ),
-                          const SizedBox(width: AppTheme.spacing12),
-                          Expanded(
-                            child: Text(
-                              'Order updates and critical notifications cannot be disabled for your account security.',
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: AppTheme.secondaryGreen,
-                              ),
+                        ),
+                        const SizedBox(width: AppTheme.spacing12),
+                        Expanded(
+                          child: Text(
+                            'Order updates and critical notifications cannot be disabled for your account security.',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: AppTheme.secondaryGreen,
                             ),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: AppTheme.spacing32),
@@ -334,16 +340,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       child: Row(
         children: [
           Container(
-            width: 40,
-            height: 40,
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
-              color: AppTheme.surfaceGreen,
+              color: AppTheme.primaryGreen.withOpacity(0.1),
               borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
             ),
             child: Icon(
               icon,
-              color: AppTheme.darkText,
-              size: 20,
+              color: AppTheme.primaryGreen,
+              size: 22,
             ),
           ),
           const SizedBox(width: AppTheme.spacing12),
@@ -353,14 +359,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               children: [
                 Text(
                   title,
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: 2),
                 Text(
                   subtitle,
-                  style: Theme.of(context).textTheme.bodyMedium,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppTheme.secondaryGreen,
+                  ),
                 ),
               ],
             ),

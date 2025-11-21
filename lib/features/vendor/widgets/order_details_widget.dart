@@ -244,9 +244,73 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
                 ],
               ),
             ),
+            const SizedBox(height: 16),
+            _buildStatusTimeline(context, status),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildStatusTimeline(BuildContext context, String currentStatus) {
+    final statuses = ['pending', 'confirmed', 'preparing', 'ready', 'completed'];
+    final currentIndex = statuses.indexOf(currentStatus.toLowerCase());
+    
+    return Column(
+      children: List.generate(statuses.length, (index) {
+        final status = statuses[index];
+        final isCompleted = index <= currentIndex;
+        final isCurrent = index == currentIndex;
+        final statusColor = isCompleted ? Colors.green : Colors.grey;
+        
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Column(
+              children: [
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: isCompleted ? statusColor : Colors.transparent,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: statusColor,
+                      width: 2,
+                    ),
+                  ),
+                  child: isCompleted
+                      ? Icon(
+                          isCurrent ? _getStatusIcon(status) : Icons.check,
+                          size: 16,
+                          color: Colors.white,
+                        )
+                      : null,
+                ),
+                if (index < statuses.length - 1)
+                  Container(
+                    width: 2,
+                    height: 40,
+                    color: isCompleted ? statusColor : Colors.grey.shade300,
+                  ),
+              ],
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  OrderManagementState.getStatusDisplayName(status),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+                    color: isCompleted ? Colors.black87 : Colors.grey,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      }),
     );
   }
 

@@ -8,6 +8,8 @@ import '../widgets/order_card.dart';
 import '../widgets/stats_card.dart';
 import '../widgets/menu_item_card.dart';
 import 'order_history_screen.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../shared/widgets/glass_container.dart';
 
 class VendorDashboardScreen extends StatefulWidget {
   const VendorDashboardScreen({super.key});
@@ -84,64 +86,80 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen>
 
   Widget _buildHeader(VendorDashboardState state) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(AppTheme.spacing20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Welcome back!',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppTheme.secondaryGreen,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      state.vendor?['business_name'] as String? ?? 'Vendor',
+                      style: Theme.of(context).textTheme.headlineMedium,
+                    ),
+                  ],
+                ),
+              ),
+              Row(
                 children: [
-                  Text(
-                    'Welcome back!',
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Colors.grey[600],
+                  IconButton(
+                    onPressed: () => context.push('/vendor/quick-tour'),
+                    icon: const Icon(Icons.help_outline),
+                    tooltip: 'Quick Tour',
+                    style: IconButton.styleFrom(
+                      backgroundColor: AppTheme.surfaceGreen,
                     ),
                   ),
-                  Text(
-                    state.vendor?['business_name'] as String? ?? 'Vendor',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
+                  const SizedBox(width: 8),
+                  IconButton(
+                    onPressed: () => context.read<VendorDashboardBloc>().add(RefreshDashboard()),
+                    icon: const Icon(Icons.refresh),
+                    style: IconButton.styleFrom(
+                      backgroundColor: AppTheme.surfaceGreen,
                     ),
                   ),
                 ],
               ),
-              IconButton(
-                onPressed: () => context.read<VendorDashboardBloc>().add(RefreshDashboard()),
-                icon: const Icon(Icons.refresh),
-              ),
             ],
           ),
           if (state.successMessage != null) ...[
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.green.withOpacity(0.3)),
-              ),
+            const SizedBox(height: AppTheme.spacing12),
+            GlassContainer(
+              padding: const EdgeInsets.all(AppTheme.spacing12),
+              borderRadius: AppTheme.radiusSmall,
+              color: AppTheme.primaryGreen,
+              opacity: 0.1,
               child: Row(
                 children: [
-                  Icon(Icons.check_circle, color: Colors.green[700], size: 20),
-                  const SizedBox(width: 8),
+                  const Icon(Icons.check_circle, color: AppTheme.primaryGreen, size: 20),
+                  const SizedBox(width: AppTheme.spacing8),
                   Expanded(
                     child: Text(
                       state.successMessage!,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.green[700],
+                        color: AppTheme.darkText,
                       ),
                     ),
                   ),
                   IconButton(
                     onPressed: () {
-                      // Clear success message using a custom event or refresh
                       context.read<VendorDashboardBloc>().add(RefreshDashboard());
                     },
                     icon: const Icon(Icons.close, size: 18),
-                    color: Colors.green[700],
+                    color: AppTheme.darkText,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
                   ),
                 ],
               ),

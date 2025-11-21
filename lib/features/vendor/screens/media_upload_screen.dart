@@ -504,9 +504,10 @@ class _MediaUploadScreenState extends State<MediaUploadScreen>
   }
 
   void _showMediaDetails(BuildContext context, Map<String, dynamic> media) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => MediaDetailsWidget(media: media),
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        child: MediaDetailsWidget(media: media),
       ),
     );
   }

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 
 import '../../../core/theme/app_theme.dart' show AppTheme;
-import '../../../shared/widgets/glass_container.dart';
 
 class RouteOverlay extends StatefulWidget {
   const RouteOverlay({
@@ -95,69 +94,128 @@ class _RouteOverlayState extends State<RouteOverlay>
         alignment: Alignment.bottomCenter,
         child: Container(
           margin: const EdgeInsets.all(AppTheme.spacing16),
-          child: GlassContainer(
-            borderRadius: AppTheme.radiusLarge,
-            child: Container(
-              padding: const EdgeInsets.all(AppTheme.spacing16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Header Row
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.15),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+              BoxShadow(
+                color: AppTheme.primaryGreen.withOpacity(0.1),
+                blurRadius: 30,
+                offset: const Offset(0, 4),
+              ),
+            ],
+            border: Border.all(
+              color: AppTheme.borderGreen,
+              width: 1,
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(AppTheme.spacing20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                  // Header Row with status badge
                   Row(
                     children: [
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              _getStatusText(),
-                              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                                color: _getStatusColor(),
-                                fontWeight: FontWeight.w600,
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: _getStatusColor().withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: _getStatusColor(),
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: Text(
+                                _getStatusText(),
+                                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                  color: _getStatusColor(),
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 11,
+                                  letterSpacing: 0.5,
+                                ),
                               ),
                             ),
-                            const SizedBox(height: 4),
+                            const SizedBox(height: 8),
                             Text(
                               widget.vendorName,
-                              style: Theme.of(context).textTheme.headlineMedium,
+                              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
                           ],
                         ),
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.close),
-                        onPressed: widget.onClose,
-                        color: AppTheme.darkText,
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: AppTheme.surfaceGreen,
+                          shape: BoxShape.circle,
+                        ),
+                        child: IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: widget.onClose,
+                          color: AppTheme.darkText,
+                          iconSize: 20,
+                        ),
                       ),
                     ],
                   ),
                   const SizedBox(height: AppTheme.spacing12),
 
-                  // ETA Display
+                  // ETA Display with enhanced styling
                   Container(
                     padding: const EdgeInsets.all(AppTheme.spacing16),
                     decoration: BoxDecoration(
-                      color: AppTheme.surfaceGreen,
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          AppTheme.primaryGreen.withOpacity(0.1),
+                          AppTheme.surfaceGreen,
+                        ],
+                      ),
                       borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                      border: Border.all(
+                        color: AppTheme.primaryGreen.withOpacity(0.2),
+                        width: 1,
+                      ),
                     ),
                     child: Row(
                       children: [
                         Container(
-                          width: 48,
-                          height: 48,
+                          width: 52,
+                          height: 52,
                           decoration: BoxDecoration(
                             color: AppTheme.primaryGreen,
                             shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppTheme.primaryGreen.withOpacity(0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
                           ),
                           child: const Icon(
                             Icons.access_time,
                             color: AppTheme.darkText,
-                            size: 24,
+                            size: 26,
                           ),
                         ),
                         const SizedBox(width: AppTheme.spacing16),
@@ -167,15 +225,18 @@ class _RouteOverlayState extends State<RouteOverlay>
                             children: [
                               Text(
                                 _getEtaText(),
-                                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                                   color: AppTheme.primaryGreen,
-                                  fontWeight: FontWeight.w700,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 24,
                                 ),
                               ),
                               const SizedBox(height: 2),
                               Text(
                                 'Estimated pickup time',
-                                style: Theme.of(context).textTheme.bodyMedium,
+                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
                             ],
                           ),
@@ -207,17 +268,29 @@ class _RouteOverlayState extends State<RouteOverlay>
                   ),
                   const SizedBox(height: AppTheme.spacing16),
 
-                  // Action Buttons
+                  // Action Buttons with improved styling
                   Row(
                     children: [
                       Expanded(
                         child: OutlinedButton.icon(
                           onPressed: widget.onContactVendor,
                           icon: const Icon(Icons.chat_bubble_outline, size: 20),
-                          label: const Text('Chat'),
+                          label: const Text(
+                            'Chat',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(
-                              vertical: AppTheme.spacing12,
+                              vertical: AppTheme.spacing16,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                            ),
+                            side: BorderSide(
+                              color: AppTheme.borderGreen,
+                              width: 1.5,
                             ),
                           ),
                         ),
@@ -227,10 +300,18 @@ class _RouteOverlayState extends State<RouteOverlay>
                         child: ElevatedButton.icon(
                           onPressed: widget.onViewDetails,
                           icon: const Icon(Icons.receipt_long, size: 20),
-                          label: const Text('Details'),
+                          label: const Text(
+                            'Details',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
                           style: ElevatedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(
-                              vertical: AppTheme.spacing12,
+                              vertical: AppTheme.spacing16,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
                             ),
                           ),
                         ),
@@ -278,15 +359,15 @@ class _RouteOverlayState extends State<RouteOverlay>
   Color _getStatusColor() {
     switch (widget.orderStatus) {
       case 'pending':
-        return Colors.orange;
+        return const Color(0xFFFF9800); // Orange
       case 'accepted':
-        return Colors.blue;
+        return const Color(0xFF2196F3); // Blue
       case 'preparing':
-        return Colors.purple;
+        return const Color(0xFF9C27B0); // Purple
       case 'ready':
-        return AppTheme.primaryGreen;
+        return AppTheme.primaryGreen; // Green
       case 'completed':
-        return AppTheme.secondaryGreen;
+        return AppTheme.secondaryGreen; // Grey-green
       default:
         return AppTheme.secondaryGreen;
     }

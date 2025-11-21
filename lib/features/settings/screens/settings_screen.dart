@@ -23,81 +23,77 @@ class SettingsScreen extends StatelessWidget {
         child: Column(
           children: [
             // Profile Section
-            Container(
-              decoration: BoxDecoration(
-                color: AppTheme.surfaceGreen,
-                borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(AppTheme.spacing16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Account',
-                      style: Theme.of(context).textTheme.headlineMedium,
-                    ),
-                    const SizedBox(height: AppTheme.spacing16),
-                    BlocBuilder<AuthBloc, AuthState>(
-                      builder: (context, state) {
-                        if (state.user == null) {
-                          return const Text('Not logged in');
-                        }
-                        return Row(
-                          children: [
-                            Container(
-                              width: 56,
-                              height: 56,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: AppTheme.surfaceGreen,
-                                border: Border.all(
-                                  color: AppTheme.primaryGreen,
-                                  width: 2,
-                                ),
+            GlassContainer(
+              borderRadius: AppTheme.radiusLarge,
+              blur: 12,
+              opacity: 0.6,
+              padding: const EdgeInsets.all(AppTheme.spacing16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Account',
+                    style: Theme.of(context).textTheme.headlineMedium,
+                  ),
+                  const SizedBox(height: AppTheme.spacing16),
+                  BlocBuilder<AuthBloc, AuthState>(
+                    builder: (context, state) {
+                      if (state.user == null) {
+                        return const Text('Not logged in');
+                      }
+                      return Row(
+                        children: [
+                          Container(
+                            width: 56,
+                            height: 56,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: AppTheme.surfaceGreen,
+                              border: Border.all(
+                                color: AppTheme.primaryGreen,
+                                width: 2,
                               ),
-                              child: Center(
-                                child: Text(
-                                  state.user!.email?.substring(0, 1).toUpperCase() ?? 'U',
-                                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                            ),
+                            child: Center(
+                              child: Text(
+                                state.user!.email?.substring(0, 1).toUpperCase() ?? 'U',
+                                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ),
-                            const SizedBox(width: AppTheme.spacing16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    state.user!.email ?? '',
-                                    style: Theme.of(context).textTheme.labelLarge,
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'Manage your account',
-                                    style: Theme.of(context).textTheme.bodyMedium,
-                                  ),
-                                ],
-                              ),
+                          ),
+                          const SizedBox(width: AppTheme.spacing16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  state.user!.email ?? '',
+                                  style: Theme.of(context).textTheme.labelLarge,
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Manage your account',
+                                  style: Theme.of(context).textTheme.bodyMedium,
+                                ),
+                              ],
                             ),
-                          ],
-                        );
-                      },
-                    ),
-                  ],
-                ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: AppTheme.spacing16),
 
             // App Settings Section
-            Container(
-              decoration: BoxDecoration(
-                color: AppTheme.surfaceGreen,
-                borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-              ),
+            GlassContainer(
+              borderRadius: AppTheme.radiusLarge,
+              blur: 12,
+              opacity: 0.6,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -108,7 +104,7 @@ class SettingsScreen extends StatelessWidget {
                       style: Theme.of(context).textTheme.headlineMedium,
                     ),
                   ),
-                  const Divider(height: 1),
+                  const Divider(height: 1, indent: 64),
                   _buildSettingsTile(
                     context,
                     icon: Icons.notifications_outlined,
@@ -116,7 +112,7 @@ class SettingsScreen extends StatelessWidget {
                     subtitle: 'Manage notification preferences',
                     onTap: () => context.push(AppRouter.notificationsRoute),
                   ),
-                  const Divider(height: 1),
+                  const Divider(height: 1, indent: 64),
                   _buildSettingsTile(
                     context,
                     icon: Icons.language_outlined,
@@ -126,7 +122,7 @@ class SettingsScreen extends StatelessWidget {
                       // Handle language selection
                     },
                   ),
-                  const Divider(height: 1),
+                  const Divider(height: 1, indent: 64),
                   _buildSettingsTile(
                     context,
                     icon: Icons.dark_mode_outlined,
@@ -142,11 +138,10 @@ class SettingsScreen extends StatelessWidget {
             const SizedBox(height: AppTheme.spacing16),
 
             // About Section
-            Container(
-              decoration: BoxDecoration(
-                color: AppTheme.surfaceGreen,
-                borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-              ),
+            GlassContainer(
+              borderRadius: AppTheme.radiusLarge,
+              blur: 12,
+              opacity: 0.6,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -157,7 +152,7 @@ class SettingsScreen extends StatelessWidget {
                       style: Theme.of(context).textTheme.headlineMedium,
                     ),
                   ),
-                  const Divider(height: 1),
+                  const Divider(height: 1, indent: 64),
                   _buildSettingsTile(
                     context,
                     icon: Icons.info_outline,
@@ -165,7 +160,7 @@ class SettingsScreen extends StatelessWidget {
                     subtitle: '1.0.0',
                     onTap: null,
                   ),
-                  const Divider(height: 1),
+                  const Divider(height: 1, indent: 64),
                   _buildSettingsTile(
                     context,
                     icon: Icons.privacy_tip_outlined,
@@ -175,7 +170,7 @@ class SettingsScreen extends StatelessWidget {
                       _showPrivacyPolicy(context);
                     },
                   ),
-                  const Divider(height: 1),
+                  const Divider(height: 1, indent: 64),
                   _buildSettingsTile(
                     context,
                     icon: Icons.description_outlined,
@@ -185,7 +180,7 @@ class SettingsScreen extends StatelessWidget {
                       _showTermsOfService(context);
                     },
                   ),
-                  const Divider(height: 1),
+                  const Divider(height: 1, indent: 64),
                   _buildSettingsTile(
                     context,
                     icon: Icons.help_outline,
@@ -246,13 +241,13 @@ class SettingsScreen extends StatelessWidget {
         child: Row(
           children: [
             Container(
-              width: 40,
-              height: 40,
+              width: 44,
+              height: 44,
               decoration: BoxDecoration(
-                color: AppTheme.surfaceGreen,
+                color: AppTheme.primaryGreen.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
               ),
-              child: Icon(icon, color: AppTheme.darkText, size: 20),
+              child: Icon(icon, color: AppTheme.primaryGreen, size: 22),
             ),
             const SizedBox(width: AppTheme.spacing16),
             Expanded(
@@ -261,14 +256,14 @@ class SettingsScreen extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: Theme.of(context).textTheme.bodyMedium,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppTheme.secondaryGreen,
+                    ),
                   ),
                 ],
               ),
@@ -277,6 +272,7 @@ class SettingsScreen extends StatelessWidget {
               const Icon(
                 Icons.chevron_right,
                 color: AppTheme.secondaryGreen,
+                size: 20,
               ),
           ],
         ),

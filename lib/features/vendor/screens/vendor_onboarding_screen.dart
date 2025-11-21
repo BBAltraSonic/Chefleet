@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../blocs/vendor_onboarding_bloc.dart';
 import '../models/vendor_model.dart';
+import '../../../core/theme/app_theme.dart';
 
 class VendorOnboardingScreen extends StatefulWidget {
   const VendorOnboardingScreen({super.key});

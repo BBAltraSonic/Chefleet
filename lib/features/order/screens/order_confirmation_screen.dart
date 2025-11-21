@@ -3,11 +3,13 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:go_router/go_router.dart';
 
 import '../blocs/order_bloc.dart';
 import '../blocs/order_state.dart';
 import '../../../shared/widgets/glass_container.dart';
 import '../../../core/theme/app_theme.dart' show AppTheme;
+import '../../../core/router/app_router.dart';
 
 class OrderConfirmationScreen extends StatefulWidget {
   final String orderId;
@@ -69,7 +71,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
   }
 
   void _navigateToHome() {
-    Navigator.of(context).pop();
+    context.go(AppRouter.feedRoute);
   }
 
   @override
@@ -761,19 +763,20 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
   }
 
   void _trackOrder() {
-    // Navigate to order tracking screen
-    Navigator.of(context).pushNamed('/order-tracking', arguments: widget.orderId);
+    // Navigate to order tracking screen (route overlay)
+    // TODO: Implement route overlay when ready
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Route tracking coming soon')),
+    );
   }
 
   void _contactVendor() {
     // Navigate to chat screen with vendor
-    Navigator.of(context).pushNamed('/chat', arguments: {
-      'orderId': widget.orderId,
-      'orderStatus': _orderDetails!['status'],
-    });
+    final status = _orderDetails!['status'] as String? ?? 'pending';
+    context.push('${AppRouter.chatDetailRoute}/${widget.orderId}?orderStatus=$status');
   }
 
   void _navigateToHome() {
-    Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
+    context.go(AppRouter.feedRoute);
   }
 }

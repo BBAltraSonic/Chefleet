@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../shared/widgets/glass_container.dart';
 import '../blocs/chat_bloc.dart';
 import '../widgets/chat_list_item.dart';
-import 'chat_detail_screen.dart';
+import '../../../core/router/app_router.dart';
 
 class ChatListScreen extends StatefulWidget {
   const ChatListScreen({super.key});
@@ -181,15 +182,9 @@ class _ChatListScreenState extends State<ChatListScreen> {
                             child: ChatListItem(
                               orderChat: orderChat,
                               onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => ChatDetailScreen(
-                                      orderId: orderChat['id'] as String,
-                                      orderStatus: orderChat['status'] as String,
-                                    ),
-                                  ),
-                                );
+                                final orderId = orderChat['id'] as String;
+                                final status = orderChat['status'] as String;
+                                context.push('${AppRouter.chatDetailRoute}/$orderId?orderStatus=$status');
                               },
                             ),
                           );

@@ -5,6 +5,7 @@ import '../../auth/blocs/user_profile_bloc.dart';
 import '../../auth/blocs/auth_bloc.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/router/app_router.dart';
+import '../../../shared/widgets/glass_container.dart';
 
 class ProfileDrawer extends StatelessWidget {
   const ProfileDrawer({super.key});
@@ -16,13 +17,17 @@ class ProfileDrawer extends StatelessWidget {
       child: SafeArea(
         child: Column(
           children: [
-            // Profile Header
-            BlocBuilder<UserProfileBloc, UserProfileState>(
-              builder: (context, state) {
-                return _buildProfileHeader(context, state);
-              },
-            ),
             const SizedBox(height: AppTheme.spacing16),
+            // Profile Header
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacing16),
+              child: BlocBuilder<UserProfileBloc, UserProfileState>(
+                builder: (context, state) {
+                  return _buildProfileHeader(context, state);
+                },
+              ),
+            ),
+            const SizedBox(height: AppTheme.spacing24),
 
             // Menu Items
             Expanded(
@@ -42,7 +47,7 @@ class ProfileDrawer extends StatelessWidget {
                         context.push(AppRouter.favouritesRoute);
                       },
                     ),
-                    const SizedBox(height: AppTheme.spacing8),
+                    const SizedBox(height: AppTheme.spacing12),
                     _buildMenuItem(
                       context,
                       icon: Icons.history,
@@ -53,7 +58,7 @@ class ProfileDrawer extends StatelessWidget {
                         context.push(AppRouter.ordersRoute);
                       },
                     ),
-                    const SizedBox(height: AppTheme.spacing8),
+                    const SizedBox(height: AppTheme.spacing12),
                     _buildMenuItem(
                       context,
                       icon: Icons.notifications_outlined,
@@ -64,7 +69,7 @@ class ProfileDrawer extends StatelessWidget {
                         context.push(AppRouter.notificationsRoute);
                       },
                     ),
-                    const SizedBox(height: AppTheme.spacing8),
+                    const SizedBox(height: AppTheme.spacing12),
                     _buildMenuItem(
                       context,
                       icon: Icons.settings_outlined,
@@ -75,7 +80,7 @@ class ProfileDrawer extends StatelessWidget {
                         context.push(AppRouter.settingsRoute);
                       },
                     ),
-                    const SizedBox(height: AppTheme.spacing8),
+                    const SizedBox(height: AppTheme.spacing12),
                     _buildMenuItem(
                       context,
                       icon: Icons.help_outline,
@@ -86,7 +91,7 @@ class ProfileDrawer extends StatelessWidget {
                         _showHelpDialog(context);
                       },
                     ),
-                    const SizedBox(height: AppTheme.spacing8),
+                    const SizedBox(height: AppTheme.spacing12),
                     _buildMenuItem(
                       context,
                       icon: Icons.info_outline,
@@ -128,6 +133,10 @@ class ProfileDrawer extends StatelessWidget {
                         ),
                         style: OutlinedButton.styleFrom(
                           side: const BorderSide(color: Colors.red),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppTheme.spacing20,
+                            vertical: AppTheme.spacing12,
+                          ),
                         ),
                       ),
                     );
@@ -147,70 +156,24 @@ class ProfileDrawer extends StatelessWidget {
       return const Padding(
         padding: EdgeInsets.all(AppTheme.spacing24),
         child: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-    }
-
-    if (state.profile.isEmpty) {
-      return Container(
-        decoration: BoxDecoration(
-          color: AppTheme.surfaceGreen,
-          borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-        ),
-        child: Container(
-          margin: const EdgeInsets.all(AppTheme.spacing16),
-          padding: const EdgeInsets.all(AppTheme.spacing20),
-          child: Column(
-            children: [
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppTheme.surfaceGreen,
-                  border: Border.all(
-                    color: AppTheme.borderGreen,
-                    width: 2,
-                  ),
-                ),
-                child: const Icon(
-                  Icons.person_outline,
-                  size: 40,
-                  color: AppTheme.secondaryGreen,
-                ),
-              ),
-              const SizedBox(height: AppTheme.spacing12),
-              Text(
-                'Welcome!',
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
-              const SizedBox(height: AppTheme.spacing8),
-              Text(
-                'Create your profile to get started',
-                style: Theme.of(context).textTheme.bodyMedium,
-                textAlign: TextAlign.center,
-              ),
-            ],
+          child: CircularProgressIndicator(
+            color: AppTheme.primaryGreen,
           ),
         ),
       );
     }
 
-    final profile = state.profile;
-    return Container(
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceGreen,
-        borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-      ),
-      child: Container(
-        margin: const EdgeInsets.all(AppTheme.spacing16),
+    if (state.profile.isEmpty) {
+      return GlassContainer(
+        borderRadius: AppTheme.radiusLarge,
+        blur: 12,
+        opacity: 0.6,
         padding: const EdgeInsets.all(AppTheme.spacing20),
-        child: Row(
+        child: Column(
           children: [
             Container(
-              width: 64,
-              height: 64,
+              width: 80,
+              height: 80,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: AppTheme.surfaceGreen,
@@ -219,61 +182,92 @@ class ProfileDrawer extends StatelessWidget {
                   width: 2,
                 ),
               ),
-              child: profile.avatarUrl != null && profile.avatarUrl!.isNotEmpty
-                  ? ClipRRect(
-                      borderRadius: BorderRadius.circular(32),
-                      child: Image.network(
-                        profile.avatarUrl!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return const Icon(
-                            Icons.person,
-                            size: 32,
-                            color: AppTheme.secondaryGreen,
-                          );
-                        },
-                      ),
-                    )
-                  : const Icon(
-                      Icons.person,
-                      size: 32,
-                      color: AppTheme.secondaryGreen,
-                    ),
-            ),
-            const SizedBox(width: AppTheme.spacing16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    profile.name,
-                    style: Theme.of(context).textTheme.headlineMedium,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: AppTheme.spacing4),
-                  BlocBuilder<AuthBloc, AuthState>(
-                    builder: (context, authState) {
-                      return Text(
-                        authState.user?.email ?? '',
-                        style: Theme.of(context).textTheme.bodyMedium,
-                        overflow: TextOverflow.ellipsis,
-                      );
-                    },
-                  ),
-                ],
+              child: const Icon(
+                Icons.person_outline,
+                size: 40,
+                color: AppTheme.primaryGreen,
               ),
             ),
-            IconButton(
-              icon: const Icon(Icons.edit_outlined),
-              color: AppTheme.darkText,
-              onPressed: () {
-                Navigator.pop(context);
-                // Keep existing route until go_router route exists for edit profile
-                Navigator.pushNamed(context, '/profile/edit');
-              },
+            const SizedBox(height: AppTheme.spacing12),
+            Text(
+              'Welcome!',
+              style: Theme.of(context).textTheme.headlineMedium,
+            ),
+            const SizedBox(height: AppTheme.spacing8),
+            Text(
+              'Create your profile to get started',
+              style: Theme.of(context).textTheme.bodyMedium,
+              textAlign: TextAlign.center,
             ),
           ],
         ),
+      );
+    }
+
+    final profile = state.profile;
+    return GlassContainer(
+      borderRadius: AppTheme.radiusLarge,
+      blur: 12,
+      opacity: 0.6,
+      padding: const EdgeInsets.all(AppTheme.spacing20),
+      child: Row(
+        children: [
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppTheme.surfaceGreen,
+              border: Border.all(
+                color: AppTheme.primaryGreen,
+                width: 2,
+              ),
+            ),
+            child: profile.avatarUrl != null && profile.avatarUrl!.isNotEmpty
+                ? ClipRRect(
+                    borderRadius: BorderRadius.circular(32),
+                    child: Image.network(
+                      profile.avatarUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return const Icon(
+                          Icons.person,
+                          size: 32,
+                          color: AppTheme.primaryGreen,
+                        );
+                      },
+                    ),
+                  )
+                : const Icon(
+                    Icons.person,
+                    size: 32,
+                    color: AppTheme.primaryGreen,
+                  ),
+          ),
+          const SizedBox(width: AppTheme.spacing16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  profile.name,
+                  style: Theme.of(context).textTheme.headlineMedium,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: AppTheme.spacing4),
+                BlocBuilder<AuthBloc, AuthState>(
+                  builder: (context, authState) {
+                    return Text(
+                      authState.user?.email ?? '',
+                      style: Theme.of(context).textTheme.bodySmall,
+                      overflow: TextOverflow.ellipsis,
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -285,11 +279,10 @@ class ProfileDrawer extends StatelessWidget {
     required String subtitle,
     required VoidCallback onTap,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceGreen,
-        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-      ),
+    return GlassContainer(
+      borderRadius: AppTheme.radiusMedium,
+      blur: 10,
+      opacity: 0.5,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
@@ -298,16 +291,16 @@ class ProfileDrawer extends StatelessWidget {
           child: Row(
             children: [
               Container(
-                width: 48,
-                height: 48,
+                width: 44,
+                height: 44,
                 decoration: BoxDecoration(
-                  color: AppTheme.surfaceGreen,
+                  color: AppTheme.primaryGreen.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
                 ),
                 child: Icon(
                   icon,
-                  color: AppTheme.darkText,
-                  size: 24,
+                  color: AppTheme.primaryGreen,
+                  size: 22,
                 ),
               ),
               const SizedBox(width: AppTheme.spacing16),
@@ -317,12 +310,14 @@ class ProfileDrawer extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: Theme.of(context).textTheme.labelLarge,
+                      style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 2),
                     Text(
                       subtitle,
-                      style: Theme.of(context).textTheme.bodyMedium,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppTheme.secondaryGreen,
+                      ),
                     ),
                   ],
                 ),
@@ -330,6 +325,7 @@ class ProfileDrawer extends StatelessWidget {
               const Icon(
                 Icons.chevron_right,
                 color: AppTheme.secondaryGreen,
+                size: 20,
               ),
             ],
           ),

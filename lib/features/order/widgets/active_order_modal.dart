@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/glass_container.dart' as glass;
 import '../blocs/active_orders_bloc.dart';
-import '../../chat/screens/chat_detail_screen.dart';
+import '../../../core/router/app_router.dart';
 
 class ActiveOrderModal extends StatefulWidget {
   const ActiveOrderModal({super.key});
@@ -52,7 +53,7 @@ class _ActiveOrderModalState extends State<ActiveOrderModal>
               child: Stack(
                 children: [
                   GestureDetector(
-                    onTap: () => Navigator.of(context).pop(),
+                    onTap: () => context.pop(),
                     child: Container(
                       color: AppTheme.modalOverlay,
                     ),
@@ -331,8 +332,11 @@ class _ActiveOrderModalState extends State<ActiveOrderModal>
                 child: OutlinedButton(
                   onPressed: () {
                     // Close modal and navigate to tracking
-                    Navigator.of(context).pop();
-                    Navigator.of(context).pushNamed('/order-tracking', arguments: orderId);
+                    context.pop();
+                    // TODO: Implement route overlay when ready
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Route tracking coming soon')),
+                    );
                   },
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppTheme.darkText,
@@ -416,7 +420,7 @@ class _ActiveOrderModalState extends State<ActiveOrderModal>
   }
 
   void _viewOrderDetails(Map<String, dynamic> order) {
-    Navigator.of(context).pop();
+    context.pop();
     // TODO: Navigate to order details screen
     // For now, just close the modal
   }
@@ -425,15 +429,8 @@ class _ActiveOrderModalState extends State<ActiveOrderModal>
     final orderId = order['id'] as String;
     final status = order['status'] as String? ?? 'pending';
 
-    Navigator.of(context).pop();
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => ChatDetailScreen(
-          orderId: orderId,
-          orderStatus: status,
-        ),
-      ),
-    );
+    context.pop();
+    context.push('${AppRouter.chatDetailRoute}/$orderId?orderStatus=$status');
   }
 
   // Helper methods for enhanced order display

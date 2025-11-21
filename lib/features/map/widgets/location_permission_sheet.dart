@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../../../core/theme/app_theme.dart' show AppTheme;
-import '../../../shared/widgets/glass_container.dart';
 
 class LocationPermissionSheet extends StatelessWidget {
   const LocationPermissionSheet({super.key});
@@ -20,8 +19,20 @@ class LocationPermissionSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GlassContainer(
-      borderRadius: AppTheme.radiusXLarge.toDouble(),
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceGreen,
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(AppTheme.radiusXLarge),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 20,
+            offset: const Offset(0, -5),
+          ),
+        ],
+      ),
       child: Container(
         padding: const EdgeInsets.all(AppTheme.spacing24),
         child: Column(
@@ -38,18 +49,33 @@ class LocationPermissionSheet extends StatelessWidget {
             ),
             const SizedBox(height: AppTheme.spacing24),
 
-            // Icon
-            Container(
-              width: 100,
-              height: 100,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppTheme.surfaceGreen,
-              ),
-              child: const Icon(
-                Icons.location_on_outlined,
-                size: 50,
-                color: AppTheme.primaryGreen,
+            // Icon with animation
+            TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0.0, end: 1.0),
+              duration: const Duration(milliseconds: 600),
+              curve: Curves.elasticOut,
+              builder: (context, value, child) {
+                return Transform.scale(
+                  scale: value,
+                  child: child,
+                );
+              },
+              child: Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppTheme.primaryGreen.withOpacity(0.15),
+                  border: Border.all(
+                    color: AppTheme.primaryGreen.withOpacity(0.3),
+                    width: 2,
+                  ),
+                ),
+                child: const Icon(
+                  Icons.location_on,
+                  size: 50,
+                  color: AppTheme.primaryGreen,
+                ),
               ),
             ),
             const SizedBox(height: AppTheme.spacing24),
@@ -57,7 +83,9 @@ class LocationPermissionSheet extends StatelessWidget {
             // Title
             Text(
               'Enable Location Services',
-              style: Theme.of(context).textTheme.headlineLarge,
+              style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppTheme.spacing12),
@@ -65,7 +93,10 @@ class LocationPermissionSheet extends StatelessWidget {
             // Description
             Text(
               'We need your location to show nearby home chefs and provide accurate delivery estimates.',
-              style: Theme.of(context).textTheme.bodyMedium,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: AppTheme.secondaryGreen,
+                height: 1.5,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppTheme.spacing32),
@@ -93,9 +124,21 @@ class LocationPermissionSheet extends StatelessWidget {
             // Allow Location Button
             SizedBox(
               width: double.infinity,
+              height: 56,
               child: ElevatedButton(
                 onPressed: () => _handleAllowLocation(context),
-                child: const Text('Allow Location'),
+                style: ElevatedButton.styleFrom(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                  ),
+                ),
+                child: const Text(
+                  'Allow Location',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ),
             ),
             const SizedBox(height: AppTheme.spacing12),
@@ -103,25 +146,51 @@ class LocationPermissionSheet extends StatelessWidget {
             // Not Now Button
             SizedBox(
               width: double.infinity,
+              height: 48,
               child: TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('Not Now'),
+                child: Text(
+                  'Not Now',
+                  style: TextStyle(
+                    color: AppTheme.secondaryGreen,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
             ),
             const SizedBox(height: AppTheme.spacing8),
 
             // Privacy Note
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppTheme.spacing16,
-              ),
-              child: Text(
-                'We respect your privacy. Location data is only used to enhance your experience.',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppTheme.secondaryGreen,
-                  fontSize: 12,
+            Container(
+              padding: const EdgeInsets.all(AppTheme.spacing12),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryGreen.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                border: Border.all(
+                  color: AppTheme.primaryGreen.withOpacity(0.1),
+                  width: 1,
                 ),
-                textAlign: TextAlign.center,
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.lock_outline,
+                    size: 16,
+                    color: AppTheme.secondaryGreen,
+                  ),
+                  const SizedBox(width: AppTheme.spacing8),
+                  Expanded(
+                    child: Text(
+                      'We respect your privacy. Location data is only used to enhance your experience.',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppTheme.secondaryGreen,
+                        fontSize: 12,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -134,31 +203,43 @@ class LocationPermissionSheet extends StatelessWidget {
     required IconData icon,
     required String text,
   }) {
-    return Row(
-      children: [
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: AppTheme.surfaceGreen,
-            borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-          ),
-          child: Icon(
-            icon,
-            color: AppTheme.darkText,
-            size: 20,
-          ),
+    return Container(
+      padding: const EdgeInsets.all(AppTheme.spacing12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+        border: Border.all(
+          color: AppTheme.borderGreen,
+          width: 1,
         ),
-        const SizedBox(width: AppTheme.spacing16),
-        Expanded(
-          child: Text(
-            text,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              fontWeight: FontWeight.w500,
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: AppTheme.primaryGreen.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+            ),
+            child: Icon(
+              icon,
+              color: AppTheme.primaryGreen,
+              size: 24,
             ),
           ),
-        ),
-      ],
+          const SizedBox(width: AppTheme.spacing16),
+          Expanded(
+            child: Text(
+              text,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: AppTheme.darkText,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
