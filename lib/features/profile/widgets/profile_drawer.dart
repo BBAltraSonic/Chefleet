@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../../auth/blocs/user_profile_bloc.dart';
 import '../../auth/blocs/auth_bloc.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/router/app_router.dart';
 
 class ProfileDrawer extends StatelessWidget {
   const ProfileDrawer({super.key});
@@ -37,7 +39,7 @@ class ProfileDrawer extends StatelessWidget {
                       subtitle: 'Your saved dishes',
                       onTap: () {
                         Navigator.pop(context);
-                        Navigator.pushNamed(context, '/favourites');
+                        context.push(AppRouter.favouritesRoute);
                       },
                     ),
                     const SizedBox(height: AppTheme.spacing8),
@@ -48,7 +50,7 @@ class ProfileDrawer extends StatelessWidget {
                       subtitle: 'View past orders',
                       onTap: () {
                         Navigator.pop(context);
-                        Navigator.pushNamed(context, '/orders');
+                        context.push(AppRouter.ordersRoute);
                       },
                     ),
                     const SizedBox(height: AppTheme.spacing8),
@@ -59,7 +61,7 @@ class ProfileDrawer extends StatelessWidget {
                       subtitle: 'Manage preferences',
                       onTap: () {
                         Navigator.pop(context);
-                        Navigator.pushNamed(context, '/notifications');
+                        context.push(AppRouter.notificationsRoute);
                       },
                     ),
                     const SizedBox(height: AppTheme.spacing8),
@@ -70,7 +72,7 @@ class ProfileDrawer extends StatelessWidget {
                       subtitle: 'App preferences',
                       onTap: () {
                         Navigator.pop(context);
-                        Navigator.pushNamed(context, '/settings');
+                        context.push(AppRouter.settingsRoute);
                       },
                     ),
                     const SizedBox(height: AppTheme.spacing8),
@@ -266,6 +268,7 @@ class ProfileDrawer extends StatelessWidget {
               color: AppTheme.darkText,
               onPressed: () {
                 Navigator.pop(context);
+                // Keep existing route until go_router route exists for edit profile
                 Navigator.pushNamed(context, '/profile/edit');
               },
             ),

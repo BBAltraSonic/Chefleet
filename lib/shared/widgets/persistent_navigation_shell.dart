@@ -5,6 +5,7 @@ import '../../core/blocs/navigation_bloc.dart';
 import '../../core/router/app_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../features/order/widgets/active_order_modal.dart';
+import '../../features/order/blocs/active_orders_bloc.dart';
 
 class PersistentNavigationShell extends StatefulWidget {
   const PersistentNavigationShell({
@@ -227,7 +228,12 @@ class _OrdersFloatingActionButtonState extends State<OrdersFloatingActionButton>
     showDialog(
       context: context,
       barrierColor: Colors.black.withOpacity(0.5),
-      builder: (context) => const ActiveOrderModal(),
+      builder: (context) {
+        return BlocProvider.value(
+          value: context.read<ActiveOrdersBloc>(),
+          child: const ActiveOrderModal(),
+        );
+      },
     );
   }
 }

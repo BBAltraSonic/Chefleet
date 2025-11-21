@@ -331,7 +331,7 @@ class _OrderManagementScreenState extends State<OrderManagementScreen>
   Widget _buildOrderHistoryItem(Map<String, dynamic> order) {
     final customer = order['customer'] as Map<String, dynamic>?;
     final customerName = customer?['name'] as String? ?? 'Unknown Customer';
-    final totalAmount = (order['total_cents'] as int) / 100;
+    final totalAmount = (order['total_amount'] as num?)?.toDouble() ?? 0.0;
     final status = order['status'] as String;
     final createdAt = DateTime.tryParse(order['created_at'] ?? '') ?? DateTime.now();
     final pickupTime = DateTime.tryParse(order['pickup_time'] ?? '');

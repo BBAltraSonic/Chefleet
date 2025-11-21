@@ -207,7 +207,7 @@ class _ActiveOrderModalState extends State<ActiveOrderModal>
   Widget _buildOrderCard(Map<String, dynamic> order) {
     final orderId = order['id'] as String;
     final status = order['status'] as String? ?? 'pending';
-    final totalAmount = ((order['total_cents'] as num?)?.toDouble() ?? 0.0) / 100;
+    final totalAmount = (order['total_amount'] as num?)?.toDouble() ?? 0.0;
     final createdAt = DateTime.parse(order['created_at'] as String);
     final vendorName = order['vendors']?['business_name'] as String? ?? 'Vendor';
     final vendorLogo = order['vendors']?['logo_url'] as String?;

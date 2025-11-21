@@ -301,7 +301,7 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
 
   Widget _buildOrderItemsSection(BuildContext context) {
     final orderItems = _order!['order_items'] as List<dynamic>? ?? [];
-    final totalAmount = (_order!['total_cents'] as int) / 100;
+    final totalAmount = (_order!['total_amount'] as num?)?.toDouble() ?? 0.0;
 
     return Card(
       child: Padding(

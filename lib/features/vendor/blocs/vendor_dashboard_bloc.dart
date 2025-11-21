@@ -190,7 +190,7 @@ class VendorDashboardBloc extends Bloc<VendorDashboardEvent, VendorDashboardStat
     try {
       // Call the Edge function for secure order status updates
       final response = await _supabaseClient.functions.invoke(
-        'order_status_update',
+        'change_order_status',
         body: {
           'order_id': event.orderId,
           'new_status': event.newStatus,

@@ -7,6 +7,7 @@ import 'core/blocs/navigation_bloc.dart';
 import 'core/router/app_router.dart';
 import 'features/auth/blocs/auth_bloc.dart';
 import 'features/auth/blocs/user_profile_bloc.dart';
+import 'features/order/blocs/active_orders_bloc.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -41,14 +42,6 @@ class ChefleetApp extends StatefulWidget {
 
 class _ChefleetAppState extends State<ChefleetApp> {
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      AppRouter.initialize(context);
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
@@ -61,14 +54,24 @@ class _ChefleetAppState extends State<ChefleetApp> {
         BlocProvider(
           create: (context) => NavigationBloc(),
         ),
+        BlocProvider(
+          create: (context) => ActiveOrdersBloc(
+            supabaseClient: Supabase.instance.client,
+          )..loadActiveOrders(),
+        ),
       ],
-      child: MaterialApp.router(
-        title: 'Chefleet',
-        theme: AppTheme.lightTheme,
-        darkTheme: AppTheme.darkTheme,
-        themeMode: ThemeMode.system,
-        debugShowCheckedModeBanner: false,
-        routerConfig: AppRouter.router,
+      child: Builder(
+        builder: (context) {
+          final router = AppRouter.create(context);
+          return MaterialApp.router(
+            title: 'Chefleet',
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+            themeMode: ThemeMode.system,
+            debugShowCheckedModeBanner: false,
+            routerConfig: router,
+          );
+        },
       ),
     );
   }

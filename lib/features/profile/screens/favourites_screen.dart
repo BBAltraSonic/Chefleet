@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/glass_container.dart';
 import '../../dish/screens/dish_detail_screen.dart';
+import '../../../core/router/app_router.dart';
 
 class FavouritesScreen extends StatefulWidget {
   const FavouritesScreen({super.key});
@@ -236,7 +238,7 @@ class _FavouritesScreenState extends State<FavouritesScreen> {
           const SizedBox(height: AppTheme.spacing32),
           ElevatedButton.icon(
             onPressed: () {
-              Navigator.pushNamed(context, '/feed');
+              context.push(AppRouter.feedRoute);
             },
             icon: const Icon(Icons.explore),
             label: const Text('Explore Dishes'),

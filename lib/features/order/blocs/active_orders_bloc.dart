@@ -61,7 +61,7 @@ class ActiveOrdersBloc extends Bloc<ActiveOrdersEvent, ActiveOrdersState> {
             )
           ''')
           .eq('buyer_id', currentUser.id)
-          .filter('status', 'in', '{pending,accepted,preparing,ready}')
+          .filter('status', 'in', '(pending,accepted,preparing,ready)')
           .order('created_at', ascending: false);
 
       final orders = List<Map<String, dynamic>>.from(response);

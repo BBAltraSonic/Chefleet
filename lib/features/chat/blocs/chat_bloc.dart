@@ -86,7 +86,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
               )
             ''')
             .eq('buyer_id', userId)
-            .filter('status', 'in', '{pending,accepted,preparing,ready}')
+            .filter('status', 'in', '(pending,accepted,preparing,ready)')
             .order('created_at', ascending: false);
 
         orders = List<Map<String, dynamic>>.from(response);
@@ -116,7 +116,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
               )
             ''')
             .eq('vendor_id', vendorId)
-            .filter('status', 'in', '{pending,accepted,preparing,ready}')
+            .filter('status', 'in', '(pending,accepted,preparing,ready)')
             .order('created_at', ascending: false);
 
         orders = List<Map<String, dynamic>>.from(response);

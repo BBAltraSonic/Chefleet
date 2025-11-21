@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../../auth/blocs/user_profile_bloc.dart';
 import '../../auth/models/user_profile_model.dart';
 import '../../auth/screens/profile_creation_screen.dart';
 import '../../auth/screens/profile_management_screen.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/router/app_router.dart';
 import '../widgets/profile_drawer.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -241,21 +243,21 @@ class ProfileScreen extends StatelessWidget {
             context,
             icon: Icons.favorite_outline,
             title: 'Favourites',
-            onTap: () => Navigator.pushNamed(context, '/favourites'),
+            onTap: () => context.push(AppRouter.favouritesRoute),
           ),
           const Divider(height: 1),
           _buildActionTile(
             context,
             icon: Icons.notifications_outlined,
             title: 'Notifications',
-            onTap: () => Navigator.pushNamed(context, '/notifications'),
+            onTap: () => context.push(AppRouter.notificationsRoute),
           ),
           const Divider(height: 1),
           _buildActionTile(
             context,
             icon: Icons.settings_outlined,
             title: 'Settings',
-            onTap: () => Navigator.pushNamed(context, '/settings'),
+            onTap: () => context.push(AppRouter.settingsRoute),
           ),
         ],
       ),

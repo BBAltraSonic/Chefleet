@@ -37,9 +37,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       if (userId == null) return;
 
       final response = await Supabase.instance.client
-          .from('user_profiles')
+          .from('users_public')
           .select('notification_preferences')
-          .eq('user_id', userId)
+          .eq('id', userId)
           .maybeSingle();
 
       if (response != null && response['notification_preferences'] != null) {
@@ -89,9 +89,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       };
 
       await Supabase.instance.client
-          .from('user_profiles')
+          .from('users_public')
           .update({'notification_preferences': preferences})
-          .eq('user_id', userId);
+          .eq('id', userId);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

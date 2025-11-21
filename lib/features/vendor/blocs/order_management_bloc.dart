@@ -393,13 +393,13 @@ class OrderManagementBloc
 
     if (state.filters.minAmount != null) {
       filteredOrders = filteredOrders
-          .where((order) => (order['total_cents'] as int) >= state.filters.minAmount!)
+          .where((order) => ((order['total_amount'] as num?)?.toDouble() ?? 0.0) >= state.filters.minAmount!)
           .toList();
     }
 
     if (state.filters.maxAmount != null) {
       filteredOrders = filteredOrders
-          .where((order) => (order['total_cents'] as int) <= state.filters.maxAmount!)
+          .where((order) => ((order['total_amount'] as num?)?.toDouble() ?? 0.0) <= state.filters.maxAmount!)
           .toList();
     }
 
@@ -424,7 +424,8 @@ class OrderManagementBloc
           comparison = nameA.compareTo(nameB);
           break;
         case OrderSortOption.totalAmount:
-          comparison = (a['total_cents'] as int).compareTo(b['total_cents'] as int);
+          comparison = ((a['total_amount'] as num?)?.toDouble() ?? 0.0)
+              .compareTo((b['total_amount'] as num?)?.toDouble() ?? 0.0);
           break;
         case OrderSortOption.priority:
           // Sort by urgency and then by order time

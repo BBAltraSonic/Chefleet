@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -132,7 +133,10 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
               SnackBar(content: Text(state.errorMessage!)),
             );
           } else if (state.profile.isNotEmpty) {
-            Navigator.of(context).pushReplacementNamed('/');
+            // Navigate to main map after profile completion
+            // Uses go_router for consistency
+            // ignore: use_build_context_synchronously
+            context.go('/map');
           }
         },
         child: Stack(

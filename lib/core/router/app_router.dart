@@ -22,6 +22,8 @@ import '../../features/vendor/screens/vendor_onboarding_screen.dart';
 import '../../features/feed/models/dish_model.dart';
 import '../../features/auth/blocs/auth_bloc.dart';
 import '../../features/auth/blocs/user_profile_bloc.dart';
+import '../../features/order/blocs/active_orders_bloc.dart';
+import '../../features/chat/screens/chat_detail_screen.dart';
 import '../blocs/navigation_bloc.dart';
 import '../../../shared/widgets/persistent_navigation_shell.dart';
 
@@ -50,10 +52,8 @@ class AppRouter {
   static const String vendorModerationRoute = '/vendor/moderation';
   static const String vendorOnboardingRoute = '/vendor/onboarding';
 
-  static late final GoRouter router;
-
-  static void initialize(BuildContext context) {
-    router = GoRouter(
+  static GoRouter create(BuildContext context) {
+    return GoRouter(
       initialLocation: initialRoute,
       redirect: (BuildContext context, GoRouterState state) {
         final authBloc = context.read<AuthBloc>();
@@ -229,13 +229,81 @@ class OrdersScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
       backgroundColor: Colors.transparent,
-      body: Center(
-        child: Text(
-          'Orders Screen - To be implemented',
-          style: TextStyle(color: Colors.white),
-        ),
+      appBar: AppBar(
+        title: const Text('Your Orders'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      },
+      body: BlocBuilder<ActiveOrdersBloc, ActiveOrdersState>(
+        builder: (context, state) {
+          if (state.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (state.errorMessage != null) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.error_outline, size: 48),
+                    const SizedBox(height: 12),
+                    Text(state.errorMessage!),
+                    const SizedBox(height: 12),
+                    ElevatedButton(
+                      onPressed: () => context.read<ActiveOrdersBloc>().refresh(),
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+          final orders = state.orders;
+          if (orders.isEmpty) {
+            return const Center(child: Text('No active orders'));
+          }
+
+          return RefreshIndicator(
+            onRefresh: () async => context.read<ActiveOrdersBloc>().refresh(),
+            child: ListView.separated(
+              padding: const EdgeInsets.all(12),
+              itemBuilder: (context, index) {
+                final order = orders[index];
+                final vendorName = order['vendors']?['business_name'] as String? ?? 'Vendor';
+                final status = order['status'] as String? ?? 'pending';
+                final total = (order['total_amount'] as num?)?.toDouble() ?? 0.0;
+                final pickupCode = order['pickup_code'] as String?;
+                return ListTile(
+                  tileColor: Colors.white.withOpacity(0.04),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  title: Text(vendorName),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Status: ${status[0].toUpperCase()}${status.substring(1)}'),
+                      if (pickupCode != null) Text('Code: $pickupCode'),
+                    ],
+                  ),
+                  trailing: Text('\$${total.toStringAsFixed(2)}'),
+                  onTap: () {
+                    final orderId = order['id'] as String;
+                    final status = order['status'] as String? ?? 'pending';
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => ChatDetailScreen(orderId: orderId, orderStatus: status),
+                      ),
+                    );
+                  },
+                );
+              },
+              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              itemCount: orders.length,
+            ),
+          );
+        },
       ),
     );
   }
