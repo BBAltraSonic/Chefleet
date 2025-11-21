@@ -192,14 +192,19 @@ class _ActiveOrderModalState extends State<ActiveOrderModal>
 
   Widget _buildActiveOrdersList(List<Map<String, dynamic>> activeOrders) {
     return Flexible(
-      child: ListView.separated(
-        shrinkWrap: true,
-        itemCount: activeOrders.length,
-        separatorBuilder: (context, index) => const SizedBox(height: 12),
-        itemBuilder: (context, index) {
-          final order = activeOrders[index];
-          return _buildOrderCard(order);
+      child: RefreshIndicator(
+        onRefresh: () async {
+          context.read<ActiveOrdersBloc>().refresh();
         },
+        child: ListView.separated(
+          shrinkWrap: true,
+          itemCount: activeOrders.length,
+          separatorBuilder: (context, index) => const SizedBox(height: 12),
+          itemBuilder: (context, index) {
+            final order = activeOrders[index];
+            return _buildOrderCard(order);
+          },
+        ),
       ),
     );
   }
@@ -320,28 +325,41 @@ class _ActiveOrderModalState extends State<ActiveOrderModal>
             ),
           ),
           const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            height: 40,
-            child: ElevatedButton(
-              onPressed: () => _openChat(order),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryGreen,
-                foregroundColor: AppTheme.darkText,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                ),
-                elevation: 0,
-              ),
-              child: Text(
-                'Chat with vendor',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.darkText,
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () {
+                    // Close modal and navigate to tracking
+                    Navigator.of(context).pop();
+                    Navigator.of(context).pushNamed('/order-tracking', arguments: orderId);
+                  },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppTheme.darkText,
+                    side: BorderSide(color: AppTheme.borderGreen),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                    ),
+                  ),
+                  child: const Text('Track Order'),
                 ),
               ),
-            ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () => _openChat(order),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryGreen,
+                    foregroundColor: AppTheme.darkText,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: const Text('Chat'),
+                ),
+              ),
+            ],
           ),
         ],
       ),

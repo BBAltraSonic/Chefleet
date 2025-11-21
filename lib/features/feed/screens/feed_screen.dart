@@ -6,6 +6,7 @@ import 'dart:math' as math;
 import '../models/dish_model.dart';
 import '../models/vendor_model.dart';
 import '../widgets/dish_card.dart';
+import '../widgets/dish_card_skeleton.dart';
 import '../../map/blocs/map_feed_bloc.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/glass_container.dart';
@@ -57,7 +58,11 @@ class _FeedScreenState extends State<FeedScreen> {
           child: BlocBuilder<MapFeedBloc, MapFeedState>(
             builder: (context, state) {
               if (state.isLoading && state.dishes.isEmpty) {
-                return const Center(child: CircularProgressIndicator());
+                return ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: 3,
+                  itemBuilder: (context, index) => const DishCardSkeleton(),
+                );
               }
 
               if (state.errorMessage != null && state.dishes.isEmpty) {

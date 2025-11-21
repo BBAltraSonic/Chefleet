@@ -1,0 +1,674 @@
+Analyzing Chefleet...                                           
+
+   info - Don't invoke 'print' in production code - lib\core\blocs\app_bloc_observer.dart:7:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\core\blocs\app_bloc_observer.dart:13:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\core\blocs\app_bloc_observer.dart:18:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\core\blocs\app_bloc_observer.dart:25:5 - avoid_print
+   info - Parameter 'client' could be a super parameter - lib\core\repositories\order_repository.dart:5:3 - use_super_parameters
+warning - The method doesn't override an inherited method - lib\core\repositories\order_repository.dart:41:13 - override_on_non_overriding_member
+warning - Unused import: '../services/deep_link_service.dart' - lib\core\router\app_router.dart:24:8 - unused_import
+   info - The 'child' argument should be last in widget constructor invocations - lib\core\router\app_router.dart:86:15 - sort_child_properties_last
+   info - Use 'const' with the constructor to improve performance - lib\core\router\app_router.dart:107:24 - prefer_const_constructors
+   info - The 'child' argument should be last in widget constructor invocations - lib\core\router\app_router.dart:108:19 - sort_child_properties_last
+   info - Use 'const' with the constructor to improve performance - lib\core\router\app_router.dart:116:24 - prefer_const_constructors
+   info - The 'child' argument should be last in widget constructor invocations - lib\core\router\app_router.dart:117:19 - sort_child_properties_last
+   info - Use 'const' with the constructor to improve performance - lib\core\router\app_router.dart:131:20 - prefer_const_constructors
+   info - The 'child' argument should be last in widget constructor invocations - lib\core\router\app_router.dart:132:15 - sort_child_properties_last
+   info - Don't invoke 'print' in production code - lib\core\services\cache_service.dart:40:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\core\services\cache_service.dart:66:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\core\services\cache_service.dart:85:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\core\services\cache_service.dart:101:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\core\services\cache_service.dart:118:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\core\services\cache_service.dart:142:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\core\services\cache_service.dart:156:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\core\services\cache_service.dart:250:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\core\services\cache_service.dart:261:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\core\services\cache_service.dart:274:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\core\services\cache_service.dart:299:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\core\services\cache_service.dart:307:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\core\services\cache_service.dart:311:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\core\services\cache_service.dart:313:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\core\services\cache_service.dart:331:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\core\services\cache_service.dart:345:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\core\services\cache_service.dart:362:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\core\services\cache_service.dart:369:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\core\services\cache_service.dart:371:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\core\services\cache_service.dart:388:7 - avoid_print
+warning - The value of the local variable 'deepLink' isn't used - lib\core\services\deep_link_service.dart:61:11 - unused_local_variable
+warning - The value of the field '_isInitialized' isn't used - lib\core\services\notification_service.dart:14:8 - unused_field
+warning - Unused import: 'dart:convert' - lib\core\services\payment_service.dart:1:8 - unused_import
+warning - The value of the field '_baseUrl' isn't used - lib\core\services\payment_service.dart:12:23 - unused_field
+   info - The import of 'dart:ui' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/material.dart' - lib\core\theme\app_theme.dart:2:8 - unnecessary_import
+   info - The private field _textTheme could be 'final' - lib\core\theme\app_theme.dart:38:20 - prefer_final_fields
+   info - 'background' is deprecated and shouldn't be used. Use surface instead. This feature was deprecated after v3.18.0-0.1.pre - lib\core\theme\app_theme.dart:101:7 - deprecated_member_use
+   info - 'background' is deprecated and shouldn't be used. Use surface instead. This feature was deprecated after v3.18.0-0.1.pre - lib\core\theme\app_theme.dart:196:7 - deprecated_member_use
+warning - Unused import: 'dart:io' - lib\core\utils\battery_optimizer.dart:3:8 - unused_import
+warning - Unused import: 'dart:typed_data' - lib\core\utils\cluster_icon_generator.dart:2:8 - unused_import
+   info - The import of 'package:flutter/services.dart' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/material.dart' - lib\core\utils\cluster_icon_generator.dart:3:8 - unnecessary_import
+   info - 'value' is deprecated and shouldn't be used. Use component accessors like .r or .g, or toARGB32 for an explicit conversion - lib\core\utils\cluster_icon_generator.dart:26:61 - deprecated_member_use
+   info - 'value' is deprecated and shouldn't be used. Use component accessors like .r or .g, or toARGB32 for an explicit conversion - lib\core\utils\cluster_icon_generator.dart:26:86 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\core\utils\cluster_icon_generator.dart:60:30 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\core\utils\cluster_icon_generator.dart:75:25 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\core\utils\cluster_icon_generator.dart:107:35 - deprecated_member_use
+   info - 'fromBytes' is deprecated and shouldn't be used. Use BitmapDescriptor.bytes method instead - lib\core\utils\cluster_icon_generator.dart:129:29 - deprecated_member_use
+   info - 'value' is deprecated and shouldn't be used. Use component accessors like .r or .g, or toARGB32 for an explicit conversion - lib\core\utils\cluster_icon_generator.dart:151:39 - deprecated_member_use
+   info - Use 'const' with the constructor to improve performance - lib\core\utils\cluster_manager.dart:297:19 - prefer_const_constructors
+warning - The declaration '_getClusterIcon' isn't referenced - lib\core\utils\cluster_manager.dart:307:28 - unused_element
+   info - 'fromBytes' is deprecated and shouldn't be used. Use BitmapDescriptor.bytes method instead - lib\core\utils\cluster_manager.dart:369:29 - deprecated_member_use
+   info - The imported package 'sqflite' isn't a dependency of the importing package - lib\core\utils\database_optimizer.dart:4:8 - depend_on_referenced_packages
+warning - Unused import: 'package:sqflite/sqflite.dart' - lib\core\utils\database_optimizer.dart:4:8 - unused_import
+warning - The value of the field '_cacheValidityThreshold' isn't used - lib\core\utils\database_optimizer.dart:17:20 - unused_field
+   info - The private field _enableQueryCache could be 'final' - lib\core\utils\database_optimizer.dart:32:8 - prefer_final_fields
+   info - The private field _enableConnectionPooling could be 'final' - lib\core\utils\database_optimizer.dart:33:8 - prefer_final_fields
+   info - The private field _enableQueryOptimization could be 'final' - lib\core\utils\database_optimizer.dart:34:8 - prefer_final_fields
+   info - The private field _maxCacheSize could be 'final' - lib\core\utils\database_optimizer.dart:35:7 - prefer_final_fields
+   info - The private field _maxConnectionPoolSize could be 'final' - lib\core\utils\database_optimizer.dart:36:7 - prefer_final_fields
+   info - Local variables should be final - lib\core\utils\database_optimizer.dart:302:5 - prefer_final_locals
+   info - The private field _optimizedAnimationDuration could be 'final' - lib\core\utils\hero_optimizer.dart:18:12 - prefer_final_fields
+warning - The value of the field '_maxSizeCacheSize' isn't used - lib\core\utils\hero_optimizer.dart:29:7 - unused_field
+   info - 'window' is deprecated and shouldn't be used. Look up the current FlutterView from the context via View.of(context) or consult the PlatformDispatcher directly instead. Deprecated to prepare for the upcoming multi-window support. This feature was deprecated after v3.7.0-32.0.pre - lib\core\utils\hero_optimizer.dart:62:29 - deprecated_member_use
+   info - 'window' is deprecated and shouldn't be used. Look up the current FlutterView from the context via View.of(context) or consult the PlatformDispatcher directly instead. Deprecated to prepare for the upcoming multi-window support. This feature was deprecated after v3.7.0-32.0.pre - lib\core\utils\hero_optimizer.dart:63:29 - deprecated_member_use
+warning - The declaration '_onFrame' isn't referenced - lib\core\utils\hero_optimizer.dart:122:8 - unused_element
+   info - The 'child' argument should be last in widget constructor invocations - lib\core\utils\hero_optimizer.dart:145:9 - sort_child_properties_last
+   info - The 'child' argument should be last in widget constructor invocations - lib\core\utils\hero_optimizer.dart:156:7 - sort_child_properties_last
+   info - Use 'const' with the constructor to improve performance - lib\core\utils\hero_optimizer.dart:388:32 - prefer_const_constructors
+   info - Parameter 'key' could be a super parameter - lib\core\utils\hero_optimizer.dart:543:9 - use_super_parameters
+warning - The value of the field '_animation' isn't used - lib\core\utils\hero_optimizer.dart:563:26 - unused_field
+   info - The 'child' argument should be last in widget constructor invocations - lib\core\utils\hero_optimizer.dart:607:7 - sort_child_properties_last
+   info - 'zIndex' is deprecated and shouldn't be used. Use zIndexInt instead. On some platforms zIndex is truncated to an int, which can lead to incorrect/unstable ordering - lib\core\utils\marker_pool.dart:48:9 - deprecated_member_use
+   info - 'zIndex' is deprecated and shouldn't be used. Use zIndexInt instead. On some platforms zIndex is truncated to an int, which can lead to incorrect/unstable ordering - lib\core\utils\marker_pool.dart:63:9 - deprecated_member_use
+   info - Don't invoke 'print' in production code - lib\core\utils\marker_pool.dart:120:7 - avoid_print
+warning - The value of the local variable 'initialLength' isn't used - lib\core\utils\quadtree.dart:143:13 - unused_local_variable
+warning - The declaration '_calculateDistance' isn't referenced - lib\core\utils\quadtree.dart:307:17 - unused_element
+warning - Unused import: 'package:flutter/material.dart' - lib\core\utils\vendor_cluster_manager.dart:2:8 - unused_import
+warning - Unnecessary cast - lib\core\utils\vendor_cluster_manager.dart:39:24 - unnecessary_cast
+warning - Unnecessary cast - lib\core\utils\vendor_cluster_manager.dart:70:44 - unnecessary_cast
+   info - 'userDeleted' is deprecated and shouldn't be used. Was never in use and might be removed in the future - lib\features\auth\blocs\auth_bloc.dart:138:30 - deprecated_member_use
+   info - Don't invoke 'print' in production code - lib\features\auth\blocs\auth_bloc.dart:201:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\blocs\auth_bloc.dart:209:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\blocs\auth_bloc.dart:210:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\blocs\auth_bloc.dart:211:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\blocs\auth_bloc.dart:216:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\blocs\auth_bloc.dart:232:11 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\blocs\auth_bloc.dart:235:11 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\blocs\auth_bloc.dart:240:13 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\blocs\auth_bloc.dart:257:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\blocs\auth_bloc.dart:258:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\blocs\auth_bloc.dart:259:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\blocs\auth_bloc.dart:262:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\blocs\auth_bloc.dart:263:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\blocs\auth_bloc.dart:264:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\blocs\user_profile_bloc.dart:172:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\blocs\user_profile_bloc.dart:210:9 - avoid_print
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\auth\screens\auth_screen.dart:50:53 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\auth\screens\auth_screen.dart:51:55 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\auth\screens\auth_screen.dart:85:76 - deprecated_member_use
+   info - Don't use 'BuildContext's across async gaps - lib\features\auth\screens\profile_creation_screen.dart:59:28 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\features\auth\screens\profile_creation_screen.dart:75:28 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\features\auth\screens\profile_creation_screen.dart:79:28 - use_build_context_synchronously
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\auth\screens\profile_creation_screen.dart:147:34 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\auth\screens\profile_creation_screen.dart:148:34 - deprecated_member_use
+   info - 'activeColor' is deprecated and shouldn't be used. Use activeThumbColor instead. This feature was deprecated after v3.31.0-2.0.pre - lib\features\auth\screens\profile_creation_screen.dart:435:13 - deprecated_member_use
+   info - Don't use 'BuildContext's across async gaps - lib\features\auth\screens\profile_management_screen.dart:72:9 - use_build_context_synchronously
+   info - Use 'const' with the constructor to improve performance - lib\features\auth\screens\profile_management_screen.dart:73:11 - prefer_const_constructors
+   info - Don't use 'BuildContext's across async gaps - lib\features\auth\screens\profile_management_screen.dart:77:28 - use_build_context_synchronously
+   info - 'activeColor' is deprecated and shouldn't be used. Use activeThumbColor instead. This feature was deprecated after v3.31.0-2.0.pre - lib\features\auth\screens\profile_management_screen.dart:394:13 - deprecated_member_use
+warning - Unused import: 'package:flutter_bloc/flutter_bloc.dart' - lib\features\auth\screens\role_selection_screen.dart:2:8 - unused_import
+warning - Unused import: '../../../shared/widgets/glass_container.dart' - lib\features\auth\screens\role_selection_screen.dart:4:8 - unused_import
+warning - Unused import: '../blocs/auth_bloc.dart' - lib\features\auth\screens\role_selection_screen.dart:5:8 - unused_import
+   info - Use 'const' with the constructor to improve performance - lib\features\auth\screens\role_selection_screen.dart:34:29 - prefer_const_constructors
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\auth\screens\role_selection_screen.dart:152:41 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\auth\screens\role_selection_screen.dart:178:47 - deprecated_member_use
+   info - Use 'const' with the constructor to improve performance - lib\features\auth\screens\splash_screen.dart:85:21 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\auth\screens\splash_screen.dart:86:21 - prefer_const_constructors
+   info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\features\auth\screens\splash_screen.dart:89:21 - prefer_const_literals_to_create_immutables
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\auth\screens\splash_screen.dart:121:54 - deprecated_member_use
+warning - The operand can't be 'null', so the condition is always 'true' - lib\features\chat\blocs\chat_bloc.dart:322:27 - unnecessary_null_comparison
+   info - Don't invoke 'print' in production code - lib\features\chat\blocs\chat_bloc.dart:479:7 - avoid_print
+   info - Use 'const' with the constructor to improve performance - lib\features\chat\screens\chat_detail_screen.dart:283:21 - prefer_const_constructors
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\chat\screens\chat_list_screen.dart:90:59 - deprecated_member_use
+warning - Unused import: 'package:flutter_bloc/flutter_bloc.dart' - lib\features\chat\widgets\chat_bubble.dart:2:8 - unused_import
+warning - Unused import: '../blocs/chat_bloc.dart' - lib\features\chat\widgets\chat_bubble.dart:5:8 - unused_import
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\chat\widgets\chat_bubble.dart:58:63 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\chat\widgets\chat_bubble.dart:72:34 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\chat\widgets\chat_bubble.dart:73:44 - deprecated_member_use
+   info - Use 'const' with the constructor to improve performance - lib\features\chat\widgets\chat_bubble.dart:191:14 - prefer_const_constructors
+   info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\features\chat\widgets\chat_bubble.dart:193:19 - prefer_const_literals_to_create_immutables
+   info - Use 'const' with the constructor to improve performance - lib\features\chat\widgets\chat_bubble.dart:194:11 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\chat\widgets\chat_bubble.dart:196:11 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\chat\widgets\chat_bubble.dart:196:37 - prefer_const_constructors
+warning - Unused import: '../../../core/theme/app_theme.dart' - lib\features\chat\widgets\chat_input.dart:3:8 - unused_import
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\chat\widgets\chat_input.dart:71:62 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\chat\widgets\chat_input.dart:74:36 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\chat\widgets\chat_input.dart:87:41 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\chat\widgets\chat_input.dart:89:60 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\chat\widgets\chat_input.dart:167:67 - deprecated_member_use
+warning - Unused import: 'package:flutter_bloc/flutter_bloc.dart' - lib\features\chat\widgets\chat_list_item.dart:2:8 - unused_import
+warning - Unused import: '../../../core/theme/app_theme.dart' - lib\features\chat\widgets\chat_list_item.dart:3:8 - unused_import
+warning - Unused import: '../blocs/chat_bloc.dart' - lib\features\chat\widgets\chat_list_item.dart:5:8 - unused_import
+warning - The value of the local variable 'otherPartyInfo' isn't used - lib\features\chat\widgets\chat_list_item.dart:28:12 - unused_local_variable
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\chat\widgets\chat_list_item.dart:59:64 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\chat\widgets\chat_list_item.dart:62:66 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\chat\widgets\chat_list_item.dart:127:60 - deprecated_member_use
+warning - Unused import: '../../../core/theme/app_theme.dart' - lib\features\chat\widgets\quick_replies.dart:3:8 - unused_import
+warning - Unused import: 'package:google_maps_flutter/google_maps_flutter.dart' - lib\features\dish\screens\dish_detail_screen.dart:2:8 - unused_import
+warning - The operand can't be 'null', so the condition is always 'false' - lib\features\dish\screens\dish_detail_screen.dart:79:24 - unnecessary_null_comparison
+warning - Dead code - lib\features\dish\screens\dish_detail_screen.dart:79:33 - dead_code
+   info - 'WillPopScope' is deprecated and shouldn't be used. Use PopScope instead. The Android predictive back feature will not work with WillPopScope. This feature was deprecated after v3.12.0-1.0.pre - lib\features\dish\screens\dish_detail_screen.dart:146:17 - deprecated_member_use
+   info - Use 'const' with the constructor to improve performance - lib\features\dish\screens\dish_detail_screen.dart:201:21 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\dish\screens\dish_detail_screen.dart:239:30 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\dish\screens\dish_detail_screen.dart:249:26 - prefer_const_constructors
+warning - The operand can't be 'null', so the condition is always 'true' - lib\features\dish\screens\dish_detail_screen.dart:275:36 - unnecessary_null_comparison
+warning - The '!' will have no effect because the receiver can't be null - lib\features\dish\screens\dish_detail_screen.dart:275:65 - unnecessary_non_null_assertion
+warning - The '!' will have no effect because the receiver can't be null - lib\features\dish\screens\dish_detail_screen.dart:279:37 - unnecessary_non_null_assertion
+warning - The declaration '_buildDishHeader' isn't referenced - lib\features\dish\screens\dish_detail_screen.dart:298:10 - unused_element
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\dish\screens\dish_detail_screen.dart:390:56 - deprecated_member_use
+   info - Use 'const' with the constructor to improve performance - lib\features\dish\screens\dish_detail_screen.dart:395:28 - prefer_const_constructors
+warning - The declaration '_buildVendorInfo' isn't referenced - lib\features\dish\screens\dish_detail_screen.dart:410:10 - unused_element
+   info - Use 'const' with the constructor to improve performance - lib\features\dish\screens\dish_detail_screen.dart:451:23 - prefer_const_constructors
+   info - Unnecessary use of string interpolation - lib\features\dish\screens\dish_detail_screen.dart:454:25 - unnecessary_string_interpolations
+warning - The receiver can't be null, so the null-aware operator '?.' is unnecessary - lib\features\dish\screens\dish_detail_screen.dart:454:43 - invalid_null_aware_operator
+warning - The declaration '_buildDietaryInfo' isn't referenced - lib\features\dish\screens\dish_detail_screen.dart:485:10 - unused_element
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\dish\screens\dish_detail_screen.dart:519:41 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\dish\screens\dish_detail_screen.dart:521:60 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\dish\screens\dish_detail_screen.dart:549:42 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\dish\screens\dish_detail_screen.dart:551:61 - deprecated_member_use
+warning - The declaration '_buildDescription' isn't referenced - lib\features\dish\screens\dish_detail_screen.dart:569:10 - unused_element
+   info - Use 'const' with the constructor to improve performance - lib\features\dish\screens\dish_detail_screen.dart:635:31 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\dish\screens\dish_detail_screen.dart:647:27 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\dish\screens\dish_detail_screen.dart:669:31 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\dish\screens\dish_detail_screen.dart:679:27 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\dish\screens\dish_detail_screen.dart:756:45 - prefer_const_constructors
+   info - Unnecessary use of 'toList' in a spread - lib\features\dish\screens\dish_detail_screen.dart:769:12 - unnecessary_to_list_in_spreads
+   info - Use 'const' with the constructor to improve performance - lib\features\dish\screens\dish_detail_screen.dart:805:15 - prefer_const_constructors
+   info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\features\dish\screens\dish_detail_screen.dart:807:27 - prefer_const_literals_to_create_immutables
+   info - Use 'const' with the constructor to improve performance - lib\features\dish\screens\dish_detail_screen.dart:808:19 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\dish\screens\dish_detail_screen.dart:811:28 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\dish\screens\dish_detail_screen.dart:813:35 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\dish\screens\dish_detail_screen.dart:820:15 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\dish\screens\dish_detail_screen.dart:822:24 - prefer_const_constructors
+   info - An 'async' function should have a 'Future' return type when it doesn't return a value - lib\features\dish\screens\dish_detail_screen.dart:844:8 - avoid_void_async
+warning - The declaration '_selectPickupTime' isn't referenced - lib\features\dish\screens\dish_detail_screen.dart:844:8 - unused_element
+   info - Don't use 'BuildContext's across async gaps - lib\features\dish\screens\dish_detail_screen.dart:855:9 - use_build_context_synchronously
+warning - The declaration '_formatPickupTime' isn't referenced - lib\features\dish\screens\dish_detail_screen.dart:873:10 - unused_element
+warning - The declaration '_calculateAsapTime' isn't referenced - lib\features\dish\screens\dish_detail_screen.dart:878:10 - unused_element
+   info - Use 'const' with the constructor to improve performance - lib\features\dish\screens\dish_detail_screen.dart:889:16 - prefer_const_constructors
+   info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\features\dish\screens\dish_detail_screen.dart:890:21 - prefer_const_literals_to_create_immutables
+   info - Use 'const' with the constructor to improve performance - lib\features\dish\screens\dish_detail_screen.dart:891:13 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\dish\screens\dish_detail_screen.dart:922:16 - prefer_const_constructors
+   info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\features\dish\screens\dish_detail_screen.dart:923:21 - prefer_const_literals_to_create_immutables
+   info - Use 'const' with the constructor to improve performance - lib\features\dish\screens\dish_detail_screen.dart:924:13 - prefer_const_constructors
+   info - An 'async' function should have a 'Future' return type when it doesn't return a value - lib\features\dish\screens\dish_detail_screen.dart:947:8 - avoid_void_async
+warning - The declaration '_shareDish' isn't referenced - lib\features\dish\screens\dish_detail_screen.dart:947:8 - unused_element
+warning - The getter doesn't override an inherited getter - lib\features\dish\screens\dish_detail_screen.dart:958:12 - override_on_non_overriding_member
+   info - Unnecessary braces in a string interpolation - lib\features\feed\models\dish_model.dart:100:36 - unnecessary_brace_in_string_interps
+warning - Unused import: '../models/dish_model.dart' - lib\features\feed\screens\feed_screen.dart:6:8 - unused_import
+warning - Unused import: '../../../shared/widgets/glass_container.dart' - lib\features\feed\screens\feed_screen.dart:11:8 - unused_import
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\feed\widgets\dish_card.dart:32:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\feed\widgets\dish_card.dart:103:52 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\feed\widgets\dish_card.dart:164:56 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\feed\widgets\dish_card.dart:223:39 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\feed\widgets\dish_card.dart:227:45 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\feed\widgets\dish_card.dart:250:45 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\feed\widgets\dish_card.dart:288:43 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\feed\widgets\dish_card.dart:290:56 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\feed\widgets\dish_feed_widget.dart:47:68 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\feed\widgets\dish_feed_widget.dart:118:76 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\feed\widgets\vendor_feed_widget.dart:37:68 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\feed\widgets\vendor_feed_widget.dart:103:80 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\feed\widgets\vendor_feed_widget.dart:138:72 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\feed\widgets\vendor_mini_card.dart:28:33 - deprecated_member_use
+   info - Use 'const' with the constructor to improve performance - lib\features\feed\widgets\vendor_mini_card.dart:124:19 - prefer_const_constructors
+   info - Don't invoke 'print' in production code - lib\features\map\blocs\map_feed_bloc.dart:630:11 - avoid_print
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\map\screens\map_screen.dart:140:50 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\map\screens\map_screen.dart:176:37 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\map\screens\map_screen.dart:217:56 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\map\screens\map_screen.dart:250:64 - deprecated_member_use
+   info - Use 'const' with the constructor to improve performance - lib\features\map\widgets\location_permission_sheet.dart:45:27 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\order\blocs\active_orders_bloc.dart:76:11 - prefer_const_constructors
+warning - The receiver can't be null, so the null-aware operator '?[' is unnecessary - lib\features\order\blocs\active_orders_bloc.dart:102:34 - invalid_null_aware_operator
+warning - The receiver can't be null, so the null-aware operator '?[' is unnecessary - lib\features\order\blocs\active_orders_bloc.dart:103:34 - invalid_null_aware_operator
+   info - Use 'const' with the constructor to improve performance - lib\features\order\blocs\active_orders_bloc.dart:104:19 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\order\blocs\active_orders_bloc.dart:125:9 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\order\blocs\active_orders_bloc.dart:130:9 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\order\blocs\active_orders_bloc.dart:134:9 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\order\blocs\active_orders_bloc.dart:138:9 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\order\blocs\active_orders_bloc.dart:142:9 - prefer_const_constructors
+warning - The member 'emit' can only be used within 'package:bloc/src/bloc.dart' or a test - lib\features\order\blocs\active_orders_bloc.dart:147:5 - invalid_use_of_visible_for_testing_member
+warning - The member 'emit' can only be used within 'package:bloc/src/bloc.dart' or a test - lib\features\order\blocs\active_orders_bloc.dart:151:5 - invalid_use_of_visible_for_testing_member
+warning - The member 'emit' can only be used within 'package:bloc/src/bloc.dart' or a test - lib\features\order\blocs\active_orders_bloc.dart:155:5 - invalid_use_of_visible_for_testing_member
+warning - The member 'emit' can only be used within 'package:bloc/src/bloc.dart' or a test - lib\features\order\blocs\active_orders_bloc.dart:159:5 - invalid_use_of_visible_for_testing_member
+   info - An 'async' function should have a 'Future' return type when it doesn't return a value - lib\features\order\blocs\order_bloc.dart:143:8 - avoid_void_async
+   info - Use 'const' with the constructor to improve performance - lib\features\order\blocs\order_bloc.dart:214:9 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\order\blocs\order_bloc.dart:311:9 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\order\blocs\order_bloc.dart:323:9 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\order\blocs\order_bloc.dart:327:9 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\order\blocs\order_bloc.dart:331:9 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\order\blocs\order_bloc.dart:339:9 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\order\blocs\order_bloc.dart:357:9 - prefer_const_constructors
+warning - Unused import: 'package:flutter_bloc/flutter_bloc.dart' - lib\features\order\screens\order_confirmation_screen.dart:2:8 - unused_import
+warning - Unused import: '../blocs/order_bloc.dart' - lib\features\order\screens\order_confirmation_screen.dart:6:8 - unused_import
+warning - Unused import: '../blocs/order_state.dart' - lib\features\order\screens\order_confirmation_screen.dart:7:8 - unused_import
+warning - The value of the local variable 'status' isn't used - lib\features\order\screens\order_confirmation_screen.dart:132:11 - unused_local_variable
+warning - The value of the local variable 'vendor' isn't used - lib\features\order\screens\order_confirmation_screen.dart:134:11 - unused_local_variable
+warning - The value of the local variable 'items' isn't used - lib\features\order\screens\order_confirmation_screen.dart:135:11 - unused_local_variable
+warning - The value of the local variable 'totalAmount' isn't used - lib\features\order\screens\order_confirmation_screen.dart:137:11 - unused_local_variable
+   info - Use 'const' with the constructor to improve performance - lib\features\order\screens\order_confirmation_screen.dart:148:27 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\order\screens\order_confirmation_screen.dart:239:36 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\order\screens\order_confirmation_screen.dart:241:38 - prefer_const_constructors
+warning - The declaration '_buildStatusSection' isn't referenced - lib\features\order\screens\order_confirmation_screen.dart:262:10 - unused_element
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\order\screens\order_confirmation_screen.dart:304:38 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\order\screens\order_confirmation_screen.dart:306:57 - deprecated_member_use
+   info - Use 'const' with the constructor to improve performance - lib\features\order\screens\order_confirmation_screen.dart:310:21 - prefer_const_constructors
+warning - The declaration '_buildVendorSection' isn't referenced - lib\features\order\screens\order_confirmation_screen.dart:347:10 - unused_element
+warning - The declaration '_buildOrderItemsSection' isn't referenced - lib\features\order\screens\order_confirmation_screen.dart:402:10 - unused_element
+   info - Unnecessary use of 'toList' in a spread - lib\features\order\screens\order_confirmation_screen.dart:452:16 - unnecessary_to_list_in_spreads
+warning - The declaration '_buildTimingSection' isn't referenced - lib\features\order\screens\order_confirmation_screen.dart:459:10 - unused_element
+warning - The declaration '_buildTotalSection' isn't referenced - lib\features\order\screens\order_confirmation_screen.dart:538:10 - unused_element
+warning - The declaration '_buildActionButtons' isn't referenced - lib\features\order\screens\order_confirmation_screen.dart:564:10 - unused_element
+warning - Unused import: 'package:supabase_flutter/supabase_flutter.dart' - lib\features\order\widgets\active_order_modal.dart:3:8 - unused_import
+warning - Unused import: '../../../shared/widgets/glass_container.dart' - lib\features\order\widgets\active_order_modal.dart:5:8 - unused_import
+   info - Use 'const' with the constructor to improve performance - lib\features\order\widgets\active_order_modal.dart:66:35 - prefer_const_constructors
+warning - The value of the local variable 'orderId' isn't used - lib\features\order\widgets\active_order_modal.dart:208:11 - unused_local_variable
+warning - The value of the local variable 'status' isn't used - lib\features\order\widgets\active_order_modal.dart:209:11 - unused_local_variable
+warning - The value of the local variable 'createdAt' isn't used - lib\features\order\widgets\active_order_modal.dart:211:11 - unused_local_variable
+   info - Use 'const' with the constructor to improve performance - lib\features\order\widgets\active_order_modal.dart:239:38 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\order\widgets\active_order_modal.dart:243:25 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\order\widgets\active_order_modal.dart:274:25 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\order\widgets\active_order_modal.dart:275:23 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\order\widgets\active_order_modal.dart:276:22 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\order\widgets\active_order_modal.dart:299:25 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\order\widgets\active_order_modal.dart:300:23 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\order\widgets\active_order_modal.dart:301:22 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\order\widgets\active_order_modal.dart:336:22 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\order\widgets\active_order_modal.dart:338:24 - prefer_const_constructors
+warning - The declaration '_buildStatusBadge' isn't referenced - lib\features\order\widgets\active_order_modal.dart:351:10 - unused_element
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\order\widgets\active_order_modal.dart:358:41 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\order\widgets\active_order_modal.dart:363:39 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\order\widgets\active_order_modal.dart:368:41 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\order\widgets\active_order_modal.dart:373:40 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\order\widgets\active_order_modal.dart:378:39 - deprecated_member_use
+warning - The declaration '_viewOrderDetails' isn't referenced - lib\features\order\widgets\active_order_modal.dart:400:8 - unused_element
+warning - The declaration '_buildOrderTimeline' isn't referenced - lib\features\order\widgets\active_order_modal.dart:437:10 - unused_element
+   info - Unnecessary use of 'toList' in a spread - lib\features\order\widgets\active_order_modal.dart:481:66 - unnecessary_to_list_in_spreads
+warning - The declaration '_buildPickupCodeSection' isn't referenced - lib\features\order\widgets\active_order_modal.dart:546:10 - unused_element
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\order\widgets\active_order_modal.dart:550:54 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\order\widgets\active_order_modal.dart:553:56 - deprecated_member_use
+warning - The declaration '_buildVendorLocationSection' isn't referenced - lib\features\order\widgets\active_order_modal.dart:591:10 - unused_element
+warning - The declaration '_buildOrderItemsPreview' isn't referenced - lib\features\order\widgets\active_order_modal.dart:612:10 - unused_element
+   info - Unnecessary use of 'toList' in a spread - lib\features\order\widgets\active_order_modal.dart:655:12 - unnecessary_to_list_in_spreads
+warning - The declaration '_buildSpecialInstructionsSection' isn't referenced - lib\features\order\widgets\active_order_modal.dart:670:10 - unused_element
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\order\widgets\active_order_modal.dart:674:30 - deprecated_member_use
+   info - Use 'const' with the constructor to improve performance - lib\features\order\widgets\route_overlay.dart:153:39 - prefer_const_constructors
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\payment\screens\checkout_screen.dart:125:76 - deprecated_member_use
+   info - Use 'const' with the constructor to improve performance - lib\features\payment\screens\checkout_screen.dart:157:13 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\payment\screens\checkout_screen.dart:165:13 - prefer_const_constructors
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\payment\screens\checkout_screen.dart:239:60 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\payment\screens\checkout_screen.dart:242:62 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\payment\screens\checkout_screen.dart:303:58 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\payment\screens\checkout_screen.dart:404:66 - deprecated_member_use
+   info - An 'async' function should have a 'Future' return type when it doesn't return a value - lib\features\payment\screens\checkout_screen.dart:536:8 - avoid_void_async
+   info - Don't use 'BuildContext's across async gaps - lib\features\payment\screens\checkout_screen.dart:552:7 - use_build_context_synchronously
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\payment\screens\payment_method_selection_screen.dart:175:64 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\payment\screens\payment_method_selection_screen.dart:199:72 - deprecated_member_use
+   info - 'groupValue' is deprecated and shouldn't be used. Use a RadioGroup ancestor to manage group value instead. This feature was deprecated after v3.32.0-0.0.pre - lib\features\payment\screens\payment_method_selection_screen.dart:218:17 - deprecated_member_use
+   info - 'onChanged' is deprecated and shouldn't be used. Use RadioGroup to handle value change instead. This feature was deprecated after v3.32.0-0.0.pre - lib\features\payment\screens\payment_method_selection_screen.dart:219:17 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\payment\screens\payment_method_selection_screen.dart:242:64 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\payment\screens\payment_method_selection_screen.dart:357:64 - deprecated_member_use
+   info - An 'async' function should have a 'Future' return type when it doesn't return a value - lib\features\payment\widgets\order_cancellation_widget.dart:86:8 - avoid_void_async
+   info - Use 'const' with the constructor to improve performance - lib\features\payment\widgets\order_cancellation_widget.dart:92:11 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\payment\widgets\order_cancellation_widget.dart:97:37 - prefer_const_constructors
+   info - Don't use 'BuildContext's across async gaps - lib\features\payment\widgets\order_cancellation_widget.dart:103:20 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\features\payment\widgets\order_cancellation_widget.dart:106:38 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\features\payment\widgets\order_cancellation_widget.dart:110:20 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\features\payment\widgets\order_cancellation_widget.dart:113:36 - use_build_context_synchronously
+   info - Use 'const' with the constructor to improve performance - lib\features\payment\widgets\order_cancellation_widget.dart:126:13 - prefer_const_constructors
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\payment\widgets\order_cancellation_widget.dart:202:62 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\payment\widgets\order_cancellation_widget.dart:238:60 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\payment\widgets\order_cancellation_widget.dart:264:70 - deprecated_member_use
+warning - The value of the local variable 'isSelected' isn't used - lib\features\payment\widgets\payment_method_manager_widget.dart:99:11 - unused_local_variable
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\payment\widgets\payment_method_manager_widget.dart:115:64 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\payment\widgets\payment_method_manager_widget.dart:143:76 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\payment\widgets\payment_method_manager_widget.dart:165:74 - deprecated_member_use
+   info - 'groupValue' is deprecated and shouldn't be used. Use a RadioGroup ancestor to manage group value instead. This feature was deprecated after v3.32.0-0.0.pre - lib\features\payment\widgets\payment_method_manager_widget.dart:180:23 - deprecated_member_use
+   info - 'onChanged' is deprecated and shouldn't be used. Use RadioGroup to handle value change instead. This feature was deprecated after v3.32.0-0.0.pre - lib\features\payment\widgets\payment_method_manager_widget.dart:181:23 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\payment\widgets\payment_method_manager_widget.dart:187:72 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\payment\widgets\payment_method_manager_widget.dart:230:58 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\payment\widgets\payment_method_manager_widget.dart:243:60 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\payment\widgets\payment_method_manager_widget.dart:311:64 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\payment\widgets\payment_status_widget.dart:54:74 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\payment\widgets\payment_status_widget.dart:198:56 - deprecated_member_use
+   info - Use 'const' with the constructor to improve performance - lib\features\payment\widgets\payment_status_widget.dart:227:22 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\payment\widgets\payment_status_widget.dart:229:29 - prefer_const_constructors
+warning - Unused import: 'package:flutter_bloc/flutter_bloc.dart' - lib\features\profile\screens\favourites_screen.dart:2:8 - unused_import
+warning - Unused import: '../../../shared/widgets/glass_container.dart' - lib\features\profile\screens\favourites_screen.dart:5:8 - unused_import
+   info - Use 'const' with the constructor to improve performance - lib\features\profile\screens\favourites_screen.dart:210:25 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\profile\screens\favourites_screen.dart:367:27 - prefer_const_constructors
+warning - Unused import: 'package:flutter_bloc/flutter_bloc.dart' - lib\features\settings\screens\notifications_screen.dart:2:8 - unused_import
+warning - Unused import: '../../../shared/widgets/glass_container.dart' - lib\features\settings\screens\notifications_screen.dart:5:8 - unused_import
+warning - Unused import: '../../auth/blocs/user_profile_bloc.dart' - lib\features\settings\screens\notifications_screen.dart:6:8 - unused_import
+   info - 'activeColor' is deprecated and shouldn't be used. Use activeThumbColor instead. This feature was deprecated after v3.31.0-2.0.pre - lib\features\settings\screens\notifications_screen.dart:371:13 - deprecated_member_use
+warning - Unused import: '../../../shared/widgets/glass_container.dart' - lib\features\settings\screens\settings_screen.dart:5:8 - unused_import
+warning - Unused import: 'dart:convert' - lib\features\vendor\blocs\media_upload_bloc.dart:2:8 - unused_import
+   info - The imported package 'bloc' isn't a dependency of the importing package - lib\features\vendor\blocs\media_upload_bloc.dart:3:8 - depend_on_referenced_packages
+warning - Unused import: 'package:http/http.dart' - lib\features\vendor\blocs\media_upload_bloc.dart:6:8 - unused_import
+  error - The getter 'error' isn't defined for the type 'String' - lib\features\vendor\blocs\media_upload_bloc.dart:69:26 - undefined_getter
+  error - The getter 'error' isn't defined for the type 'String' - lib\features\vendor\blocs\media_upload_bloc.dart:70:40 - undefined_getter
+warning - The value of the local variable 'chunk' isn't used - lib\features\vendor\blocs\media_upload_bloc.dart:141:15 - unused_local_variable
+  error - The getter 'error' isn't defined for the type 'String' - lib\features\vendor\blocs\media_upload_bloc.dart:157:30 - undefined_getter
+  error - The getter 'error' isn't defined for the type 'String' - lib\features\vendor\blocs\media_upload_bloc.dart:158:44 - undefined_getter
+  error - The getter 'error' isn't defined for the type 'String' - lib\features\vendor\blocs\media_upload_bloc.dart:237:28 - undefined_getter
+  error - The getter 'error' isn't defined for the type 'String' - lib\features\vendor\blocs\media_upload_bloc.dart:238:42 - undefined_getter
+  error - The getter 'error' isn't defined for the type 'List<FileObject>' - lib\features\vendor\blocs\media_upload_bloc.dart:284:26 - undefined_getter
+  error - The getter 'error' isn't defined for the type 'List<FileObject>' - lib\features\vendor\blocs\media_upload_bloc.dart:285:40 - undefined_getter
+  error - There's no constant named 'loaded' in 'MediaUploadStatus' - lib\features\vendor\blocs\media_upload_bloc.dart:342:35 - undefined_enum_constant
+  error - The getter 'error' isn't defined for the type 'String' - lib\features\vendor\blocs\media_upload_bloc.dart:420:32 - undefined_getter
+  error - The getter 'error' isn't defined for the type 'String' - lib\features\vendor\blocs\media_upload_bloc.dart:421:46 - undefined_getter
+  error - The getter 'data' isn't defined for the type 'String' - lib\features\vendor\blocs\media_upload_bloc.dart:425:44 - undefined_getter
+   info - Unnecessary braces in a string interpolation - lib\features\vendor\blocs\media_upload_bloc.dart:461:36 - unnecessary_brace_in_string_interps
+   info - Unnecessary braces in a string interpolation - lib\features\vendor\blocs\media_upload_bloc.dart:544:13 - unnecessary_brace_in_string_interps
+  error - 'FilterMedia.props' ('List<Object?> Function()') isn't a valid override of 'MediaUploadEvent.props' ('List<Object> Function()') - lib\features\vendor\blocs\media_upload_event.dart:157:21 - invalid_override
+   info - The imported package 'bloc' isn't a dependency of the importing package - lib\features\vendor\blocs\menu_management_bloc.dart:1:8 - depend_on_referenced_packages
+   info - An 'async' function should have a 'Future' return type when it doesn't return a value - lib\features\vendor\blocs\menu_management_bloc.dart:28:8 - avoid_void_async
+   info - An 'async' function should have a 'Future' return type when it doesn't return a value - lib\features\vendor\blocs\menu_management_bloc.dart:84:8 - avoid_void_async
+   info - An 'async' function should have a 'Future' return type when it doesn't return a value - lib\features\vendor\blocs\menu_management_bloc.dart:152:8 - avoid_void_async
+   info - An 'async' function should have a 'Future' return type when it doesn't return a value - lib\features\vendor\blocs\menu_management_bloc.dart:206:8 - avoid_void_async
+   info - An 'async' function should have a 'Future' return type when it doesn't return a value - lib\features\vendor\blocs\menu_management_bloc.dart:238:8 - avoid_void_async
+warning - The receiver can't be null, so the null-aware operator '?.' is unnecessary - lib\features\vendor\blocs\menu_management_bloc.dart:277:28 - invalid_null_aware_operator
+   info - Use 'const' with the constructor to improve performance - lib\features\vendor\blocs\menu_management_bloc.dart:311:9 - prefer_const_constructors
+warning - The receiver can't be null, so the null-aware operator '?.' is unnecessary - lib\features\vendor\blocs\menu_management_bloc.dart:344:30 - invalid_null_aware_operator
+warning - Dead code - lib\features\vendor\blocs\menu_management_bloc.dart:360:43 - dead_code
+warning - The left operand can't be null, so the right operand is never executed - lib\features\vendor\blocs\menu_management_bloc.dart:360:46 - dead_null_aware_expression
+warning - The left operand can't be null, so the right operand is never executed - lib\features\vendor\blocs\menu_management_bloc.dart:360:80 - dead_null_aware_expression
+   info - The imported package 'bloc' isn't a dependency of the importing package - lib\features\vendor\blocs\order_management_bloc.dart:1:8 - depend_on_referenced_packages
+warning - The operand can't be 'null', so the condition is always 'true' - lib\features\vendor\blocs\order_management_bloc.dart:47:35 - unnecessary_null_comparison
+warning - Unnecessary cast - lib\features\vendor\blocs\order_management_bloc.dart:48:43 - unnecessary_cast
+   info - Use 'const' with the constructor to improve performance - lib\features\vendor\blocs\order_management_bloc.dart:303:11 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\vendor\blocs\order_management_bloc.dart:337:9 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\vendor\blocs\order_management_bloc.dart:367:11 - prefer_const_constructors
+   info - The imported package 'bloc' isn't a dependency of the importing package - lib\features\vendor\blocs\vendor_chat_bloc.dart:1:8 - depend_on_referenced_packages
+  error - The getter 'new' isn't defined for the type 'PostgresChangePayload' - lib\features\vendor\blocs\vendor_chat_bloc.dart:46:25 - undefined_getter
+   info - Use 'const' with the constructor to improve performance - lib\features\vendor\blocs\vendor_chat_bloc.dart:47:19 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\vendor\blocs\vendor_chat_bloc.dart:281:11 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\vendor\blocs\vendor_chat_bloc.dart:303:11 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\vendor\blocs\vendor_chat_bloc.dart:322:11 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\vendor\blocs\vendor_chat_bloc.dart:348:11 - prefer_const_constructors
+  error - The argument type 'FilterConversations' can't be assigned to the parameter type 'ChatFilters?'.  - lib\features\vendor\blocs\vendor_chat_bloc.dart:390:16 - argument_type_not_assignable
+warning - The operand can't be 'null', so the condition is always 'true' - lib\features\vendor\blocs\vendor_dashboard_bloc.dart:272:35 - unnecessary_null_comparison
+warning - The '!' will have no effect because the receiver can't be null - lib\features\vendor\blocs\vendor_dashboard_bloc.dart:272:63 - unnecessary_non_null_assertion
+warning - The operand can't be 'null', so the condition is always 'true' - lib\features\vendor\blocs\vendor_dashboard_bloc.dart:284:35 - unnecessary_null_comparison
+warning - The '!' will have no effect because the receiver can't be null - lib\features\vendor\blocs\vendor_dashboard_bloc.dart:284:63 - unnecessary_non_null_assertion
+   info - Use 'const' with the constructor to improve performance - lib\features\vendor\blocs\vendor_dashboard_bloc.dart:354:11 - prefer_const_constructors
+   info - The imported package 'bloc' isn't a dependency of the importing package - lib\features\vendor\blocs\vendor_onboarding_bloc.dart:1:8 - depend_on_referenced_packages
+warning - The member 'emit' can only be used within 'package:bloc/src/bloc.dart' or a test - lib\features\vendor\blocs\vendor_onboarding_bloc.dart:143:9 - invalid_use_of_visible_for_testing_member
+warning - The member 'emit' can only be used within 'package:bloc/src/bloc.dart' or a test - lib\features\vendor\blocs\vendor_onboarding_bloc.dart:175:7 - invalid_use_of_visible_for_testing_member
+warning - The member 'emit' can only be used within 'package:bloc/src/bloc.dart' or a test - lib\features\vendor\blocs\vendor_onboarding_bloc.dart:180:7 - invalid_use_of_visible_for_testing_member
+warning - The member 'emit' can only be used within 'package:bloc/src/bloc.dart' or a test - lib\features\vendor\blocs\vendor_onboarding_bloc.dart:201:7 - invalid_use_of_visible_for_testing_member
+warning - The member 'emit' can only be used within 'package:bloc/src/bloc.dart' or a test - lib\features\vendor\blocs\vendor_onboarding_bloc.dart:205:7 - invalid_use_of_visible_for_testing_member
+warning - The member 'emit' can only be used within 'package:bloc/src/bloc.dart' or a test - lib\features\vendor\blocs\vendor_onboarding_bloc.dart:222:9 - invalid_use_of_visible_for_testing_member
+   info - 'activeColor' is deprecated and shouldn't be used. Use activeThumbColor instead. This feature was deprecated after v3.31.0-2.0.pre - lib\features\vendor\screens\availability_management_screen.dart:62:9 - deprecated_member_use
+warning - Dead code - lib\features\vendor\screens\dish_edit_screen.dart:73:52 - dead_code
+warning - The left operand can't be null, so the right operand is never executed - lib\features\vendor\screens\dish_edit_screen.dart:73:55 - dead_null_aware_expression
+warning - The receiver can't be null, so the null-aware operator '?.' is unnecessary - lib\features\vendor\screens\dish_edit_screen.dart:76:59 - invalid_null_aware_operator
+warning - The receiver can't be null, so the null-aware operator '?.' is unnecessary - lib\features\vendor\screens\dish_edit_screen.dart:78:47 - invalid_null_aware_operator
+warning - The left operand can't be null, so the right operand is never executed - lib\features\vendor\screens\dish_edit_screen.dart:82:38 - dead_null_aware_expression
+warning - The left operand can't be null, so the right operand is never executed - lib\features\vendor\screens\dish_edit_screen.dart:83:38 - dead_null_aware_expression
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\features\vendor\screens\dish_edit_screen.dart:162:26 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\features\vendor\screens\dish_edit_screen.dart:163:34 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\features\vendor\screens\dish_edit_screen.dart:219:11 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\features\vendor\screens\dish_edit_screen.dart:221:11 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\features\vendor\screens\dish_edit_screen.dart:224:22 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\features\vendor\screens\dish_edit_screen.dart:225:22 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\features\vendor\screens\dish_edit_screen.dart:229:22 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\features\vendor\screens\dish_edit_screen.dart:230:30 - use_build_context_synchronously
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\features\vendor\screens\dish_edit_screen.dart:340:27 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\screens\dish_edit_screen.dart:481:47 - deprecated_member_use
+   info - The imported package 'file_picker' isn't a dependency of the importing package - lib\features\vendor\screens\media_upload_screen.dart:5:8 - depend_on_referenced_packages
+  error - Target of URI doesn't exist: 'package:file_picker/file_picker.dart' - lib\features\vendor\screens\media_upload_screen.dart:5:8 - uri_does_not_exist
+  error - The imported library '../blocs/media_upload_event.dart' can't have a part-of directive - lib\features\vendor\screens\media_upload_screen.dart:8:8 - import_of_non_library
+  error - The imported library '../blocs/media_upload_state.dart' can't have a part-of directive - lib\features\vendor\screens\media_upload_screen.dart:9:8 - import_of_non_library
+  error - Target of URI doesn't exist: '../widgets/media_grid_widget.dart' - lib\features\vendor\screens\media_upload_screen.dart:10:8 - uri_does_not_exist
+  error - Target of URI doesn't exist: '../widgets/upload_progress_widget.dart' - lib\features\vendor\screens\media_upload_screen.dart:11:8 - uri_does_not_exist
+  error - Target of URI doesn't exist: '../widgets/media_details_widget.dart' - lib\features\vendor\screens\media_upload_screen.dart:12:8 - uri_does_not_exist
+   info - Use 'const' with the constructor to improve performance - lib\features\vendor\screens\media_upload_screen.dart:31:41 - prefer_const_constructors
+  error - The method 'UploadProgressWidget' isn't defined for the type '_MediaUploadScreenState' - lib\features\vendor\screens\media_upload_screen.dart:89:24 - undefined_method
+   info - The 'child' argument should be last in widget constructor invocations - lib\features\vendor\screens\media_upload_screen.dart:124:13 - sort_child_properties_last
+   info - The 'child' argument should be last in widget constructor invocations - lib\features\vendor\screens\media_upload_screen.dart:132:13 - sort_child_properties_last
+   info - Use 'const' with the constructor to improve performance - lib\features\vendor\screens\media_upload_screen.dart:181:57 - prefer_const_constructors
+   info - 'surfaceVariant' is deprecated and shouldn't be used. Use surfaceContainerHighest instead. This feature was deprecated after v3.18.0-0.1.pre - lib\features\vendor\screens\media_upload_screen.dart:200:54 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\screens\media_upload_screen.dart:203:66 - deprecated_member_use
+  error - The method 'MediaGridWidget' isn't defined for the type '_MediaUploadScreenState' - lib\features\vendor\screens\media_upload_screen.dart:235:22 - undefined_method
+  error - The getter 'multiple' isn't defined for the type 'Icons' - lib\features\vendor\screens\media_upload_screen.dart:383:31 - undefined_getter
+   info - Don't use 'BuildContext's across async gaps - lib\features\vendor\screens\media_upload_screen.dart:417:9 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\features\vendor\screens\media_upload_screen.dart:434:7 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\features\vendor\screens\media_upload_screen.dart:451:7 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\features\vendor\screens\media_upload_screen.dart:466:7 - use_build_context_synchronously
+  error - Undefined name 'FilePicker' - lib\features\vendor\screens\media_upload_screen.dart:474:26 - undefined_identifier
+  error - Undefined name 'FileType' - lib\features\vendor\screens\media_upload_screen.dart:475:13 - undefined_identifier
+   info - Don't use 'BuildContext's across async gaps - lib\features\vendor\screens\media_upload_screen.dart:484:11 - use_build_context_synchronously
+  error - The method 'MediaDetailsWidget' isn't defined for the type '_MediaUploadScreenState' - lib\features\vendor\screens\media_upload_screen.dart:509:31 - undefined_method
+  error - The method '_formatFileSize' isn't defined for the type 'MediaUploadState' - lib\features\vendor\screens\media_upload_screen.dart:582:29 - undefined_method
+  error - The imported library '../blocs/menu_management_event.dart' can't have a part-of directive - lib\features\vendor\screens\menu_management_screen.dart:6:8 - import_of_non_library
+  error - The imported library '../blocs/menu_management_state.dart' can't have a part-of directive - lib\features\vendor\screens\menu_management_screen.dart:7:8 - import_of_non_library
+  error - Target of URI doesn't exist: '../../core/repositories/supabase_repository.dart' - lib\features\vendor\screens\menu_management_screen.dart:12:8 - uri_does_not_exist
+   info - Use 'const' with the constructor to improve performance - lib\features\vendor\screens\menu_management_screen.dart:31:44 - prefer_const_constructors
+  error - Undefined class 'Dish' - lib\features\vendor\screens\menu_management_screen.dart:41:23 - undefined_class
+  error - Undefined class 'Dish' - lib\features\vendor\screens\menu_management_screen.dart:50:32 - undefined_class
+   info - Use 'const' with the constructor to improve performance - lib\features\vendor\screens\menu_management_screen.dart:97:54 - prefer_const_constructors
+   info - The 'child' argument should be last in widget constructor invocations - lib\features\vendor\screens\menu_management_screen.dart:112:9 - sort_child_properties_last
+   info - Use 'const' with the constructor to improve performance - lib\features\vendor\screens\menu_management_screen.dart:172:66 - prefer_const_constructors
+   info - 'surfaceVariant' is deprecated and shouldn't be used. Use surfaceContainerHighest instead. This feature was deprecated after v3.18.0-0.1.pre - lib\features\vendor\screens\menu_management_screen.dart:219:60 - deprecated_member_use
+  error - The name 'Dish' isn't a type, so it can't be used as a type argument - lib\features\vendor\screens\menu_management_screen.dart:363:41 - non_type_as_type_argument
+   info - 'surfaceVariant' is deprecated and shouldn't be used. Use surfaceContainerHighest instead. This feature was deprecated after v3.18.0-0.1.pre - lib\features\vendor\screens\menu_management_screen.dart:387:70 - deprecated_member_use
+  error - The name 'Dish' isn't a type, so it can't be used as a type argument - lib\features\vendor\screens\menu_management_screen.dart:399:35 - non_type_as_type_argument
+  error - The name 'Dish' isn't a type, so it can't be used as a type argument - lib\features\vendor\screens\menu_management_screen.dart:400:32 - non_type_as_type_argument
+  error - The property 'popularityScore' can't be unconditionally accessed because the receiver can be 'null' - lib\features\vendor\screens\menu_management_screen.dart:401:27 - unchecked_use_of_nullable_value
+  error - The property 'popularityScore' can't be unconditionally accessed because the receiver can be 'null' - lib\features\vendor\screens\menu_management_screen.dart:401:61 - unchecked_use_of_nullable_value
+  error - The property 'imageUrl' can't be unconditionally accessed because the receiver can be 'null' - lib\features\vendor\screens\menu_management_screen.dart:416:27 - unchecked_use_of_nullable_value
+  error - The property 'imageUrl' can't be unconditionally accessed because the receiver can be 'null' - lib\features\vendor\screens\menu_management_screen.dart:418:26 - unchecked_use_of_nullable_value
+   info - 'surfaceVariant' is deprecated and shouldn't be used. Use surfaceContainerHighest instead. This feature was deprecated after v3.18.0-0.1.pre - lib\features\vendor\screens\menu_management_screen.dart:426:62 - deprecated_member_use
+   info - 'surfaceVariant' is deprecated and shouldn't be used. Use surfaceContainerHighest instead. This feature was deprecated after v3.18.0-0.1.pre - lib\features\vendor\screens\menu_management_screen.dart:434:58 - deprecated_member_use
+  error - The property 'name' can't be unconditionally accessed because the receiver can be 'null' - lib\features\vendor\screens\menu_management_screen.dart:437:30 - unchecked_use_of_nullable_value
+  error - The property 'priceCents' can't be unconditionally accessed because the receiver can be 'null' - lib\features\vendor\screens\menu_management_screen.dart:438:39 - unchecked_use_of_nullable_value
+  error - The property 'popularityScore' can't be unconditionally accessed because the receiver can be 'null' - lib\features\vendor\screens\menu_management_screen.dart:439:36 - unchecked_use_of_nullable_value
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\screens\moderation_tools_screen.dart:77:48 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\screens\order_history_screen.dart:127:60 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\screens\order_history_screen.dart:161:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\screens\order_history_screen.dart:255:40 - deprecated_member_use
+   info - Unnecessary use of 'toList' in a spread - lib\features\vendor\screens\order_history_screen.dart:321:12 - unnecessary_to_list_in_spreads
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\screens\order_history_screen.dart:333:40 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\screens\order_history_screen.dart:338:38 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\screens\order_history_screen.dart:343:39 - deprecated_member_use
+warning - Unused import: 'package:supabase_flutter/supabase_flutter.dart' - lib\features\vendor\screens\order_management_screen.dart:3:8 - unused_import
+   info - Use 'const' with the constructor to improve performance - lib\features\vendor\screens\order_management_screen.dart:28:45 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\vendor\screens\order_management_screen.dart:81:25 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\vendor\screens\order_management_screen.dart:120:55 - prefer_const_constructors
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\screens\order_management_screen.dart:237:22 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\screens\order_management_screen.dart:239:41 - deprecated_member_use
+   info - Use 'const' with the constructor to improve performance - lib\features\vendor\screens\order_management_screen.dart:286:55 - prefer_const_constructors
+warning - The value of the local variable 'createdAt' isn't used - lib\features\vendor\screens\order_management_screen.dart:336:11 - unused_local_variable
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\screens\order_management_screen.dart:343:52 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\screens\order_management_screen.dart:378:48 - deprecated_member_use
+warning - Unused import: 'package:supabase_flutter/supabase_flutter.dart' - lib\features\vendor\screens\vendor_chat_screen.dart:3:8 - unused_import
+   info - Use 'const' with the constructor to improve performance - lib\features\vendor\screens\vendor_chat_screen.dart:29:40 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\vendor\screens\vendor_chat_screen.dart:30:40 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\vendor\screens\vendor_chat_screen.dart:68:25 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\vendor\screens\vendor_chat_screen.dart:148:56 - prefer_const_constructors
+   info - 'surfaceVariant' is deprecated and shouldn't be used. Use surfaceContainerHighest instead. This feature was deprecated after v3.18.0-0.1.pre - lib\features\vendor\screens\vendor_chat_screen.dart:194:54 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\screens\vendor_chat_screen.dart:197:66 - deprecated_member_use
+   info - Use 'const' with the constructor to improve performance - lib\features\vendor\screens\vendor_chat_screen.dart:212:31 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\vendor\screens\vendor_chat_screen.dart:241:27 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\vendor\screens\vendor_chat_screen.dart:252:27 - prefer_const_constructors
+   info - 'surfaceVariant' is deprecated and shouldn't be used. Use surfaceContainerHighest instead. This feature was deprecated after v3.18.0-0.1.pre - lib\features\vendor\screens\vendor_chat_screen.dart:290:50 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\screens\vendor_chat_screen.dart:293:62 - deprecated_member_use
+   info - Use 'const' with the constructor to improve performance - lib\features\vendor\screens\vendor_chat_screen.dart:304:54 - prefer_const_constructors
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\screens\vendor_chat_screen.dart:385:64 - deprecated_member_use
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\features\vendor\screens\vendor_chat_screen.dart:501:15 - deprecated_member_use
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\features\vendor\screens\vendor_chat_screen.dart:578:15 - deprecated_member_use
+warning - Unused import: 'package:intl/intl.dart' - lib\features\vendor\screens\vendor_dashboard_screen.dart:4:8 - unused_import
+   info - Use 'const' with the constructor to improve performance - lib\features\vendor\screens\vendor_dashboard_screen.dart:31:47 - prefer_const_constructors
+   info - Don't use 'BuildContext's across async gaps - lib\features\vendor\screens\vendor_dashboard_screen.dart:36:11 - use_build_context_synchronously
+   info - Use 'const' with the constructor to improve performance - lib\features\vendor\screens\vendor_dashboard_screen.dart:47:45 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\vendor\screens\vendor_dashboard_screen.dart:58:53 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\vendor\screens\vendor_dashboard_screen.dart:112:74 - prefer_const_constructors
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\screens\vendor_dashboard_screen.dart:122:37 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\screens\vendor_dashboard_screen.dart:124:56 - deprecated_member_use
+   info - Use 'const' with the constructor to improve performance - lib\features\vendor\screens\vendor_dashboard_screen.dart:141:63 - prefer_const_constructors
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\screens\vendor_dashboard_screen.dart:340:60 - deprecated_member_use
+   info - Use 'const' with the constructor to improve performance - lib\features\vendor\screens\vendor_dashboard_screen.dart:475:72 - prefer_const_constructors
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\screens\vendor_onboarding_screen.dart:600:33 - deprecated_member_use
+   info - Don't use 'BuildContext's across async gaps - lib\features\vendor\screens\vendor_onboarding_screen.dart:703:28 - use_build_context_synchronously
+warning - The value of the field '_isTyping' isn't used - lib\features\vendor\widgets\chat_input_widget.dart:22:8 - unused_field
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\chat_input_widget.dart:224:58 - deprecated_member_use
+   info - 'surfaceVariant' is deprecated and shouldn't be used. Use surfaceContainerHighest instead. This feature was deprecated after v3.18.0-0.1.pre - lib\features\vendor\widgets\chat_input_widget.dart:235:54 - deprecated_member_use
+   info - 'surfaceVariant' is deprecated and shouldn't be used. Use surfaceContainerHighest instead. This feature was deprecated after v3.18.0-0.1.pre - lib\features\vendor\widgets\chat_input_widget.dart:305:62 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\chat_input_widget.dart:333:63 - deprecated_member_use
+   info - 'surfaceVariant' is deprecated and shouldn't be used. Use surfaceContainerHighest instead. This feature was deprecated after v3.18.0-0.1.pre - lib\features\vendor\widgets\chat_message_widget.dart:50:57 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\chat_message_widget.dart:59:45 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\chat_message_widget.dart:90:77 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\chat_message_widget.dart:91:84 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\chat_message_widget.dart:98:79 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\chat_message_widget.dart:99:86 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\chat_message_widget.dart:178:65 - deprecated_member_use
+   info - 'surfaceVariant' is deprecated and shouldn't be used. Use surfaceContainerHighest instead. This feature was deprecated after v3.18.0-0.1.pre - lib\features\vendor\widgets\chat_message_widget.dart:179:55 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\chat_message_widget.dart:189:69 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\chat_message_widget.dart:197:71 - deprecated_member_use
+warning - The value of the local variable 'mediaUrl' isn't used - lib\features\vendor\widgets\chat_message_widget.dart:216:11 - unused_local_variable
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\chat_message_widget.dart:224:55 - deprecated_member_use
+   info - 'surfaceVariant' is deprecated and shouldn't be used. Use surfaceContainerHighest instead. This feature was deprecated after v3.18.0-0.1.pre - lib\features\vendor\widgets\chat_message_widget.dart:225:45 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\chat_message_widget.dart:229:57 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\chat_message_widget.dart:230:55 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\chat_message_widget.dart:239:59 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\chat_message_widget.dart:251:67 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\chat_message_widget.dart:262:67 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\chat_message_widget.dart:283:55 - deprecated_member_use
+   info - 'surfaceVariant' is deprecated and shouldn't be used. Use surfaceContainerHighest instead. This feature was deprecated after v3.18.0-0.1.pre - lib\features\vendor\widgets\chat_message_widget.dart:284:45 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\chat_message_widget.dart:288:57 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\chat_message_widget.dart:289:55 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\chat_message_widget.dart:298:59 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\chat_message_widget.dart:307:63 - deprecated_member_use
+warning - Unused import: 'package:flutter_bloc/flutter_bloc.dart' - lib\features\vendor\widgets\dish_card.dart:2:8 - unused_import
+warning - Unused import: '../blocs/menu_management_bloc.dart' - lib\features\vendor\widgets\dish_card.dart:5:8 - unused_import
+   info - 'surfaceVariant' is deprecated and shouldn't be used. Use surfaceContainerHighest instead. This feature was deprecated after v3.18.0-0.1.pre - lib\features\vendor\widgets\dish_card.dart:49:66 - deprecated_member_use
+   info - 'surfaceVariant' is deprecated and shouldn't be used. Use surfaceContainerHighest instead. This feature was deprecated after v3.18.0-0.1.pre - lib\features\vendor\widgets\dish_card.dart:60:62 - deprecated_member_use
+warning - The operand can't be 'null', so the condition is always 'true' - lib\features\vendor\widgets\dish_card.dart:102:44 - unnecessary_null_comparison
+warning - The '!' will have no effect because the receiver can't be null - lib\features\vendor\widgets\dish_card.dart:104:43 - unnecessary_non_null_assertion
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\dish_card.dart:150:50 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\dish_card.dart:151:48 - deprecated_member_use
+warning - The operand can't be 'null', so the condition is always 'true' - lib\features\vendor\widgets\dish_card.dart:187:43 - unnecessary_null_comparison
+warning - Dead code - lib\features\vendor\widgets\dish_card.dart:187:51 - dead_code
+warning - The operand can't be 'null', so the condition is always 'true' - lib\features\vendor\widgets\dish_card.dart:188:31 - unnecessary_null_comparison
+warning - Dead code - lib\features\vendor\widgets\dish_card.dart:188:39 - dead_code
+warning - The operand can't be 'null', so the condition is always 'true' - lib\features\vendor\widgets\dish_card.dart:195:51 - unnecessary_null_comparison
+warning - The operand can't be 'null', so the condition is always 'true' - lib\features\vendor\widgets\dish_card.dart:210:39 - unnecessary_null_comparison
+   info - Use 'const' with the constructor to improve performance - lib\features\vendor\widgets\dish_card.dart:211:21 - prefer_const_constructors
+   info - 'ButtonBar' is deprecated and shouldn't be used. Use OverflowBar instead. This feature was deprecated after v3.21.0-10.0.pre - lib\features\vendor\widgets\dish_card.dart:256:11 - deprecated_member_use
+warning - Dead code - lib\features\vendor\widgets\dish_form.dart:73:52 - dead_code
+warning - The left operand can't be null, so the right operand is never executed - lib\features\vendor\widgets\dish_form.dart:73:55 - dead_null_aware_expression
+warning - The receiver can't be null, so the null-aware operator '?.' is unnecessary - lib\features\vendor\widgets\dish_form.dart:76:59 - invalid_null_aware_operator
+warning - The receiver can't be null, so the null-aware operator '?.' is unnecessary - lib\features\vendor\widgets\dish_form.dart:78:47 - invalid_null_aware_operator
+warning - The left operand can't be null, so the right operand is never executed - lib\features\vendor\widgets\dish_form.dart:82:38 - dead_null_aware_expression
+warning - The left operand can't be null, so the right operand is never executed - lib\features\vendor\widgets\dish_form.dart:83:38 - dead_null_aware_expression
+   info - Don't use 'BuildContext's across async gaps - lib\features\vendor\widgets\dish_form.dart:163:24 - use_build_context_synchronously
+  error - The argument type 'int?' can't be assigned to the parameter type 'int'.  - lib\features\vendor\widgets\dish_form.dart:204:26 - argument_type_not_assignable
+   info - Don't use 'BuildContext's across async gaps - lib\features\vendor\widgets\dish_form.dart:220:9 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\features\vendor\widgets\dish_form.dart:222:9 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\features\vendor\widgets\dish_form.dart:225:20 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\features\vendor\widgets\dish_form.dart:226:20 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\features\vendor\widgets\dish_form.dart:228:20 - use_build_context_synchronously
+   info - Don't invoke 'print' in production code - lib\features\vendor\widgets\dish_form.dart:278:7 - avoid_print
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\features\vendor\widgets\dish_form.dart:393:31 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\dish_form.dart:556:68 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\dish_form.dart:590:56 - deprecated_member_use
+   info - 'surfaceVariant' is deprecated and shouldn't be used. Use surfaceContainerHighest instead. This feature was deprecated after v3.18.0-0.1.pre - lib\features\vendor\widgets\dish_form.dart:653:44 - deprecated_member_use
+   info - Use 'const' with the constructor to improve performance - lib\features\vendor\widgets\dish_list_view.dart:32:48 - prefer_const_constructors
+warning - Unused import: '../../../core/theme/app_theme.dart' - lib\features\vendor\widgets\menu_item_card.dart:2:8 - unused_import
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\menu_item_card.dart:33:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\menu_item_card.dart:94:46 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\menu_item_card.dart:95:44 - deprecated_member_use
+warning - Unused import: 'package:flutter_bloc/flutter_bloc.dart' - lib\features\vendor\widgets\order_analytics_widget.dart:2:8 - unused_import
+warning - Unused import: 'package:supabase_flutter/supabase_flutter.dart' - lib\features\vendor\widgets\order_analytics_widget.dart:3:8 - unused_import
+   info - 'surfaceVariant' is deprecated and shouldn't be used. Use surfaceContainerHighest instead. This feature was deprecated after v3.18.0-0.1.pre - lib\features\vendor\widgets\order_analytics_widget.dart:43:50 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\order_analytics_widget.dart:46:62 - deprecated_member_use
+warning - The value of the local variable 'cancelledOrders' isn't used - lib\features\vendor\widgets\order_analytics_widget.dart:113:15 - unused_local_variable
+warning - Unnecessary cast - lib\features\vendor\widgets\order_analytics_widget.dart:291:30 - unnecessary_cast
+   info - Use a 'SizedBox' to add whitespace to a layout - lib\features\vendor\widgets\order_analytics_widget.dart:346:13 - sized_box_for_whitespace
+warning - Unused import: 'package:flutter_bloc/flutter_bloc.dart' - lib\features\vendor\widgets\order_card.dart:2:8 - unused_import
+warning - Unused import: '../blocs/vendor_dashboard_bloc.dart' - lib\features\vendor\widgets\order_card.dart:4:8 - unused_import
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\order_card.dart:46:35 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\order_card.dart:126:40 - deprecated_member_use
+   info - Unnecessary use of 'toList' in a spread - lib\features\vendor\widgets\order_card.dart:195:12 - unnecessary_to_list_in_spreads
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\order_card.dart:207:41 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\order_card.dart:212:39 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\order_card.dart:217:41 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\order_card.dart:222:40 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\order_card.dart:227:39 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\order_card.dart:232:38 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\order_card.dart:237:39 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\order_details_widget.dart:119:58 - deprecated_member_use
+   info - 'surfaceVariant' is deprecated and shouldn't be used. Use surfaceContainerHighest instead. This feature was deprecated after v3.18.0-0.1.pre - lib\features\vendor\widgets\order_details_widget.dart:129:52 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\order_details_widget.dart:132:64 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\order_details_widget.dart:224:36 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\order_details_widget.dart:226:55 - deprecated_member_use
+   info - 'surfaceVariant' is deprecated and shouldn't be used. Use surfaceContainerHighest instead. This feature was deprecated after v3.18.0-0.1.pre - lib\features\vendor\widgets\order_details_widget.dart:347:72 - deprecated_member_use
+   info - 'surfaceVariant' is deprecated and shouldn't be used. Use surfaceContainerHighest instead. This feature was deprecated after v3.18.0-0.1.pre - lib\features\vendor\widgets\order_details_widget.dart:355:68 - deprecated_member_use
+   info - 'surfaceVariant' is deprecated and shouldn't be used. Use surfaceContainerHighest instead. This feature was deprecated after v3.18.0-0.1.pre - lib\features\vendor\widgets\order_details_widget.dart:515:56 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\order_details_widget.dart:551:58 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\order_filter_bar.dart:62:58 - deprecated_member_use
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\features\vendor\widgets\order_filter_bar.dart:197:17 - deprecated_member_use
+   info - 'surfaceVariant' is deprecated and shouldn't be used. Use surfaceContainerHighest instead. This feature was deprecated after v3.18.0-0.1.pre - lib\features\vendor\widgets\order_queue_widget.dart:25:50 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\order_queue_widget.dart:28:62 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\order_queue_widget.dart:90:43 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\order_queue_widget.dart:92:62 - deprecated_member_use
+   info - Use 'const' with the constructor to improve performance - lib\features\vendor\widgets\order_queue_widget.dart:96:27 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\vendor\widgets\order_queue_widget.dart:155:67 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\vendor\widgets\order_queue_widget.dart:208:59 - prefer_const_constructors
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\order_queue_widget.dart:384:22 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\order_queue_widget.dart:386:41 - deprecated_member_use
+warning - The value of the field '_mapController' isn't used - lib\features\vendor\widgets\place_pin_map.dart:21:24 - unused_field
+   info - Use 'const' with the constructor to improve performance - lib\features\vendor\widgets\place_pin_map.dart:50:9 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\vendor\widgets\place_pin_map.dart:51:18 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\vendor\widgets\place_pin_map.dart:53:20 - prefer_const_constructors
+   info - 'surfaceVariant' is deprecated and shouldn't be used. Use surfaceContainerHighest instead. This feature was deprecated after v3.18.0-0.1.pre - lib\features\vendor\widgets\quick_reply_widget.dart:29:50 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\quick_reply_widget.dart:32:62 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\quick_reply_widget.dart:121:50 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\quick_reply_widget.dart:143:56 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\quick_reply_widget.dart:186:53 - deprecated_member_use
+   info - Use 'const' with the constructor to improve performance - lib\features\vendor\widgets\quick_reply_widget.dart:252:11 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\vendor\widgets\quick_reply_widget.dart:254:20 - prefer_const_constructors
+   info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\features\vendor\widgets\quick_reply_widget.dart:255:25 - prefer_const_literals_to_create_immutables
+   info - Use 'const' with the constructor to improve performance - lib\features\vendor\widgets\quick_reply_widget.dart:275:11 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\vendor\widgets\quick_reply_widget.dart:277:20 - prefer_const_constructors
+   info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\features\vendor\widgets\quick_reply_widget.dart:278:25 - prefer_const_literals_to_create_immutables
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\search_filter_bar.dart:66:58 - deprecated_member_use
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\features\vendor\widgets\search_filter_bar.dart:168:17 - deprecated_member_use
+   info - Use 'const' with the constructor to improve performance - lib\features\vendor\widgets\search_filter_bar.dart:169:29 - prefer_const_constructors
+   info - 'groupValue' is deprecated and shouldn't be used. Use a RadioGroup ancestor to manage group value instead. This feature was deprecated after v3.32.0-0.0.pre - lib\features\vendor\widgets\search_filter_bar.dart:236:15 - deprecated_member_use
+   info - 'onChanged' is deprecated and shouldn't be used. Use RadioGroup to handle value change instead. This feature was deprecated after v3.32.0-0.0.pre - lib\features\vendor\widgets\search_filter_bar.dart:237:15 - deprecated_member_use
+   info - Use 'const' with the constructor to improve performance - lib\features\vendor\widgets\search_filter_bar.dart:276:27 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\vendor\widgets\search_filter_bar.dart:278:25 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\vendor\widgets\search_filter_bar.dart:285:27 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\vendor\widgets\search_filter_bar.dart:287:25 - prefer_const_constructors
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\stats_card.dart:24:22 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\stats_card.dart:27:24 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\stats_card.dart:39:32 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\widgets\stats_card.dart:76:28 - deprecated_member_use
+   info - The 'child' argument should be last in widget constructor invocations - lib\main.dart:49:11 - sort_child_properties_last
+   info - Use relative imports for files in the 'lib' directory - lib\shared\widgets\atoms.dart:2:8 - prefer_relative_imports
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\shared\widgets\cached_data_indicator.dart:100:29 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\shared\widgets\glass_container.dart:44:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\shared\widgets\glass_container.dart:47:33 - deprecated_member_use
+   info - Use 'const' with the constructor to improve performance - lib\shared\widgets\main_app_shell.dart:13:12 - prefer_const_constructors
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\shared\widgets\offline_banner.dart:393:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\shared\widgets\persistent_navigation_shell.dart:55:28 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\shared\widgets\persistent_navigation_shell.dart:56:28 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\shared\widgets\persistent_navigation_shell.dart:60:30 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\shared\widgets\persistent_navigation_shell.dart:61:30 - deprecated_member_use
+   info - Use a 'SizedBox' to add whitespace to a layout - lib\shared\widgets\persistent_navigation_shell.dart:115:14 - sized_box_for_whitespace
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\shared\widgets\persistent_navigation_shell.dart:125:61 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\shared\widgets\persistent_navigation_shell.dart:134:63 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\shared\widgets\persistent_navigation_shell.dart:196:48 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\shared\widgets\persistent_navigation_shell.dart:229:34 - deprecated_member_use
+warning - The asset directory 'assets/images/' doesn't exist - pubspec.yaml:108:7 - asset_directory_does_not_exist
+warning - The asset directory 'assets/icons/' doesn't exist - pubspec.yaml:109:7 - asset_directory_does_not_exist
+

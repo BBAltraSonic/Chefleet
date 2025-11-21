@@ -1,0 +1,6 @@
+Running Gradle task 'assembleDebug'...                          
+Maps API key from .env: null
+Maps API key from local.properties: null
+Final maps API key: 
+Running Gradle task 'assembleDebug'...                             61.4s
+√ Built build\app\outputs\flutter-apk\app-debug.apk

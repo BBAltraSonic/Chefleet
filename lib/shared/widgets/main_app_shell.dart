@@ -15,7 +15,7 @@ class MainAppShell extends StatelessWidget {
       children: const [
         MapScreen(),
         FeedScreen(),
-        OrdersScreen(),
+        LegacyOrdersScreen(),
         ChatScreen(),
         ProfileScreen(),
       ],
@@ -23,8 +23,8 @@ class MainAppShell extends StatelessWidget {
   }
 }
 
-class OrdersScreen extends StatelessWidget {
-  const OrdersScreen({super.key});
+class LegacyOrdersScreen extends StatelessWidget {
+  const LegacyOrdersScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

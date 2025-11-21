@@ -62,11 +62,11 @@ Notes
 ## Coverage and Status Matrix (by HTML reference)
 
 Buyer
-- Map (map_screen): Exists — `lib/features/map/screens/map_screen.dart` — UI parity pending (debounce 600ms, hero polish)
-- Feed (feed_screen): Exists — `lib/features/feed/screens/feed_screen.dart` — UI parity pending (card restyle)
-- Dish Detail: Exists — `lib/features/dish/screens/dish_detail_screen.dart` — UI parity pending (layout/CTA/price/tags)
-- Order Confirmation: Exists — `lib/features/order/screens/order_confirmation_screen.dart` — UI parity pending (pickup code prominence, ETA, chat CTA)
-- Active Order Modal: Exists — `lib/features/order/widgets/active_order_modal.dart` — UI parity pending (status timeline, pickup code rules)
+- Map (map_screen): Exists — `lib/features/map/screens/map_screen.dart` — UI parity achieved (search debounce, glass UI, clustering)
+- Feed (feed_screen): Exists — `lib/features/feed/screens/feed_screen.dart` — UI parity achieved (card restyle, skeletons)
+- Dish Detail: Exists — `lib/features/dish/screens/dish_detail_screen.dart` — UI parity achieved (hero layout, order flow)
+- Order Confirmation: Exists — `lib/features/order/screens/order_confirmation_screen.dart` — UI parity achieved (pickup code, summary, actions)
+- Active Order Modal: Exists — `lib/features/order/widgets/active_order_modal.dart` — UI parity achieved (timeline, actions)
 - Buyer Route Overlay: Exists — `lib/features/order/widgets/route_overlay.dart` — Verify design tokens, attach points
 - Profile Screen: Exists — `lib/features/profile/screens/profile_screen.dart` — Restyle to parity; uses profile drawer
 - Profile Drawer: Exists — `lib/features/profile/widgets/profile_drawer.dart` — Restyle + routing unification
@@ -153,44 +153,44 @@ Actions:
 ## Work Plan (aligned to OpenSpec Phases)
 
 Phase 0 — Planning & Foundations
-- [ ] Register change in OpenSpec (create change ID, reference this plan)
-- [ ] Confirm font choice (Plus Jakarta Sans) is added to `pubspec.yaml`
-- [ ] Add/verify font assets and licenses in assets/fonts
-- [ ] Decide image assets strategy (SVG/PNG), and compression pipeline
-- [ ] Define acceptance criteria per screen and sign-off owners (Design/Product/Eng)
+- [x] Register change in OpenSpec (create change ID, reference this plan)
+- [x] Confirm font choice (Plus Jakarta Sans) is added to `pubspec.yaml`
+- [x] Add/verify font assets and licenses in assets/fonts
+- [x] Decide image assets strategy (SVG/PNG), and compression pipeline
+- [x] Define acceptance criteria per screen and sign-off owners (Design/Product/Eng)
 
 Phase 1 — Theme & Design System
-- [ ] Update `lib/core/theme/app_theme.dart` tokens: colors, typography, spacing, radii, elevations
-- [ ] Implement glass tokens: nav background, cards, overlays
-- [ ] Create shared atoms: buttons (primary/secondary/tertiary), chips/tags, icon buttons, cards, glass container
-- [ ] Style Persistent bottom navigation (glass) and FAB shape per HTML
-- [ ] Add fonts to `pubspec.yaml` and preload; verify sample text styles
+- [x] Update `lib/core/theme/app_theme.dart` tokens: colors, typography, spacing, radii, elevations
+- [x] Implement glass tokens: nav background, cards, overlays
+- [x] Create shared atoms: buttons (primary/secondary/tertiary), chips/tags, icon buttons, cards, glass container
+- [x] Style Persistent bottom navigation (glass) and FAB shape per HTML
+- [x] Add fonts to `pubspec.yaml` and preload; verify sample text styles
 - [ ] Golden baseline: sample components snapshot
 
 Phase 2 — Buyer Core Screens (UI parity)
 - Map (map_screen)
-  - [ ] Implement 600ms search debounce
-  - [ ] Apply hero/blur aesthetics and glass UI per tokens
-  - [ ] Verify clustering hooks exist (no change if out-of-scope)
+  - [x] Implement 600ms search debounce
+  - [x] Apply hero/blur aesthetics and glass UI per tokens
+  - [x] Verify clustering hooks exist (no change if out-of-scope)
 - Feed (feed_screen)
-  - [ ] Restyle cards per HTML (spacing, radii, typography)
-  - [ ] Loading skeletons and empty state
-  - [ ] Pagination/refresh behavior parity
+  - [x] Restyle cards per HTML (spacing, radii, typography)
+  - [x] Loading skeletons and empty state
+  - [x] Pagination/refresh behavior parity
 - Dish Detail (dish_detail_screen)
-  - [ ] Layout to spec (hero image, name, tags, prep time)
-  - [ ] Price display (uses `total_amount` math for line items)
-  - [ ] Quantity stepper + add to order CTA (wire to OrderBloc)
-  - [ ] Error/empty states
+  - [x] Layout to spec (hero image, name, tags, prep time)
+  - [x] Price display (uses `total_amount` math for line items)
+  - [x] Quantity stepper + add to order CTA (wire to OrderBloc)
+  - [x] Error/empty states
 - Order Confirmation (order_confirmation_screen)
-  - [ ] Pickup code prominence (large code, copy/share)
-  - [ ] ETA indicator and status badge
-  - [ ] Order summary (subtotal/tax/total using `total_amount`)
-  - [ ] Actions: Chat CTA, View Route CTA
+  - [x] Pickup code prominence (large code, copy/share)
+  - [x] ETA indicator and status badge
+  - [x] Order summary (subtotal/tax/total using `total_amount`)
+  - [x] Actions: Chat CTA, View Route CTA
 - Active Order Modal (active_order_modal)
-  - [ ] Status timeline (pending→accepted→preparing→ready→completed)
-  - [ ] Pickup code visibility rules by status
-  - [ ] Quick actions: chat, view route, refresh
-  - [ ] Bloc state parity and error messaging
+  - [x] Status timeline (pending→accepted→preparing→ready→completed)
+  - [x] Pickup code visibility rules by status
+  - [x] Quick actions: chat, view route, refresh
+  - [x] Bloc state parity and error messaging
 
 Phase 3 — Buyer Secondary Screens
 - Profile (profile_screen)

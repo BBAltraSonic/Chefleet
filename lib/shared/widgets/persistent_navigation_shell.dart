@@ -43,27 +43,26 @@ class GlassBottomNavigation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final glassTokens = AppTheme.glassTokens(context);
 
     return Container(
       height: 80,
-      margin: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDark
-            ? Colors.white.withOpacity(0.1)
-            : Colors.black.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: isDark
-              ? Colors.white.withOpacity(0.2)
-              : Colors.black.withOpacity(0.1),
-          width: 1,
-        ),
+      margin: const EdgeInsets.all(AppTheme.spacing16),
+      decoration: AppTheme.glassBoxDecoration(
+        isDark: isDark,
+        borderRadius: glassTokens.borderRadius,
+      ).copyWith(
+        boxShadow: glassTokens.shadow,
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(glassTokens.borderRadius),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          filter: ImageFilter.blur(
+            sigmaX: glassTokens.blurSigma,
+            sigmaY: glassTokens.blurSigma,
+          ),
           child: BlocBuilder<NavigationBloc, NavigationState>(
             builder: (context, state) {
               return Row(

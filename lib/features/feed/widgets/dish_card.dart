@@ -27,11 +27,13 @@ class DishCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppTheme.surfaceGreen,
         borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+        border: Border.all(color: AppTheme.borderGreen.withOpacity(0.6), width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
+            color: AppTheme.primaryGreen.withOpacity(0.08),
+            blurRadius: 16,
             offset: const Offset(0, 4),
+            spreadRadius: 0,
           ),
         ],
       ),
@@ -285,7 +287,7 @@ class DishCard extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: AppTheme.glassDark.withOpacity(0.6),
+                color: Colors.black.withOpacity(0.6),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: Colors.white.withOpacity(0.2)),
               ),

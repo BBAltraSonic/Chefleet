@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
@@ -67,6 +68,10 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
     }
   }
 
+  void _navigateToHome() {
+    Navigator.of(context).pop();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -76,6 +81,13 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         automaticallyImplyLeading: false,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.close),
+            onPressed: _navigateToHome,
+            color: AppTheme.darkText,
+          ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -136,126 +148,161 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
     final createdAt = DateTime.parse(order['created_at'] as String);
     final totalAmount = (order['total_amount'] as num?)?.toDouble() ?? 0.0;
 
-    return Stack(
-      children: [
-        Container(
-          color: AppTheme.modalOverlay,
-        ),
-        Column(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                color: AppTheme.backgroundColor,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(AppTheme.radiusMedium)),
-              ),
+    // Calculate breakdown (assuming 8.75% tax if not provided)
+    final taxRate = 0.0875;
+    final subtotal = totalAmount / (1 + taxRate);
+    final tax = totalAmount - subtotal;
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          // Success Animation/Icon
+          Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              color: AppTheme.primaryGreen.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.check_circle,
+              color: AppTheme.primaryGreen,
+              size: 48,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Order Placed!',
+            style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+              color: AppTheme.darkText,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Text(
+            'Estimated pickup in 15 mins',
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              color: AppTheme.secondaryGreen,
+            ),
+          ),
+          const SizedBox(height: 32),
+
+          // Pickup Code Section
+          if (pickupCode != null)
+            _buildPickupCodeSection(pickupCode),
+
+          const SizedBox(height: 24),
+
+          // Order Summary
+          GlassContainer(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
               child: Column(
-                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Center(
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(vertical: 10),
-                      width: 36,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: AppTheme.borderGreen,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
+                  Text(
+                    'Order Summary',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
-                    child: Column(
-                      children: [
-                        Text(
-                          'Order Confirmed',
-                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.darkText,
+                  const SizedBox(height: 16),
+                  ...items.map((item) {
+                    final dish = item['dishes'] as Map<String, dynamic>? ?? {};
+                    final quantity = item['quantity'] as int? ?? 1;
+                    final unitPrice = (item['unit_price'] as num?)?.toDouble() ?? 0.0;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              '${quantity}x ${dish['name'] ?? 'Item'}',
+                              style: Theme.of(context).textTheme.bodyLarge,
+                            ),
                           ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 8),
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 12, top: 4),
-                          child: Text(
-                            'Your order has been placed and is being prepared. Please use the pickup code below when you arrive.',
+                          Text(
+                            '\$${(quantity * unitPrice).toStringAsFixed(2)}',
                             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              color: AppTheme.darkText,
+                              fontWeight: FontWeight.w500,
                             ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                        if (pickupCode != null) ...[
-                          const SizedBox(height: 16),
-                          Text(
-                            'Pickup Code',
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: AppTheme.darkText,
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          Text(
-                            pickupCode,
-                            style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: AppTheme.darkText,
-                              letterSpacing: 2,
-                            ),
-                            textAlign: TextAlign.center,
                           ),
                         ],
-                        const SizedBox(height: 16),
-                        Text(
-                          'Estimated Time of Arrival',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.darkText,
-                          ),
+                      ),
+                    );
+                  }).toList(),
+                  const Divider(height: 32),
+                  _buildSummaryRow('Subtotal', subtotal),
+                  const SizedBox(height: 8),
+                  _buildSummaryRow('Tax', tax),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Total',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          DateFormat('h:mm a').format(createdAt.add(const Duration(minutes: 15))),
-                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: AppTheme.darkText,
-                          ),
-                          textAlign: TextAlign.center,
+                      ),
+                      Text(
+                        '\$${totalAmount.toStringAsFixed(2)}',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.primaryGreen,
                         ),
-                        const SizedBox(height: 24),
-                        SizedBox(
-                          width: double.infinity,
-                          height: 48,
-                          child: ElevatedButton(
-                            onPressed: () {},
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.primaryGreen,
-                              foregroundColor: AppTheme.darkText,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                              ),
-                              elevation: 0,
-                            ),
-                            child: Text(
-                              'Chat with Vendor',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: AppTheme.darkText,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
-          ],
-        ),
-      ],
+          ),
+
+          const SizedBox(height: 24),
+
+          // Actions
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: _contactVendor,
+                  icon: const Icon(Icons.chat_bubble_outline),
+                  label: const Text('Chat'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.surfaceGreen,
+                    foregroundColor: AppTheme.darkText,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: _trackOrder,
+                  icon: const Icon(Icons.map_outlined),
+                  label: const Text('View Route'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryGreen,
+                    foregroundColor: AppTheme.darkText,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 40),
+        ],
+      ),
     );
   }
 
@@ -597,6 +644,78 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
           child: TextButton(
             onPressed: _navigateToHome,
             child: const Text('Back to Home'),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPickupCodeSection(String code) {
+    return GlassContainer(
+      color: AppTheme.primaryGreen.withOpacity(0.1),
+      border: Border.all(color: AppTheme.primaryGreen.withOpacity(0.3)),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          children: [
+            Text(
+              'PICKUP CODE',
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                color: AppTheme.secondaryGreen,
+                letterSpacing: 1.5,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  code,
+                  style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.darkText,
+                    letterSpacing: 4,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                IconButton(
+                  onPressed: () {
+                    Clipboard.setData(ClipboardData(text: code));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Pickup code copied!')),
+                    );
+                  },
+                  icon: const Icon(Icons.copy),
+                  color: AppTheme.secondaryGreen,
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Show this code to the vendor',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSummaryRow(String label, double amount) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: AppTheme.darkText.withOpacity(0.7),
+          ),
+        ),
+        Text(
+          '\$${amount.toStringAsFixed(2)}',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: AppTheme.darkText,
+            fontWeight: FontWeight.w500,
           ),
         ),
       ],

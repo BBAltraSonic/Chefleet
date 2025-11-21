@@ -1,5 +1,7 @@
-import 'package:flutter/material.dart';
 import 'dart:ui';
+
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class AppTheme {
   static const Color backgroundColor = Color(0xFFF8FCF9);
@@ -13,8 +15,12 @@ class AppTheme {
   static const Color surfaceColor = Color(0x1AFFFFFF);
   static const Color surfaceColorDark = Color(0x0D000000);
 
-  static const Color glassWhite = Color(0x33FFFFFF);
-  static const Color glassDark = Color(0x1A1A1A1A);
+  // Glassmorphism tokens
+  static const Color glassWhite = Color(0xCCFFFFFF);
+  static const Color glassWhiteBorder = Color(0x4DFFFFFF);
+  static const Color glassDarkBackground = Color(0x33131F16);
+  static const Color glassDarkBorder = Color(0x33304739);
+  static const double glassBlurSigma = 18.0;
 
   static const double spacing4 = 4.0;
   static const double spacing8 = 8.0;
@@ -35,7 +41,7 @@ class AppTheme {
   static const double elevation4 = 4.0;
   static const double elevation8 = 8.0;
 
-  static TextTheme _textTheme = const TextTheme(
+  static const TextTheme _textTheme = TextTheme(
     displayLarge: TextStyle(
       fontFamily: 'PlusJakartaSans',
       fontSize: 32,
@@ -60,6 +66,24 @@ class AppTheme {
       height: 1.2,
       letterSpacing: -0.015,
     ),
+    titleLarge: TextStyle(
+      fontFamily: 'PlusJakartaSans',
+      fontSize: 18,
+      fontWeight: FontWeight.w600,
+      color: darkText,
+    ),
+    titleMedium: TextStyle(
+      fontFamily: 'PlusJakartaSans',
+      fontSize: 16,
+      fontWeight: FontWeight.w600,
+      color: darkText,
+    ),
+    titleSmall: TextStyle(
+      fontFamily: 'PlusJakartaSans',
+      fontSize: 14,
+      fontWeight: FontWeight.w600,
+      color: darkText,
+    ),
     bodyLarge: TextStyle(
       fontFamily: 'PlusJakartaSans',
       fontSize: 16,
@@ -74,6 +98,13 @@ class AppTheme {
       color: secondaryGreen,
       height: 1.5,
     ),
+    bodySmall: TextStyle(
+      fontFamily: 'PlusJakartaSans',
+      fontSize: 12,
+      fontWeight: FontWeight.w400,
+      color: darkText,
+      height: 1.4,
+    ),
     labelLarge: TextStyle(
       fontFamily: 'PlusJakartaSans',
       fontSize: 16,
@@ -87,16 +118,24 @@ class AppTheme {
       fontWeight: FontWeight.w500,
       color: darkText,
     ),
+    labelSmall: TextStyle(
+      fontFamily: 'PlusJakartaSans',
+      fontSize: 12,
+      fontWeight: FontWeight.w500,
+      color: secondaryGreen,
+    ),
   );
 
   static ThemeData lightTheme = ThemeData(
     useMaterial3: true,
     scaffoldBackgroundColor: backgroundColor,
     fontFamily: 'PlusJakartaSans',
+    visualDensity: VisualDensity.adaptivePlatformDensity,
     colorScheme: ColorScheme.fromSeed(
       seedColor: primaryGreen,
       primary: primaryGreen,
       secondary: secondaryGreen,
+      tertiary: surfaceGreen,
       surface: surfaceGreen,
       background: backgroundColor,
       brightness: Brightness.light,
@@ -129,8 +168,10 @@ class AppTheme {
       shape: CircleBorder(),
     ),
     cardTheme: CardThemeData(
-      color: surfaceGreen,
-      elevation: 0,
+      color: GlassmorphismTokens.light.background,
+      shadowColor: GlassmorphismTokens.light.shadow.first.color,
+      elevation: elevation0,
+      margin: const EdgeInsets.all(0),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(radiusLarge),
       ),
@@ -182,12 +223,14 @@ class AppTheme {
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     ),
+    extensions: const [GlassmorphismTokens.light],
   );
 
   static ThemeData darkTheme = ThemeData(
     useMaterial3: true,
     scaffoldBackgroundColor: const Color(0xFF0D1B12),
     fontFamily: 'PlusJakartaSans',
+    visualDensity: VisualDensity.adaptivePlatformDensity,
     colorScheme: ColorScheme.fromSeed(
       seedColor: primaryGreen,
       primary: primaryGreen,
@@ -227,11 +270,123 @@ class AppTheme {
       shape: CircleBorder(),
     ),
     cardTheme: CardThemeData(
-      color: glassDark,
-      elevation: 0,
+      color: GlassmorphismTokens.dark.background,
+      shadowColor: GlassmorphismTokens.dark.shadow.first.color,
+      elevation: elevation0,
+      margin: const EdgeInsets.all(0),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(radiusLarge),
       ),
     ),
+    extensions: const [GlassmorphismTokens.dark],
   );
+
+  static BoxDecoration glassBoxDecoration({
+    required bool isDark,
+    double borderRadius = radiusXLarge,
+  }) {
+    return BoxDecoration(
+      color: isDark ? GlassmorphismTokens.dark.background : GlassmorphismTokens.light.background,
+      borderRadius: BorderRadius.circular(borderRadius),
+      border: Border.all(
+        color: isDark ? GlassmorphismTokens.dark.border : GlassmorphismTokens.light.border,
+        width: 1.2,
+      ),
+      boxShadow: isDark ? GlassmorphismTokens.dark.shadow : GlassmorphismTokens.light.shadow,
+    );
+  }
+
+  static GlassmorphismTokens glassTokens(BuildContext context) {
+    return Theme.of(context).extension<GlassmorphismTokens>() ?? GlassmorphismTokens.light;
+  }
+
+  static const List<String> _fontFiles = [
+    'PlusJakartaSans-Regular.ttf',
+    'PlusJakartaSans-Medium.ttf',
+    'PlusJakartaSans-Bold.ttf',
+    'PlusJakartaSans-ExtraBold.ttf',
+  ];
+
+  static Future<void> preloadFonts() async {
+    final loader = FontLoader('PlusJakartaSans');
+    for (final font in _fontFiles) {
+      loader.addFont(rootBundle.load('assets/fonts/$font'));
+    }
+    await loader.load();
+  }
+}
+
+class GlassmorphismTokens extends ThemeExtension<GlassmorphismTokens> {
+  final Color background;
+  final Color border;
+  final List<BoxShadow> shadow;
+  final double blurSigma;
+  final double borderRadius;
+
+  const GlassmorphismTokens({
+    required this.background,
+    required this.border,
+    required this.shadow,
+    required this.blurSigma,
+    required this.borderRadius,
+  });
+
+  static const GlassmorphismTokens light = GlassmorphismTokens(
+    background: Color(0xCCFFFFFF),
+    border: Color(0x4DFFFFFF),
+    shadow: [
+      BoxShadow(
+        color: Color(0x3313EC5B),
+        blurRadius: 24,
+        offset: Offset(0, 12),
+      ),
+    ],
+    blurSigma: 18,
+    borderRadius: 24,
+  );
+
+  static const GlassmorphismTokens dark = GlassmorphismTokens(
+    background: Color(0x1A0B140E),
+    border: Color(0x3329402F),
+    shadow: [
+      BoxShadow(
+        color: Color(0x33000000),
+        blurRadius: 20,
+        offset: Offset(0, 10),
+      ),
+    ],
+    blurSigma: 18,
+    borderRadius: 24,
+  );
+
+  @override
+  GlassmorphismTokens copyWith({
+    Color? background,
+    Color? border,
+    List<BoxShadow>? shadow,
+    double? blurSigma,
+    double? borderRadius,
+  }) {
+    return GlassmorphismTokens(
+      background: background ?? this.background,
+      border: border ?? this.border,
+      shadow: shadow ?? this.shadow,
+      blurSigma: blurSigma ?? this.blurSigma,
+      borderRadius: borderRadius ?? this.borderRadius,
+    );
+  }
+
+  @override
+  GlassmorphismTokens lerp(ThemeExtension<GlassmorphismTokens>? other, double t) {
+    if (other is! GlassmorphismTokens) {
+      return this;
+    }
+    return GlassmorphismTokens(
+      background: Color.lerp(background, other.background, t) ?? background,
+      border: Color.lerp(border, other.border, t) ?? border,
+      shadow: other.shadow,
+      blurSigma: lerpDouble(blurSigma, other.blurSigma, t) ?? blurSigma,
+      borderRadius: lerpDouble(borderRadius, other.borderRadius, t) ?? borderRadius,
+    );
+  }
 }

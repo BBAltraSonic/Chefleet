@@ -118,27 +118,45 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   Widget _buildSearchBar(BuildContext context) {
+    final glassTokens = AppTheme.glassTokens(context);
+    
     return Positioned(
       top: MediaQuery.of(context).padding.top + 16,
       left: 16,
       right: 16,
       child: GlassContainer(
-        blur: 15,
+        blur: glassTokens.blurSigma,
         opacity: 0.8,
-        borderRadius: AppTheme.radiusLarge,
-        color: AppTheme.backgroundColor,
+        borderRadius: glassTokens.borderRadius,
+        color: glassTokens.background,
+        border: Border.all(
+          color: glassTokens.border,
+          width: 1,
+        ),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           child: Row(
             children: [
               const Icon(Icons.search, color: AppTheme.secondaryGreen),
               const SizedBox(width: 12),
               Expanded(
-                child: Text(
-                  'Search dishes, cuisines...',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppTheme.darkText.withOpacity(0.5),
-                      ),
+                child: TextField(
+                  onChanged: (value) {
+                    context.read<MapFeedBloc>().add(MapSearchQueryChanged(value));
+                  },
+                  decoration: InputDecoration(
+                    hintText: 'Search dishes, cuisines...',
+                    hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: AppTheme.darkText.withOpacity(0.5),
+                        ),
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    contentPadding: EdgeInsets.zero,
+                    isDense: true,
+                  ),
+                  style: Theme.of(context).textTheme.bodyMedium,
+                  cursorColor: AppTheme.primaryGreen,
                 ),
               ),
               Container(

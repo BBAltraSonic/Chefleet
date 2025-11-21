@@ -133,7 +133,7 @@ class AppRouter {
         ShellRoute(
           builder: (context, state, child) {
             return PersistentNavigationShell(
-              children: const [
+              children: [
                 MapScreen(),
                 FeedScreen(),
                 OrdersScreen(),
@@ -225,7 +225,7 @@ class AppRouter {
 }
 
 class OrdersScreen extends StatelessWidget {
-  const OrdersScreen({super.key});
+  OrdersScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -234,8 +234,7 @@ class OrdersScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Your Orders'),
         backgroundColor: Colors.transparent,
-        elevation: 0,
-      },
+      ),
       body: BlocBuilder<ActiveOrdersBloc, ActiveOrdersState>(
         builder: (context, state) {
           if (state.isLoading) {

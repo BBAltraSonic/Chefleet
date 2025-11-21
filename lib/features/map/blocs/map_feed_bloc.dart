@@ -18,6 +18,15 @@ class MapFeedInitialized extends MapFeedEvent {
   const MapFeedInitialized();
 }
 
+class MapSearchQueryChanged extends MapFeedEvent {
+  const MapSearchQueryChanged(this.query);
+
+  final String query;
+
+  @override
+  List<Object?> get props => [query];
+}
+
 class MapLocationChanged extends MapFeedEvent {
   const MapLocationChanged(this.position);
 
@@ -101,6 +110,7 @@ class MapFeedState extends AppState {
     this.lastUpdated,
     this.isOffline = false,
     this.zoomLevel = 15.0,
+    this.searchQuery = '',
   });
 
   final Position? currentPosition;
@@ -117,6 +127,7 @@ class MapFeedState extends AppState {
   final DateTime? lastUpdated;
   final bool isOffline;
   final double zoomLevel;
+  final String searchQuery;
 
   MapFeedState copyWith({
     Position? currentPosition,
@@ -133,6 +144,7 @@ class MapFeedState extends AppState {
     DateTime? lastUpdated,
     bool? isOffline,
     double? zoomLevel,
+    String? searchQuery,
   }) {
     return MapFeedState(
       currentPosition: currentPosition ?? this.currentPosition,
@@ -149,6 +161,7 @@ class MapFeedState extends AppState {
       lastUpdated: lastUpdated ?? this.lastUpdated,
       isOffline: isOffline ?? this.isOffline,
       zoomLevel: zoomLevel ?? this.zoomLevel,
+      searchQuery: searchQuery ?? this.searchQuery,
     );
   }
 
@@ -168,6 +181,7 @@ class MapFeedState extends AppState {
         lastUpdated,
         isOffline,
         zoomLevel,
+        searchQuery,
       ];
 }
 
@@ -187,11 +201,13 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
     on<MapFeedLoadMore>(_onLoadMore);
     on<MapClusterTapped>(_onClusterTapped);
     on<MapMarkersUpdated>(_onMarkersUpdated);
+    on<MapSearchQueryChanged>(_onSearchQueryChanged);
 
     _debouncer = Timer(const Duration(milliseconds: 600), () {});
   }
 
   Timer? _debouncer;
+  Timer? _searchDebouncer;
   Timer? _clusterUpdateDebouncer;
   static const double _searchRadiusKm = 5.0;
   static const int _pageSize = 20;
@@ -305,6 +321,18 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
         errorMessage: 'Failed to refresh feed: ${e.toString()}',
       ));
     }
+  }
+
+  void _onSearchQueryChanged(
+    MapSearchQueryChanged event,
+    Emitter<MapFeedState> emit,
+  ) {
+    emit(state.copyWith(searchQuery: event.query));
+
+    _searchDebouncer?.cancel();
+    _searchDebouncer = Timer(const Duration(milliseconds: 600), () {
+      add(const MapFeedRefreshed());
+    });
   }
 
   void _onVendorSelected(
@@ -644,6 +672,7 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
   @override
   Future<void> close() {
     _debouncer?.cancel();
+    _searchDebouncer?.cancel();
     _clusterUpdateDebouncer?.cancel();
     _clusterManager.clear();
     return super.close();
