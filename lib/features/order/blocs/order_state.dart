@@ -19,6 +19,7 @@ class OrderState extends Equatable {
     this.subtotal = 0.0,
     this.tax = 0.0,
     this.total = 0.0,
+    this.placedOrderId,
   });
 
   final OrderStatus status;
@@ -30,6 +31,7 @@ class OrderState extends Equatable {
   final double subtotal;
   final double tax;
   final double total;
+  final String? placedOrderId;
 
   OrderState copyWith({
     OrderStatus? status,
@@ -41,6 +43,7 @@ class OrderState extends Equatable {
     double? subtotal,
     double? tax,
     double? total,
+    String? placedOrderId,
   }) {
     return OrderState(
       status: status ?? this.status,
@@ -52,6 +55,7 @@ class OrderState extends Equatable {
       subtotal: subtotal ?? this.subtotal,
       tax: tax ?? this.tax,
       total: total ?? this.total,
+      placedOrderId: placedOrderId ?? this.placedOrderId,
     );
   }
 
@@ -70,6 +74,7 @@ class OrderState extends Equatable {
         subtotal,
         tax,
         total,
+        placedOrderId,
       ];
 }
 

@@ -14,8 +14,12 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 class MockOrderRepository extends Mock implements OrderRepository {}
 class MockNavigationBloc extends Mock implements NavigationBloc {}
+class MockSupabaseClient extends Mock implements SupabaseClient {}
+class MockPostgrestFilterBuilder extends Mock implements PostgrestFilterBuilder {}
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  
   group('DishDetailScreen Widget Tests', () {
     late Dish testDish;
     late Vendor testVendor;

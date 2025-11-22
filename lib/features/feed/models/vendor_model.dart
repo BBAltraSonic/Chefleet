@@ -24,21 +24,22 @@ class Vendor extends Equatable {
   factory Vendor.fromJson(Map<String, dynamic> json) {
     return Vendor(
       id: json['id'] as String,
-      name: json['name'] as String,
+      name: json['business_name'] as String? ?? json['name'] as String? ?? '',
       description: json['description'] as String? ?? '',
-      latitude: (json['latitude'] as num).toDouble(),
-      longitude: (json['longitude'] as num).toDouble(),
+      latitude: (json['latitude'] as num?)?.toDouble() ?? 0.0,
+      longitude: (json['longitude'] as num?)?.toDouble() ?? 0.0,
       address: json['address'] as String? ?? '',
-      phoneNumber: json['phone_number'] as String? ?? '',
+      phoneNumber: json['phone'] as String? ?? json['phone_number'] as String? ?? '',
       isActive: json['is_active'] as bool? ?? true,
+      dishCount: json['dish_count'] as int? ?? 0,
       logoUrl: json['logo_url'] as String?,
       coverImageUrl: json['cover_image_url'] as String?,
       cuisineType: json['cuisine_type'] as String?,
       rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
       reviewCount: json['review_count'] as int? ?? 0,
       openHoursJson: json['open_hours_json'] as Map<String, dynamic>?,
-      createdAt: DateTime.tryParse(json['created_at'] as String? ?? ''),
-      updatedAt: DateTime.tryParse(json['updated_at'] as String? ?? ''),
+      createdAt: json['created_at'] != null ? DateTime.tryParse(json['created_at'] as String) : null,
+      updatedAt: json['updated_at'] != null ? DateTime.tryParse(json['updated_at'] as String) : null,
     );
   }
 

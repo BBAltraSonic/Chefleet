@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:uuid/uuid.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/repositories/order_repository.dart';
 import 'order_event.dart';
 import 'order_state.dart';
@@ -7,7 +8,9 @@ import 'order_state.dart';
 class OrderBloc extends Bloc<OrderEvent, OrderState> {
   OrderBloc({
     required OrderRepository orderRepository,
+    required SupabaseClient supabaseClient,
   })  : _orderRepository = orderRepository,
+        _supabaseClient = supabaseClient,
         super(const OrderState()) {
     on<OrderStarted>(_onOrderStarted);
     on<OrderItemAdded>(_onOrderItemAdded);
@@ -23,13 +26,14 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
   }
 
   final OrderRepository _orderRepository;
+  final SupabaseClient _supabaseClient;
   static const double _taxRate = 0.0875; // 8.75% tax rate
 
   void _onOrderStarted(OrderStarted event, Emitter<OrderState> emit) {
     emit(state.copyWith(status: OrderStatus.idle));
   }
 
-  void _onOrderItemAdded(OrderItemAdded event, Emitter<OrderState> emit) {
+  void _onOrderItemAdded(OrderItemAdded event, Emitter<OrderState> emit) async {
     emit(state.copyWith(status: OrderStatus.loading));
 
     try {
@@ -49,15 +53,32 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
         newItems[existingIndex] = updatedItem;
         _updateTotals(newItems, emit);
       } else {
-        // Add new item
-        // TODO: Fetch dish and vendor details
+        // Fetch dish and vendor details from database
+        final dishResponse = await _supabaseClient
+            .from('dishes')
+            .select('''
+              id,
+              name,
+              price,
+              vendor_id,
+              vendors!inner(
+                id,
+                business_name
+              )
+            ''')
+            .eq('id', event.dishId)
+            .single();
+
+        final vendorData = dishResponse['vendors'] as Map<String, dynamic>;
+        
+        // Add new item with real data
         final newItem = OrderItem(
-          dishId: event.dishId,
-          dishName: 'Dish ${event.dishId}',
-          dishPrice: 10.99, // TODO: Get actual price
+          dishId: dishResponse['id'] as String,
+          dishName: dishResponse['name'] as String,
+          dishPrice: (dishResponse['price'] as num).toDouble() / 100.0,
           quantity: event.quantity,
-          vendorId: 'vendor_1',
-          vendorName: 'Vendor Name',
+          vendorId: dishResponse['vendor_id'] as String,
+          vendorName: vendorData['business_name'] as String,
           specialInstructions: event.specialInstructions,
         );
         final newItems = [...state.items, newItem];
@@ -178,15 +199,19 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
         orderData,
       );
 
-      if (response['error'] != null) {
-        throw Exception(response['error']);
+      // Check for success based on edge function contract
+      if (response['success'] != true) {
+        throw Exception(response['message'] ?? 'Failed to create order');
       }
 
-      // Clear cart on success
-      emit(const OrderState(status: OrderStatus.success));
+      final orderInfo = response['order'] as Map<String, dynamic>;
+      final orderId = orderInfo['id'] as String;
 
-      // Navigate to order confirmation
-      // TODO: Navigate to active order screen/modal
+      // Clear cart on success and store order ID
+      emit(OrderState(
+        status: OrderStatus.success,
+        placedOrderId: orderId,
+      ));
 
     } catch (e) {
       emit(state.copyWith(

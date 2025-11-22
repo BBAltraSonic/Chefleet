@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/theme/app_theme.dart';
 import 'core/blocs/app_bloc_observer.dart';
@@ -11,16 +12,19 @@ import 'features/order/blocs/active_orders_bloc.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Load environment variables from .env file
+  await dotenv.load(fileName: '.env');
+  
   await AppTheme.preloadFonts();
 
-  const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
-  const supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
+  final supabaseUrl = dotenv.env['SUPABASE_URL'];
+  final supabaseAnonKey = dotenv.env['SUPABASE_ANON_KEY'];
 
-  if (supabaseUrl.isEmpty || supabaseAnonKey.isEmpty) {
+  if (supabaseUrl == null || supabaseAnonKey == null || supabaseUrl.isEmpty || supabaseAnonKey.isEmpty) {
     throw Exception(
       'Missing required environment variables. '
-      'Please provide SUPABASE_URL and SUPABASE_ANON_KEY via --dart-define.\n'
-      'Example: flutter run --dart-define=SUPABASE_URL=your_url --dart-define=SUPABASE_ANON_KEY=your_key',
+      'Please ensure SUPABASE_URL and SUPABASE_ANON_KEY are set in .env file.',
     );
   }
 

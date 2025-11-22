@@ -55,7 +55,7 @@ class MediaUploadBloc extends Bloc<MediaUploadEvent, MediaUploadState> {
       final filePath = 'vendor-images/${DateTime.now().year}/${DateTime.now().month}/$fileName';
 
       // Upload to Supabase Storage
-      final uploadResponse = await _supabaseClient.storage
+      final uploadPath = await _supabaseClient.storage
           .from('vendor-media')
           .uploadBinary(
             filePath,
@@ -66,14 +66,10 @@ class MediaUploadBloc extends Bloc<MediaUploadEvent, MediaUploadState> {
             ),
           );
 
-      if (uploadResponse.error != null) {
-        throw Exception(uploadResponse.error!.message);
-      }
-
       // Get public URL
       final publicUrl = _supabaseClient.storage
           .from('vendor-media')
-          .getPublicUrl(filePath);
+          .getPublicUrl(uploadPath);
 
       // Optimize image if needed
       final optimizedUrl = await _optimizeImageIfNeeded(publicUrl, event.file);
@@ -143,7 +139,7 @@ class MediaUploadBloc extends Bloc<MediaUploadEvent, MediaUploadState> {
         // For simplicity, we'll upload the whole file at once
         // In a real implementation, you might use resumable upload
         if (i == 0) {
-          final uploadResponse = await _supabaseClient.storage
+          await _supabaseClient.storage
               .from('vendor-media')
               .uploadBinary(
                 filePath,
@@ -153,10 +149,6 @@ class MediaUploadBloc extends Bloc<MediaUploadEvent, MediaUploadState> {
                   cacheControl: '2592000', // 30 days
                 ),
               );
-
-          if (uploadResponse.error != null) {
-            throw Exception(uploadResponse.error!.message);
-          }
         }
 
         // Update progress
@@ -223,7 +215,7 @@ class MediaUploadBloc extends Bloc<MediaUploadEvent, MediaUploadState> {
         final fileName = _generateFileName(file.path, 'jpg');
         final filePath = 'vendor-images/${DateTime.now().year}/${DateTime.now().month}/$fileName';
 
-        final uploadResponse = await _supabaseClient.storage
+        final uploadPath = await _supabaseClient.storage
             .from('vendor-media')
             .uploadBinary(
               filePath,
@@ -234,13 +226,9 @@ class MediaUploadBloc extends Bloc<MediaUploadEvent, MediaUploadState> {
               ),
             );
 
-        if (uploadResponse.error != null) {
-          throw Exception(uploadResponse.error!.message);
-        }
-
         final publicUrl = _supabaseClient.storage
             .from('vendor-media')
-            .getPublicUrl(filePath);
+            .getPublicUrl(uploadPath);
 
         final mediaRecord = await _saveMediaRecord({
           'file_name': fileName,
@@ -277,13 +265,9 @@ class MediaUploadBloc extends Bloc<MediaUploadEvent, MediaUploadState> {
   ) async {
     try {
       // Delete from storage
-      final deleteResponse = await _supabaseClient.storage
+      await _supabaseClient.storage
           .from('vendor-media')
           .remove([event.filePath]);
-
-      if (deleteResponse.error != null) {
-        throw Exception(deleteResponse.error!.message);
-      }
 
       // Delete from database
       await _supabaseClient
@@ -339,7 +323,7 @@ class MediaUploadBloc extends Bloc<MediaUploadEvent, MediaUploadState> {
       final media = List<Map<String, dynamic>>.from(response);
 
       emit(state.copyWith(
-        status: MediaUploadStatus.loaded,
+        status: MediaUploadStatus.success,
         uploadedMedia: media,
       ));
     } catch (e) {
@@ -410,19 +394,15 @@ class MediaUploadBloc extends Bloc<MediaUploadEvent, MediaUploadState> {
       final fileName = _generateFileName(event.fileName, event.fileType);
       final filePath = 'vendor-uploads/${DateTime.now().year}/${DateTime.now().month}/$fileName';
 
-      final presignedUrlResponse = await _supabaseClient.storage
+      final presignedUrl = await _supabaseClient.storage
           .from('vendor-media')
           .createSignedUrl(
             filePath,
             3600, // 1 hour expiration
           );
 
-      if (presignedUrlResponse.error != null) {
-        throw Exception(presignedUrlResponse.error!.message);
-      }
-
       emit(state.copyWith(
-        presignedUrl: presignedUrlResponse.data!,
+        presignedUrl: presignedUrl,
         presignedFilePath: filePath,
       ));
     } catch (e) {

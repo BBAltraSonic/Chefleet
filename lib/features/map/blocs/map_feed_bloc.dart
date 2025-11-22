@@ -220,7 +220,11 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
     MapFeedInitialized event,
     Emitter<MapFeedState> emit,
   ) async {
-    emit(state.copyWith(isLoading: true));
+    emit(state.copyWith(
+      isLoading: true,
+      errorMessage: null,
+      isOffline: false,
+    ));
 
     try {
       final isCacheValid = await _cacheService.isCacheValid();
@@ -256,11 +260,14 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
       emit(state.copyWith(
         isLoading: false,
         lastUpdated: DateTime.now(),
+        errorMessage: null,
+        isOffline: false,
       ));
     } catch (e) {
       emit(state.copyWith(
         isLoading: false,
         errorMessage: 'Failed to initialize map: ${e.toString()}',
+        isOffline: false,
       ));
     }
   }
@@ -272,6 +279,8 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
     emit(state.copyWith(
       currentPosition: event.position,
       isLoading: true,
+      errorMessage: null,
+      isOffline: false,
     ));
 
     try {
@@ -279,11 +288,14 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
       emit(state.copyWith(
         isLoading: false,
         lastUpdated: DateTime.now(),
+        errorMessage: null,
+        isOffline: false,
       ));
     } catch (e) {
       emit(state.copyWith(
         isLoading: false,
         errorMessage: 'Failed to load data for location: ${e.toString()}',
+        isOffline: false,
       ));
     }
   }
@@ -307,18 +319,25 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
   ) async {
     if (state.mapBounds == null) return;
 
-    emit(state.copyWith(isLoading: true));
+    emit(state.copyWith(
+      isLoading: true,
+      errorMessage: null,
+      isOffline: false,
+    ));
 
     try {
       await _loadVendorsAndDishes(emit);
       emit(state.copyWith(
         isLoading: false,
         lastUpdated: DateTime.now(),
+        errorMessage: null,
+        isOffline: false,
       ));
     } catch (e) {
       emit(state.copyWith(
         isLoading: false,
         errorMessage: 'Failed to refresh feed: ${e.toString()}',
+        isOffline: false,
       ));
     }
   }
@@ -519,6 +538,8 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
           dishes: dishes,
           currentPage: 0,
           hasMoreData: hasMoreData,
+          isOffline: false,
+          errorMessage: null,
         ));
 
         // Trigger clustering update if bounds are available
@@ -530,9 +551,27 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
           vendors: [],
           dishes: [],
           markers: {},
+          isOffline: false,
+          errorMessage: null,
         ));
       }
     } catch (e) {
+      // Check if it's a network error
+      final isNetworkError = e.toString().contains('SocketException') ||
+          e.toString().contains('NetworkException') ||
+          e.toString().contains('Failed host lookup') ||
+          e.toString().contains('Connection refused') ||
+          e.toString().contains('Connection timed out');
+      
+      if (!isNetworkError) {
+        // For non-network errors, show the actual error
+        emit(state.copyWith(
+          errorMessage: 'Error loading data: ${e.toString()}',
+          isOffline: false,
+        ));
+        return;
+      }
+      
       final cachedDishes = await _cacheService.getCachedDishes();
       final cachedVendors = await _cacheService.getCachedVendors();
       final lastUpdated = await _cacheService.getLastUpdated();

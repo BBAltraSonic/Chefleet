@@ -36,8 +36,10 @@ class _DishDetailScreenState extends State<DishDetailScreen> {
   @override
   void initState() {
     super.initState();
+    final supabaseClient = Supabase.instance.client;
     _orderBloc = OrderBloc(
-      orderRepository: OrderRepository(Supabase.instance.client),
+      orderRepository: OrderRepository(supabaseClient),
+      supabaseClient: supabaseClient,
     );
     _saveNavigationState();
     _loadDishDetails();
@@ -204,18 +206,25 @@ class _DishDetailScreenState extends State<DishDetailScreen> {
         padding: const EdgeInsets.fromLTRB(16, 48, 16, 8),
         child: Row(
           children: [
-            IconButton(
-              icon: Icon(Icons.arrow_back, color: theme.AppTheme.darkText),
-              onPressed: () => Navigator.pop(context),
+            Semantics(
+              button: true,
+              label: 'Go back',
+              child: IconButton(
+                icon: Icon(Icons.arrow_back, color: theme.AppTheme.darkText),
+                onPressed: () => Navigator.pop(context),
+              ),
             ),
             Expanded(
-              child: Text(
-                'Dish Details',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: theme.AppTheme.darkText,
-                  fontWeight: FontWeight.bold,
+              child: Semantics(
+                header: true,
+                child: Text(
+                  'Dish Details',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: theme.AppTheme.darkText,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
               ),
             ),
             const SizedBox(width: 48),
@@ -234,31 +243,35 @@ class _DishDetailScreenState extends State<DishDetailScreen> {
           borderRadius: BorderRadius.circular(theme.AppTheme.radiusMedium),
           color: theme.AppTheme.surfaceGreen,
         ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(theme.AppTheme.radiusMedium),
-          child: _dish!.imageUrl != null
-              ? Image.network(
-                  _dish!.imageUrl!,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      color: theme.AppTheme.borderGreen,
-                      child: Icon(
-                        Icons.restaurant,
-                        size: 80,
-                        color: theme.AppTheme.secondaryGreen,
-                      ),
-                    );
-                  },
-                )
-              : Container(
-                  color: theme.AppTheme.borderGreen,
-                  child: Icon(
-                    Icons.restaurant,
-                    size: 80,
-                    color: theme.AppTheme.secondaryGreen,
+        child: Semantics(
+          image: true,
+          label: 'Image of ${_dish!.name}',
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(theme.AppTheme.radiusMedium),
+            child: _dish!.imageUrl != null
+                ? Image.network(
+                    _dish!.imageUrl!,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        color: theme.AppTheme.borderGreen,
+                        child: Icon(
+                          Icons.restaurant,
+                          size: 80,
+                          color: theme.AppTheme.secondaryGreen,
+                        ),
+                      );
+                    },
+                  )
+                : Container(
+                    color: theme.AppTheme.borderGreen,
+                    child: Icon(
+                      Icons.restaurant,
+                      size: 80,
+                      color: theme.AppTheme.secondaryGreen,
+                    ),
                   ),
-                ),
+          ),
         ),
       ),
     );
@@ -320,20 +333,31 @@ class _DishDetailScreenState extends State<DishDetailScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: Text(
-                _dish!.name,
-                style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                  color: theme.AppTheme.darkText,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 24,
+              child: Semantics(
+                header: true,
+                label: 'Dish name: ${_dish!.name}',
+                child: ExcludeSemantics(
+                  child: Text(
+                    _dish!.name,
+                    style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                      color: theme.AppTheme.darkText,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 24,
+                    ),
+                  ),
                 ),
               ),
             ),
-            Text(
-              _dish!.formattedPrice,
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                color: theme.AppTheme.primaryGreen,
-                fontWeight: FontWeight.bold,
+            Semantics(
+              label: 'Price: ${_dish!.formattedPrice}',
+              child: ExcludeSemantics(
+                child: Text(
+                  _dish!.formattedPrice,
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    color: theme.AppTheme.primaryGreen,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ),
           ],
@@ -379,15 +403,20 @@ class _DishDetailScreenState extends State<DishDetailScreen> {
   }
 
   Widget _buildStatItem(IconData icon, String text) {
-    return Row(
-      children: [
-        Icon(icon, size: 16, color: Colors.grey[600]),
-        const SizedBox(width: 4),
-        Text(
-          text,
-          style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.w500),
+    return Semantics(
+      label: text,
+      child: ExcludeSemantics(
+        child: Row(
+          children: [
+            Icon(icon, size: 16, color: Colors.grey[600]),
+            const SizedBox(width: 4),
+            Text(
+              text,
+              style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.w500),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 
@@ -501,34 +530,50 @@ class _DishDetailScreenState extends State<DishDetailScreen> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              IconButton(
-                onPressed: existingItem.quantity > 1
-                    ? () => _orderBloc.updateItem(
-                          dishId: widget.dishId,
-                          quantity: existingItem.quantity - 1,
-                        )
-                    : null,
-                icon: const Icon(Icons.remove),
-                color: theme.AppTheme.darkText,
+              Semantics(
+                button: true,
+                enabled: existingItem.quantity > 1,
+                label: 'Decrease quantity',
+                hint: 'Current quantity is ${existingItem.quantity}',
+                child: IconButton(
+                  onPressed: existingItem.quantity > 1
+                      ? () => _orderBloc.updateItem(
+                            dishId: widget.dishId,
+                            quantity: existingItem.quantity - 1,
+                          )
+                      : null,
+                  icon: const Icon(Icons.remove),
+                  color: theme.AppTheme.darkText,
+                ),
               ),
-              Container(
-                width: 40,
-                alignment: Alignment.center,
-                child: Text(
-                  '${existingItem.quantity}',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+              Semantics(
+                label: 'Quantity: ${existingItem.quantity}',
+                child: Container(
+                  width: 40,
+                  alignment: Alignment.center,
+                  child: ExcludeSemantics(
+                    child: Text(
+                      '${existingItem.quantity}',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ),
               ),
-              IconButton(
-                onPressed: () => _orderBloc.updateItem(
-                  dishId: widget.dishId,
-                  quantity: existingItem.quantity + 1,
+              Semantics(
+                button: true,
+                label: 'Increase quantity',
+                hint: 'Current quantity is ${existingItem.quantity}',
+                child: IconButton(
+                  onPressed: () => _orderBloc.updateItem(
+                    dishId: widget.dishId,
+                    quantity: existingItem.quantity + 1,
+                  ),
+                  icon: const Icon(Icons.add),
+                  color: theme.AppTheme.darkText,
                 ),
-                icon: const Icon(Icons.add),
-                color: theme.AppTheme.darkText,
               ),
             ],
           ),
@@ -562,52 +607,58 @@ class _DishDetailScreenState extends State<DishDetailScreen> {
 
           return Padding(
             padding: const EdgeInsets.only(bottom: 12),
-            child: GestureDetector(
-              onTap: () {
-                _orderBloc.setPickupTime(DateTime.now().add(Duration(minutes: 30 * (index + 1))));
-              },
-              child: Container(
-                padding: const EdgeInsets.all(15),
-                decoration: BoxDecoration(
-                  border: Border.all(color: theme.AppTheme.borderGreen),
-                  borderRadius: BorderRadius.circular(theme.AppTheme.radiusMedium),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        slot,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: theme.AppTheme.darkText,
-                          fontWeight: FontWeight.w500,
+            child: Semantics(
+              button: true,
+              selected: isSelected,
+              label: 'Pickup time: $slot',
+              hint: isSelected ? 'Currently selected' : 'Tap to select this time slot',
+              child: GestureDetector(
+                onTap: () {
+                  _orderBloc.setPickupTime(DateTime.now().add(Duration(minutes: 30 * (index + 1))));
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(15),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: theme.AppTheme.borderGreen),
+                    borderRadius: BorderRadius.circular(theme.AppTheme.radiusMedium),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          slot,
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: theme.AppTheme.darkText,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
-                    ),
-                    Container(
-                      width: 20,
-                      height: 20,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: isSelected ? theme.AppTheme.primaryGreen : theme.AppTheme.borderGreen,
-                          width: 2,
+                      Container(
+                        width: 20,
+                        height: 20,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: isSelected ? theme.AppTheme.primaryGreen : theme.AppTheme.borderGreen,
+                            width: 2,
+                          ),
                         ),
-                      ),
-                      child: isSelected
-                          ? Center(
-                              child: Container(
-                                width: 12,
-                                height: 12,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: theme.AppTheme.primaryGreen,
+                        child: isSelected
+                            ? Center(
+                                child: Container(
+                                  width: 12,
+                                  height: 12,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: theme.AppTheme.primaryGreen,
+                                  ),
                                 ),
-                              ),
-                            )
-                          : null,
-                    ),
-                  ],
+                              )
+                            : null,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -640,51 +691,57 @@ class _DishDetailScreenState extends State<DishDetailScreen> {
     return SizedBox(
       width: double.infinity,
       height: 56,
-      child: ElevatedButton(
-        onPressed: canPlaceOrder && !isPlacingOrder ? () => _placeOrder(0) : null, // Quantity is managed by bloc state now
-        style: ElevatedButton.styleFrom(
-          backgroundColor: canPlaceOrder ? theme.AppTheme.primaryGreen : Colors.grey,
-          foregroundColor: theme.AppTheme.darkText,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(theme.AppTheme.radiusLarge),
+      child: Semantics(
+        button: true,
+        enabled: canPlaceOrder && !isPlacingOrder,
+        label: isPlacingOrder ? 'Placing order' : 'Order for pickup, total $totalFormatted',
+        hint: canPlaceOrder ? 'Double tap to place order' : 'Dish is currently unavailable',
+        child: ElevatedButton(
+          onPressed: canPlaceOrder && !isPlacingOrder ? () => _placeOrder(0) : null, // Quantity is managed by bloc state now
+          style: ElevatedButton.styleFrom(
+            backgroundColor: canPlaceOrder ? theme.AppTheme.primaryGreen : Colors.grey,
+            foregroundColor: theme.AppTheme.darkText,
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(theme.AppTheme.radiusLarge),
+            ),
           ),
+          child: isPlacingOrder
+              ? Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        valueColor: AlwaysStoppedAnimation<Color>(theme.AppTheme.darkText),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    const Text('Placing Order...', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  ],
+                )
+              : Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Order for Pickup',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      totalFormatted,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
         ),
-        child: isPlacingOrder
-            ? Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.5,
-                      valueColor: AlwaysStoppedAnimation<Color>(theme.AppTheme.darkText),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  const Text('Placing Order...', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                ],
-              )
-            : Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                   const Text(
-                    'Order for Pickup',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    totalFormatted,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
       ),
     );
   }
