@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../auth/blocs/auth_bloc.dart';
 import '../../feed/models/dish_model.dart';
 import '../../feed/models/vendor_model.dart';
 import '../../order/blocs/order_bloc.dart';
@@ -12,7 +13,6 @@ import '../../../core/repositories/order_repository.dart';
 import '../../../core/services/deep_link_service.dart';
 import '../../../core/services/navigation_state_service.dart';
 import '../../../core/blocs/navigation_bloc.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class DishDetailScreen extends StatefulWidget {
   final String dishId;
@@ -40,6 +40,7 @@ class _DishDetailScreenState extends State<DishDetailScreen> {
     _orderBloc = OrderBloc(
       orderRepository: OrderRepository(supabaseClient),
       supabaseClient: supabaseClient,
+      authBloc: context.read<AuthBloc>(),
     );
     _saveNavigationState();
     _loadDishDetails();

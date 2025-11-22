@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
 
-import '../blocs/order_bloc.dart';
-import '../blocs/order_state.dart';
+import '../../auth/utils/conversion_prompt_helper.dart';
 import '../../../shared/widgets/glass_container.dart';
 import '../../../core/theme/app_theme.dart' show AppTheme;
 import '../../../core/router/app_router.dart';
@@ -62,6 +60,11 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
         _orderDetails = response;
         _isLoading = false;
       });
+
+      // Show conversion prompt for guest users after first order
+      if (mounted) {
+        await ConversionPromptHelper.showAfterOrder(context);
+      }
     } catch (e) {
       setState(() {
         _error = 'Failed to load order details: $e';

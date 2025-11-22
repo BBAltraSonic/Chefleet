@@ -62,6 +62,7 @@ class _ChefleetAppState extends State<ChefleetApp> {
         BlocProvider(
           create: (context) => ActiveOrdersBloc(
             supabaseClient: Supabase.instance.client,
+            authBloc: context.read<AuthBloc>(),
           )..loadActiveOrders(),
         ),
       ],

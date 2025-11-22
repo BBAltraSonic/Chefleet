@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:uuid/uuid.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/repositories/order_repository.dart';
+import '../../auth/blocs/auth_bloc.dart';
 import 'order_event.dart';
 import 'order_state.dart';
 
@@ -9,8 +10,10 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
   OrderBloc({
     required OrderRepository orderRepository,
     required SupabaseClient supabaseClient,
+    required AuthBloc authBloc,
   })  : _orderRepository = orderRepository,
         _supabaseClient = supabaseClient,
+        _authBloc = authBloc,
         super(const OrderState()) {
     on<OrderStarted>(_onOrderStarted);
     on<OrderItemAdded>(_onOrderItemAdded);
@@ -27,6 +30,7 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
 
   final OrderRepository _orderRepository;
   final SupabaseClient _supabaseClient;
+  final AuthBloc _authBloc;
   static const double _taxRate = 0.0875; // 8.75% tax rate
 
   void _onOrderStarted(OrderStarted event, Emitter<OrderState> emit) {
@@ -181,7 +185,7 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
       final vendorId = state.items.first.vendorId;
 
       // Prepare order data for Edge function
-      final orderData = {
+      final orderData = <String, dynamic>{
         'vendor_id': vendorId,
         'items': state.items.map((item) => {
           'dish_id': item.dishId,
@@ -192,6 +196,12 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
         'special_instructions': state.specialInstructions,
         'idempotency_key': idempotencyKey,
       };
+
+      // Add guest_user_id if in guest mode
+      final authState = _authBloc.state;
+      if (authState.isGuest && authState.guestId != null) {
+        orderData['guest_user_id'] = authState.guestId;
+      }
 
       // Call Edge function
       final response = await _orderRepository.callEdgeFunction(

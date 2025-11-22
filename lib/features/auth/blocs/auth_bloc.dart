@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/blocs/base_bloc.dart';
+import '../../../core/services/guest_session_service.dart';
 
 class AuthEvent extends AppEvent {
   const AuthEvent();
@@ -50,27 +51,62 @@ class AuthErrorOccurred extends AuthEvent {
   List<Object?> get props => [errorMessage];
 }
 
+class AuthGuestModeStarted extends AuthEvent {
+  const AuthGuestModeStarted();
+}
+
+class AuthGuestToRegisteredRequested extends AuthEvent {
+  const AuthGuestToRegisteredRequested({
+    required this.email,
+    required this.password,
+    required this.name,
+  });
+
+  final String email;
+  final String password;
+  final String name;
+
+  @override
+  List<Object?> get props => [email, password, name];
+}
+
+enum AuthMode {
+  guest,           // Anonymous user with guest_id
+  authenticated,   // Registered user with auth.users record
+  unauthenticated  // No session (splash/auth screens)
+}
+
 class AuthState extends AppState {
   const AuthState({
+    this.mode = AuthMode.unauthenticated,
     this.user,
+    this.guestId,
     this.isAuthenticated = false,
     this.isLoading = false,
     this.errorMessage,
   });
 
+  final AuthMode mode;
   final User? user;
+  final String? guestId;
   final bool isAuthenticated;
   final bool isLoading;
   final String? errorMessage;
 
+  bool get isGuest => mode == AuthMode.guest;
+
   AuthState copyWith({
+    AuthMode? mode,
     User? user,
+    String? guestId,
     bool? isAuthenticated,
     bool? isLoading,
     String? errorMessage,
   }) {
     return AuthState(
+      mode: mode ?? this.mode,
       user: user ?? this.user,
+      guestId: guestId ?? this.guestId,
       isAuthenticated: isAuthenticated ?? this.isAuthenticated,
       isLoading: isLoading ?? this.isLoading,
       errorMessage: errorMessage ?? this.errorMessage,
@@ -78,17 +114,22 @@ class AuthState extends AppState {
   }
 
   @override
-  List<Object?> get props => [user, isAuthenticated, isLoading, errorMessage];
+  List<Object?> get props => [mode, user, guestId, isAuthenticated, isLoading, errorMessage];
 }
 
 class AuthBloc extends AppBloc<AuthEvent, AuthState> {
-  AuthBloc() : super(const AuthState()) {
+  AuthBloc({
+    GuestSessionService? guestSessionService,
+  })  : _guestSessionService = guestSessionService ?? GuestSessionService(),
+        super(const AuthState()) {
     // Register all event handlers first
     on<AuthLoginRequested>(_onLoginRequested);
     on<AuthSignupRequested>(_onSignupRequested);
     on<AuthLogoutRequested>(_onLogoutRequested);
     on<AuthStatusChanged>(_onAuthStatusChanged);
     on<AuthErrorOccurred>(_onAuthErrorOccurred);
+    on<AuthGuestModeStarted>(_onGuestModeStarted);
+    on<AuthGuestToRegisteredRequested>(_onGuestToRegisteredRequested);
 
     // Initialize auth state after handlers are registered
     _initializeAuth();
@@ -96,6 +137,8 @@ class AuthBloc extends AppBloc<AuthEvent, AuthState> {
     // Set up auth state listener for automatic session recovery
     _setupAuthStateListener();
   }
+
+  final GuestSessionService _guestSessionService;
 
   void _initializeAuth() {
     try {
@@ -296,10 +339,111 @@ class AuthBloc extends AppBloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) {
     emit(state.copyWith(
+      mode: event.user != null ? AuthMode.authenticated : AuthMode.unauthenticated,
       user: event.user,
+      guestId: null,
       isAuthenticated: event.user != null,
       isLoading: false,
       errorMessage: null,
     ));
+  }
+
+  Future<void> _onGuestModeStarted(
+    AuthGuestModeStarted event,
+    Emitter<AuthState> emit,
+  ) async {
+    emit(state.copyWith(isLoading: true));
+
+    try {
+      final guestId = await _guestSessionService.getOrCreateGuestId();
+      
+      emit(state.copyWith(
+        mode: AuthMode.guest,
+        guestId: guestId,
+        user: null,
+        isAuthenticated: false,
+        isLoading: false,
+        errorMessage: null,
+      ));
+    } catch (e) {
+      emit(state.copyWith(
+        mode: AuthMode.unauthenticated,
+        isLoading: false,
+        errorMessage: 'Failed to start guest mode: ${e.toString()}',
+      ));
+    }
+  }
+
+  Future<void> _onGuestToRegisteredRequested(
+    AuthGuestToRegisteredRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    if (state.mode != AuthMode.guest || state.guestId == null) {
+      emit(state.copyWith(
+        errorMessage: 'Not in guest mode',
+      ));
+      return;
+    }
+
+    emit(state.copyWith(isLoading: true, errorMessage: null));
+
+    try {
+      final guestId = state.guestId!;
+
+      // 1. Create auth.users account
+      final response = await Supabase.instance.client.auth.signUp(
+        email: event.email,
+        password: event.password,
+        data: {'name': event.name},
+      );
+
+      if (response.user == null) {
+        emit(state.copyWith(
+          isLoading: false,
+          errorMessage: 'Failed to create account. Please try again.',
+        ));
+        return;
+      }
+
+      final newUserId = response.user!.id;
+
+      // 2. Call edge function to migrate guest data
+      try {
+        final migrationResponse = await Supabase.instance.client.functions.invoke(
+          'migrate_guest_data',
+          body: {
+            'guest_id': guestId,
+            'new_user_id': newUserId,
+          },
+        );
+
+        final migrationData = migrationResponse.data as Map<String, dynamic>?;
+        if (migrationData?['success'] != true) {
+          throw Exception(migrationData?['message'] ?? 'Migration failed');
+        }
+      } catch (migrationError) {
+        // Log migration error but don't fail the conversion
+        print('Warning: Guest data migration failed: $migrationError');
+        // The user account is created, so we proceed
+      }
+
+      // 3. Clear local guest session
+      await _guestSessionService.clearGuestSession();
+
+      // 4. Transition to authenticated state
+      emit(state.copyWith(
+        mode: AuthMode.authenticated,
+        user: response.user,
+        guestId: null,
+        isAuthenticated: true,
+        isLoading: false,
+        errorMessage: null,
+      ));
+    } catch (e) {
+      emit(state.copyWith(
+        isLoading: false,
+        errorMessage: 'Conversion failed: ${e.toString()}',
+      ));
+    }
   }
 }

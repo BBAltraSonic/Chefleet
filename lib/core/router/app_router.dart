@@ -21,7 +21,7 @@ import '../../features/vendor/screens/moderation_tools_screen.dart';
 import '../../features/vendor/screens/vendor_onboarding_screen.dart';
 import '../../features/vendor/screens/vendor_quick_tour_screen.dart';
 import '../../features/feed/models/dish_model.dart';
-import '../../features/auth/blocs/auth_bloc.dart';
+import '../../features/auth/blocs/auth_bloc.dart' show AuthBloc, AuthMode;
 import '../../features/auth/blocs/user_profile_bloc.dart';
 import '../../features/order/blocs/active_orders_bloc.dart';
 import '../../features/chat/screens/chat_detail_screen.dart';
@@ -63,24 +63,49 @@ class AppRouter {
         final authBloc = context.read<AuthBloc>();
         final profileBloc = context.read<UserProfileBloc>();
         
+        final authMode = authBloc.state.mode;
         final isAuthenticated = authBloc.state.isAuthenticated;
+        final isGuest = authMode == AuthMode.guest;
         final hasProfile = profileBloc.state.profile.isNotEmpty;
         
         final isSplashRoute = state.matchedLocation == splashRoute;
         final isAuthRoute = state.matchedLocation == authRoute;
         final isProfileCreationRoute = state.matchedLocation == profileCreationRoute;
         
+        // Routes accessible to guest users
+        final guestAllowedRoutes = [
+          mapRoute,
+          feedRoute,
+          ordersRoute,
+          chatRoute,
+          settingsRoute,
+        ];
+        
+        // Check if current route or its parent is allowed for guests
+        final isGuestAllowedRoute = guestAllowedRoutes.any((route) => 
+          state.matchedLocation == route || 
+          state.matchedLocation.startsWith('$route/') ||
+          state.matchedLocation.startsWith(dishDetailRoute) ||
+          state.matchedLocation.startsWith(chatDetailRoute)
+        );
+        
         // If on splash, let it through
         if (isSplashRoute) return null;
         
-        // If not authenticated and not on auth route, redirect to auth
-        if (!isAuthenticated && !isAuthRoute) {
+        // If unauthenticated (not guest, not registered) and not on auth route, redirect to auth
+        if (!isAuthenticated && !isGuest && !isAuthRoute) {
           return authRoute;
         }
         
-        // If authenticated but no profile and not on profile creation, redirect to profile creation
+        // Guest users trying to access restricted features
+        if (isGuest && !isAuthRoute && !isGuestAllowedRoute) {
+          // Redirect to auth with prompt to register
+          return authRoute;
+        }
+        
+        // Authenticated users without profile
         if (isAuthenticated && !hasProfile && !isProfileCreationRoute) {
-          // Allow access to settings without profile
+          // Allow access to core features without profile
           if (state.matchedLocation == settingsRoute || 
               state.matchedLocation == mapRoute || 
               state.matchedLocation == feedRoute || 
@@ -93,6 +118,11 @@ class AppRouter {
         // If authenticated with profile but on auth route, redirect to map
         if (isAuthenticated && hasProfile && isAuthRoute) {
           return mapRoute;
+        }
+        
+        // If guest on auth route, allow it (for conversion)
+        if (isGuest && isAuthRoute) {
+          return null;
         }
         
         return null;

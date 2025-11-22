@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../auth/blocs/user_profile_bloc.dart';
 import '../../auth/blocs/auth_bloc.dart';
+import '../../auth/utils/conversion_prompt_helper.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/router/app_router.dart';
 import '../../../shared/widgets/glass_container.dart';
@@ -21,13 +22,36 @@ class ProfileDrawer extends StatelessWidget {
             // Profile Header
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacing16),
-              child: BlocBuilder<UserProfileBloc, UserProfileState>(
-                builder: (context, state) {
-                  return _buildProfileHeader(context, state);
+              child: BlocBuilder<AuthBloc, AuthState>(
+                builder: (context, authState) {
+                  if (authState.isGuest) {
+                    return _buildGuestHeader(context);
+                  }
+                  return BlocBuilder<UserProfileBloc, UserProfileState>(
+                    builder: (context, state) {
+                      return _buildProfileHeader(context, state);
+                    },
+                  );
                 },
               ),
             ),
             const SizedBox(height: AppTheme.spacing24),
+
+            // Guest Conversion Prompt
+            BlocBuilder<AuthBloc, AuthState>(
+              builder: (context, state) {
+                if (state.isGuest) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppTheme.spacing16,
+                    ),
+                    child: ConversionPromptHelper.buildProfilePrompt(context),
+                  );
+                }
+                return const SizedBox.shrink();
+              },
+            ),
+            const SizedBox(height: AppTheme.spacing12),
 
             // Menu Items
             Expanded(
@@ -112,21 +136,21 @@ class ProfileDrawer extends StatelessWidget {
               padding: const EdgeInsets.all(AppTheme.spacing16),
               child: BlocBuilder<AuthBloc, AuthState>(
                 builder: (context, state) {
-                  if (state.isAuthenticated) {
+                  if (state.isAuthenticated || state.isGuest) {
                     return SizedBox(
                       width: double.infinity,
                       child: OutlinedButton.icon(
                         onPressed: () {
                           Navigator.pop(context);
-                          _showLogoutDialog(context);
+                          _showLogoutDialog(context, isGuest: state.isGuest);
                         },
                         icon: const Icon(
                           Icons.logout,
                           color: Colors.red,
                         ),
-                        label: const Text(
-                          'Logout',
-                          style: TextStyle(
+                        label: Text(
+                          state.isGuest ? 'Exit Guest Mode' : 'Logout',
+                          style: const TextStyle(
                             color: Colors.red,
                             fontWeight: FontWeight.w600,
                           ),
@@ -147,6 +171,81 @@ class ProfileDrawer extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildGuestHeader(BuildContext context) {
+    return GlassContainer(
+      borderRadius: AppTheme.radiusLarge,
+      blur: 12,
+      opacity: 0.6,
+      padding: const EdgeInsets.all(AppTheme.spacing20),
+      child: Row(
+        children: [
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppTheme.surfaceGreen,
+              border: Border.all(
+                color: AppTheme.primaryGreen,
+                width: 2,
+              ),
+            ),
+            child: const Icon(
+              Icons.person_outline,
+              size: 32,
+              color: AppTheme.primaryGreen,
+            ),
+          ),
+          const SizedBox(width: AppTheme.spacing16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      'Guest User',
+                      style: Theme.of(context).textTheme.headlineMedium,
+                    ),
+                    const SizedBox(width: AppTheme.spacing8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppTheme.spacing8,
+                        vertical: AppTheme.spacing4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryGreen.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                        border: Border.all(
+                          color: AppTheme.primaryGreen.withOpacity(0.3),
+                        ),
+                      ),
+                      child: Text(
+                        'GUEST',
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color: AppTheme.primaryGreen,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 10,
+                            ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppTheme.spacing4),
+                Text(
+                  'Browsing without an account',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppTheme.secondaryGreen,
+                      ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -334,12 +433,16 @@ class ProfileDrawer extends StatelessWidget {
     );
   }
 
-  void _showLogoutDialog(BuildContext context) {
+  void _showLogoutDialog(BuildContext context, {bool isGuest = false}) {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Logout'),
-        content: const Text('Are you sure you want to logout?'),
+        title: Text(isGuest ? 'Exit Guest Mode' : 'Logout'),
+        content: Text(
+          isGuest
+              ? 'Are you sure you want to exit guest mode? Your guest data will be cleared.'
+              : 'Are you sure you want to logout?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
@@ -351,7 +454,7 @@ class ProfileDrawer extends StatelessWidget {
               context.read<AuthBloc>().add(const AuthLogoutRequested());
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Logout'),
+            child: Text(isGuest ? 'Exit' : 'Logout'),
           ),
         ],
       ),

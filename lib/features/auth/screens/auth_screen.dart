@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../blocs/auth_bloc.dart';
 import '../../../shared/widgets/glass_container.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/router/app_router.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -125,6 +128,10 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                       ],
                     ),
                   ),
+                  const SizedBox(height: 24),
+
+                  // Guest Mode Button
+                  _buildGuestModeButton(),
                 ],
               ),
             ),
@@ -324,5 +331,86 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
             ),
           );
     }
+  }
+
+  Widget _buildGuestModeButton() {
+    return BlocBuilder<AuthBloc, AuthState>(
+      builder: (context, state) {
+        return GlassContainer(
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      height: 1,
+                      color: AppTheme.borderGreen.withOpacity(0.3),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Text(
+                      'OR',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppTheme.secondaryGreen,
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Container(
+                      height: 1,
+                      color: AppTheme.borderGreen.withOpacity(0.3),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: state.isLoading
+                      ? null
+                      : () => _handleGuestMode(context),
+                  icon: const Icon(
+                    Icons.person_outline,
+                    size: 20,
+                  ),
+                  label: const Text('Continue as Guest'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    side: BorderSide(
+                      color: AppTheme.primaryGreen.withOpacity(0.5),
+                      width: 1.5,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Browse and order without creating an account',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppTheme.secondaryGreen,
+                    ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _handleGuestMode(BuildContext context) {
+    // Start guest mode
+    context.read<AuthBloc>().add(const AuthGuestModeStarted());
+    
+    // Navigate to map feed
+    context.go(AppRouter.mapRoute);
   }
 }

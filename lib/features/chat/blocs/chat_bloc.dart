@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../auth/blocs/auth_bloc.dart';
 import '../../../core/services/notification_service.dart';
 
 part 'chat_event.dart';
@@ -8,6 +9,7 @@ part 'chat_state.dart';
 
 class ChatBloc extends Bloc<ChatEvent, ChatState> {
   final SupabaseClient _supabaseClient;
+  final AuthBloc _authBloc;
   RealtimeChannel? _chatChannel;
   final Map<String, RealtimeChannel?> _orderChannels = {};
 
@@ -16,8 +18,11 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   static const int _maxMessagesPerWindow = 5;
   static const Duration _rateLimitWindow = Duration(seconds: 10);
 
-  ChatBloc({required SupabaseClient supabaseClient})
-      : _supabaseClient = supabaseClient,
+  ChatBloc({
+    required SupabaseClient supabaseClient,
+    required AuthBloc authBloc,
+  })  : _supabaseClient = supabaseClient,
+        _authBloc = authBloc,
         super(const ChatState()) {
     on<LoadOrderChats>(_onLoadOrderChats);
     on<LoadChatMessages>(_onLoadChatMessages);
@@ -48,8 +53,11 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     emit(state.copyWith(status: ChatStatus.loading));
 
     try {
+      final authState = _authBloc.state;
       final currentUser = _supabaseClient.auth.currentUser;
-      if (currentUser == null) {
+
+      // Check if user is authenticated or in guest mode
+      if (currentUser == null && !authState.isGuest) {
         emit(state.copyWith(
           status: ChatStatus.error,
           errorMessage: 'User not authenticated',
@@ -57,20 +65,10 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         return;
       }
 
-      // Get user's role and related ID (buyer or vendor)
-      final userResponse = await _supabaseClient
-          .from('users_public')
-          .select('id, role')
-          .eq('id', currentUser.id)
-          .single();
-
-      final userRole = userResponse['role'] as String;
-      final userId = userResponse['id'] as String;
-
       List<Map<String, dynamic>> orders = [];
 
-      if (userRole == 'buyer') {
-        // Get orders where user is buyer
+      if (authState.isGuest && authState.guestId != null) {
+        // Guest user - get orders by guest_user_id
         final response = await _supabaseClient
             .from('orders')
             .select('''
@@ -85,51 +83,92 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
                 owner_id
               )
             ''')
-            .eq('buyer_id', userId)
+            .eq('guest_user_id', authState.guestId!)
             .filter('status', 'in', '(pending,accepted,preparing,ready)')
             .order('created_at', ascending: false);
 
         orders = List<Map<String, dynamic>>.from(response);
-      } else if (userRole == 'vendor') {
-        // Get vendor ID first
-        final vendorResponse = await _supabaseClient
-            .from('vendors')
-            .select('id')
-            .eq('owner_id', userId)
+      } else if (currentUser != null) {
+        // Authenticated user - get user's role and related ID
+        final userResponse = await _supabaseClient
+            .from('users_public')
+            .select('id, role')
+            .eq('id', currentUser.id)
             .single();
 
-        final vendorId = vendorResponse['id'] as String;
+        final userRole = userResponse['role'] as String;
+        final userId = userResponse['id'] as String;
 
-        // Get orders where user is vendor
-        final response = await _supabaseClient
-            .from('orders')
-            .select('''
-              id,
-              status,
-              total_amount,
-              pickup_code,
-              created_at,
-              buyer:users_public!orders_buyer_id_fkey (
+        if (userRole == 'buyer') {
+          // Get orders where user is buyer
+          final response = await _supabaseClient
+              .from('orders')
+              .select('''
                 id,
-                full_name,
-                phone
-              )
-            ''')
-            .eq('vendor_id', vendorId)
-            .filter('status', 'in', '(pending,accepted,preparing,ready)')
-            .order('created_at', ascending: false);
+                status,
+                total_amount,
+                pickup_code,
+                created_at,
+                vendor:vendors!orders_vendor_id_fkey (
+                  id,
+                  business_name,
+                  owner_id
+                )
+              ''')
+              .eq('buyer_id', userId)
+              .filter('status', 'in', '(pending,accepted,preparing,ready)')
+              .order('created_at', ascending: false);
 
-        orders = List<Map<String, dynamic>>.from(response);
+          orders = List<Map<String, dynamic>>.from(response);
+        } else if (userRole == 'vendor') {
+          // Get vendor ID first
+          final vendorResponse = await _supabaseClient
+              .from('vendors')
+              .select('id')
+              .eq('owner_id', userId)
+              .single();
+
+          final vendorId = vendorResponse['id'] as String;
+
+          // Get orders where user is vendor
+          final response = await _supabaseClient
+              .from('orders')
+              .select('''
+                id,
+                status,
+                total_amount,
+                pickup_code,
+                created_at,
+                buyer:users_public!orders_buyer_id_fkey (
+                  id,
+                  full_name,
+                  phone
+                )
+              ''')
+              .eq('vendor_id', vendorId)
+              .filter('status', 'in', '(pending,accepted,preparing,ready)')
+              .order('created_at', ascending: false);
+
+          orders = List<Map<String, dynamic>>.from(response);
+        }
       }
 
       // Get unread message count for each order
+      // For guests, we can't filter by sender_id since they don't have one
+      // For now, just get all unread messages for the order
       for (final order in orders) {
-        final unreadResponse = await _supabaseClient
+        var unreadQuery = _supabaseClient
             .from('messages')
             .select('id')
             .eq('order_id', order['id'])
-            .eq('is_read', false)
-            .neq('sender_id', userId);
+            .eq('is_read', false);
+        
+        // Only filter by sender_id for authenticated users
+        if (currentUser != null) {
+          unreadQuery = unreadQuery.neq('sender_id', currentUser.id);
+        }
+        
+        final unreadResponse = await unreadQuery;
 
         order['unread_count'] = (unreadResponse as List).length;
 
@@ -196,8 +235,16 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     Emitter<ChatState> emit,
   ) async {
     try {
+      final authState = _authBloc.state;
       final currentUser = _supabaseClient.auth.currentUser;
-      if (currentUser == null) return;
+      
+      // Check if user is authenticated or in guest mode
+      if (currentUser == null && !authState.isGuest) {
+        emit(state.copyWith(
+          errorMessage: 'User not authenticated',
+        ));
+        return;
+      }
 
       // Check rate limit
       if (_isRateLimited()) {
@@ -208,11 +255,16 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         return;
       }
 
+      // Determine sender ID based on auth mode
+      final senderId = currentUser?.id;
+      final guestSenderId = authState.isGuest ? authState.guestId : null;
+
       // Create optimistic message
       final optimisticMessage = {
         'id': 'temp_${DateTime.now().millisecondsSinceEpoch}',
         'order_id': event.orderId,
-        'sender_id': currentUser.id,
+        if (senderId != null) 'sender_id': senderId,
+        if (guestSenderId != null) 'guest_sender_id': guestSenderId,
         'content': event.content,
         'sender_type': event.senderType,
         'message_type': event.messageType ?? 'text',
@@ -230,15 +282,24 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       ));
 
       try {
-        final response = await _supabaseClient.from('messages').insert({
+        // Build message data based on auth mode
+        final messageData = <String, dynamic>{
           'order_id': event.orderId,
-          'sender_id': currentUser.id,
           'content': event.content,
           'sender_type': event.senderType,
           'message_type': event.messageType ?? 'text',
           'created_at': DateTime.now().toIso8601String(),
           'is_read': false,
-        }).select();
+        };
+        
+        // Add appropriate sender ID
+        if (senderId != null) {
+          messageData['sender_id'] = senderId;
+        } else if (guestSenderId != null) {
+          messageData['guest_sender_id'] = guestSenderId;
+        }
+
+        final response = await _supabaseClient.from('messages').insert(messageData).select();
 
         final insertedMessage = (response as List).first;
 

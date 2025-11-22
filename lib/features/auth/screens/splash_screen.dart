@@ -63,9 +63,15 @@ class _SplashScreenState extends State<SplashScreen>
 
     final authState = context.read<AuthBloc>().state;
 
+    // Navigate based on auth mode
     if (authState.isAuthenticated) {
+      // Registered user - go to map
+      context.go(AppRouter.mapRoute);
+    } else if (authState.isGuest) {
+      // Guest user - go to map
       context.go(AppRouter.mapRoute);
     } else {
+      // No session - go to auth screen
       context.go(AppRouter.authRoute);
     }
   }

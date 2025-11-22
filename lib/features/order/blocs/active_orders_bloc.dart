@@ -1,16 +1,21 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../auth/blocs/auth_bloc.dart';
 
 part 'active_orders_event.dart';
 part 'active_orders_state.dart';
 
 class ActiveOrdersBloc extends Bloc<ActiveOrdersEvent, ActiveOrdersState> {
   final SupabaseClient _supabaseClient;
+  final AuthBloc _authBloc;
   RealtimeChannel? _ordersChannel;
 
-  ActiveOrdersBloc({required SupabaseClient supabaseClient})
-      : _supabaseClient = supabaseClient,
+  ActiveOrdersBloc({
+    required SupabaseClient supabaseClient,
+    required AuthBloc authBloc,
+  })  : _supabaseClient = supabaseClient,
+        _authBloc = authBloc,
         super(const ActiveOrdersState()) {
     on<LoadActiveOrders>(_onLoadActiveOrders);
     on<SubscribeToOrderUpdates>(_onSubscribeToOrderUpdates);
@@ -31,8 +36,11 @@ class ActiveOrdersBloc extends Bloc<ActiveOrdersEvent, ActiveOrdersState> {
     emit(state.copyWith(isLoading: true));
 
     try {
+      final authState = _authBloc.state;
       final currentUser = _supabaseClient.auth.currentUser;
-      if (currentUser == null) {
+
+      // Check if user is authenticated or in guest mode
+      if (currentUser == null && !authState.isGuest) {
         emit(state.copyWith(
           isLoading: false,
           errorMessage: 'User not authenticated',
@@ -40,8 +48,8 @@ class ActiveOrdersBloc extends Bloc<ActiveOrdersEvent, ActiveOrdersState> {
         return;
       }
 
-      // Get active orders for the current user
-      final response = await _supabaseClient
+      // Build query based on auth mode
+      var query = _supabaseClient
           .from('orders')
           .select('''
             *,
@@ -59,8 +67,17 @@ class ActiveOrdersBloc extends Bloc<ActiveOrdersEvent, ActiveOrdersState> {
                 price
               )
             )
-          ''')
-          .eq('buyer_id', currentUser.id)
+          ''');
+
+      // Filter by user type
+      if (authState.isGuest && authState.guestId != null) {
+        query = query.eq('guest_user_id', authState.guestId!);
+      } else if (currentUser != null) {
+        query = query.eq('buyer_id', currentUser.id);
+      }
+
+      // Apply status and ordering filters
+      final response = await query
           .filter('status', 'in', '(pending,accepted,preparing,ready)')
           .order('created_at', ascending: false);
 
@@ -88,19 +105,36 @@ class ActiveOrdersBloc extends Bloc<ActiveOrdersEvent, ActiveOrdersState> {
   ) async {
     if (_ordersChannel != null) return;
 
+    final authState = _authBloc.state;
     final currentUser = _supabaseClient.auth.currentUser;
-    if (currentUser == null) return;
+    
+    // Don't subscribe if neither authenticated nor guest
+    if (currentUser == null && !authState.isGuest) return;
+
+    // Create unique channel name based on auth mode
+    final channelName = authState.isGuest
+        ? 'guest_active_orders_${authState.guestId}'
+        : 'user_active_orders_${currentUser!.id}';
 
     _ordersChannel = _supabaseClient
-        .channel('user_active_orders_${currentUser.id}')
+        .channel(channelName)
         .onPostgresChanges(
           event: PostgresChangeEvent.all,
           schema: 'public',
           table: 'orders',
           callback: (payload) {
-            // Check if this order belongs to the current user
-            if (payload.newRecord?['buyer_id'] == currentUser.id ||
-                payload.oldRecord?['buyer_id'] == currentUser.id) {
+            // Check if this order belongs to the current user/guest
+            bool isMyOrder = false;
+            
+            if (authState.isGuest && authState.guestId != null) {
+              isMyOrder = (payload.newRecord?['guest_user_id'] == authState.guestId) ||
+                  (payload.oldRecord?['guest_user_id'] == authState.guestId);
+            } else if (currentUser != null) {
+              isMyOrder = (payload.newRecord?['buyer_id'] == currentUser.id) ||
+                  (payload.oldRecord?['buyer_id'] == currentUser.id);
+            }
+            
+            if (isMyOrder) {
               add(LoadActiveOrders());
             }
           },

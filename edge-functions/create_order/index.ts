@@ -25,6 +25,7 @@ interface CreateOrderRequest {
   };
   idempotency_key: string;
   special_instructions?: string;
+  guest_user_id?: string; // For guest orders
 }
 
 interface CreateOrderResponse {
@@ -59,27 +60,57 @@ Deno.serve(async (req: Request) => {
       },
     });
 
-    // Verify authentication
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return new Response(
-        JSON.stringify({ success: false, message: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-
-    if (authError || !user) {
-      return new Response(
-        JSON.stringify({ success: false, message: "Invalid authentication" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Parse request body
+    // Parse request body first to check for guest_user_id
     const body: CreateOrderRequest = await req.json();
+
+    // Verify authentication - accept either auth token OR guest_user_id
+    const authHeader = req.headers.get("Authorization");
+    const guestId = body.guest_user_id;
+    
+    let user: any = null;
+    let userId: string | null = null;
+
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      // Authenticated user flow
+      const token = authHeader.replace("Bearer ", "");
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser(token);
+
+      if (authError || !authUser) {
+        return new Response(
+          JSON.stringify({ success: false, message: "Invalid authentication" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      
+      user = authUser;
+      userId = authUser.id;
+    } else if (guestId) {
+      // Guest user flow - validate guest_id exists in guest_sessions
+      const { data: guestSession, error: guestError } = await supabase
+        .from("guest_sessions")
+        .select("guest_id")
+        .eq("guest_id", guestId)
+        .single();
+
+      if (guestError || !guestSession) {
+        return new Response(
+          JSON.stringify({ success: false, message: "Invalid guest session" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      
+      // Update last_active_at for guest session
+      await supabase
+        .from("guest_sessions")
+        .update({ last_active_at: new Date().toISOString() })
+        .eq("guest_id", guestId);
+    } else {
+      // Neither auth token nor guest_id provided
+      return new Response(
+        JSON.stringify({ success: false, message: "Authentication or guest ID required" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // Validate required fields
     if (!body.vendor_id || !body.items || !body.delivery_address || !body.idempotency_key) {
@@ -90,12 +121,18 @@ Deno.serve(async (req: Request) => {
     }
 
     // Check for duplicate order with same idempotency key
-    const { data: existingOrder, error: duplicateError } = await supabase
+    let duplicateQuery = supabase
       .from("orders")
       .select("*")
-      .eq("idempotency_key", body.idempotency_key)
-      .eq("buyer_id", user.id)
-      .single();
+      .eq("idempotency_key", body.idempotency_key);
+    
+    if (userId) {
+      duplicateQuery = duplicateQuery.eq("buyer_id", userId);
+    } else if (guestId) {
+      duplicateQuery = duplicateQuery.eq("guest_user_id", guestId);
+    }
+    
+    const { data: existingOrder, error: duplicateError } = await duplicateQuery.single();
 
     if (duplicateError && duplicateError.code !== "PGRST116") {
       throw duplicateError;
@@ -177,7 +214,8 @@ Deno.serve(async (req: Request) => {
       .from("orders")
       .insert({
         id: orderId,
-        buyer_id: user.id,
+        buyer_id: userId,              // null for guests
+        guest_user_id: guestId,        // null for authenticated
         vendor_id: body.vendor_id,
         status: "pending",
         subtotal_cents,
@@ -214,15 +252,17 @@ Deno.serve(async (req: Request) => {
       throw itemsError;
     }
 
-    // Create initial status history
-    await supabase
-      .from("order_status_history")
-      .insert({
-        order_id: orderId,
-        status: "pending",
-        changed_by: user.id,
-        created_at: new Date().toISOString(),
-      });
+    // Create initial status history (only if authenticated user)
+    if (userId) {
+      await supabase
+        .from("order_status_history")
+        .insert({
+          order_id: orderId,
+          status: "pending",
+          changed_by: userId,
+          created_at: new Date().toISOString(),
+        });
+    }
 
     // Get vendor owner for notification
     const { data: vendorOwner } = await supabase
