@@ -43,7 +43,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
             vendors!inner(
               business_name,
               address,
-              phone_number
+              phone
             ),
             order_items(
               *,
@@ -777,9 +777,5 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
     // Navigate to chat screen with vendor
     final status = _orderDetails!['status'] as String? ?? 'pending';
     context.push('${AppRouter.chatDetailRoute}/${widget.orderId}?orderStatus=$status');
-  }
-
-  void _navigateToHome() {
-    context.go(AppRouter.feedRoute);
   }
 }

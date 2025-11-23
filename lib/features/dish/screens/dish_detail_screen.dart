@@ -70,7 +70,7 @@ class _DishDetailScreenState extends State<DishDetailScreen> {
               latitude,
               longitude,
               logo_url,
-              phone_number,
+              phone,
               rating,
               cuisine_type,
               open_hours_json
@@ -78,10 +78,6 @@ class _DishDetailScreenState extends State<DishDetailScreen> {
           ''')
           .eq('id', widget.dishId)
           .single();
-
-      if (dishResponse == null) {
-        throw Exception('Dish not found');
-      }
 
       // Parse dish data
       _dish = Dish.fromJson(dishResponse);
@@ -100,7 +96,9 @@ class _DishDetailScreenState extends State<DishDetailScreen> {
         cuisineType: vendorData['cuisine_type'] as String?,
         address: vendorData['address'] as String? ?? 'Address not available',
         logoUrl: vendorData['logo_url'] as String?,
-        phoneNumber: vendorData['phone_number'] as String? ?? '',
+        phoneNumber: vendorData['phone'] as String? ??
+            vendorData['phone_number'] as String? ??
+            '',
         openHoursJson: vendorData['open_hours_json'] as Map<String, dynamic>?,
       );
 
@@ -291,7 +289,7 @@ class _DishDetailScreenState extends State<DishDetailScreen> {
             const SizedBox(height: 24),
             
             // Description
-            if (_dish!.description != null && _dish!.description!.isNotEmpty) ...[
+            if (_dish!.description.isNotEmpty) ...[
               Text(
                 'Description',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -301,7 +299,7 @@ class _DishDetailScreenState extends State<DishDetailScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                _dish!.description!,
+                _dish!.description,
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: theme.AppTheme.darkText.withOpacity(0.8),
                   height: 1.5,
@@ -465,7 +463,7 @@ class _DishDetailScreenState extends State<DishDetailScreen> {
                       Icon(Icons.star, size: 16, color: Colors.amber),
                       const SizedBox(width: 4),
                       Text(
-                        '${_vendor!.rating?.toStringAsFixed(1) ?? 'N/A'}',
+                        '${_vendor!.rating.toStringAsFixed(1)}',
                         style: TextStyle(color: Colors.grey[300]),
                       ),
                       const SizedBox(width: 8),

@@ -73,7 +73,7 @@ class Vendor extends Equatable {
       'latitude': latitude,
       'longitude': longitude,
       'address': address,
-      'phone_number': phoneNumber,
+      'phone': phoneNumber,
       'is_active': isActive,
       'logo_url': logoUrl,
       'cover_image_url': coverImageUrl,
