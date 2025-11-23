@@ -80,26 +80,28 @@ Deno.serve(async (req) => {
     }
 
     // Check if user has permission to upload to this bucket
+    let vendor = null
     if (bucket === 'vendor_media') {
-      // Check if user is a vendor
-      const { data: vendor } = await supabase
+      // Check if user is a vendor (vendors.owner_id = user.id)
+      const { data: vendorData } = await supabase
         .from('vendors')
         .select('id')
-        .eq('id', user.id)
+        .eq('owner_id', user.id)
         .eq('is_active', true)
         .single()
 
-      if (!vendor) {
+      if (!vendorData) {
         throw new Error('Only active vendors can upload to vendor_media bucket')
       }
+      vendor = vendorData
     }
 
     // Generate unique file path
     const timestamp = new Date().getTime()
     const randomId = crypto.getRandomValues(new Uint32Array(1))[0].toString(36)
     const cleanFileName = file_name.replace(/[^a-zA-Z0-9.-]/g, '_')
-    const filePath = user.id === vendor?.id
-      ? `vendors/${user.id}/${purpose || 'images'}/${timestamp}_${randomId}_${cleanFileName}`
+    const filePath = vendor
+      ? `vendors/${vendor.id}/${purpose || 'images'}/${timestamp}_${randomId}_${cleanFileName}`
       : `users/${user.id}/${purpose || 'images'}/${timestamp}_${randomId}_${cleanFileName}`
 
     // Generate signed URL for upload

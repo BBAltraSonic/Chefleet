@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../shared/widgets/glass_container.dart' as glass;
 import '../blocs/active_orders_bloc.dart';
 import '../../../core/router/app_router.dart';
 
@@ -425,6 +423,12 @@ class _ActiveOrderModalState extends State<ActiveOrderModal>
     // For now, just close the modal
   }
 
+  /// Opens the order-specific chat screen.
+  /// 
+  /// This is one of the primary entry points for chat functionality.
+  /// Per Phase 4 of the navigation redesign, chat is ONLY accessible
+  /// through order-specific routes (Active Orders, Order Detail, Order Confirmation).
+  /// There is no global chat tab.
   void _openChat(Map<String, dynamic> order) {
     final orderId = order['id'] as String;
     final status = order['status'] as String? ?? 'pending';

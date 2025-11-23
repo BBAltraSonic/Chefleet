@@ -9,6 +9,7 @@ import 'core/router/app_router.dart';
 import 'features/auth/blocs/auth_bloc.dart';
 import 'features/auth/blocs/user_profile_bloc.dart';
 import 'features/order/blocs/active_orders_bloc.dart';
+import 'features/cart/blocs/cart_bloc.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -64,6 +65,9 @@ class _ChefleetAppState extends State<ChefleetApp> {
             supabaseClient: Supabase.instance.client,
             authBloc: context.read<AuthBloc>(),
           )..loadActiveOrders(),
+        ),
+        BlocProvider(
+          create: (context) => CartBloc(),
         ),
       ],
       child: Builder(

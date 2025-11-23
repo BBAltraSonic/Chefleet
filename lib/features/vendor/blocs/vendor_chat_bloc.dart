@@ -43,7 +43,7 @@ class VendorChatBloc extends Bloc<VendorChatEvent, VendorChatState> {
           schema: 'public',
           table: 'messages',
           callback: (payload) {
-            if (payload.new != null) {
+            if (payload.newRecord.isNotEmpty) {
               add(LoadConversations());
             }
           },
@@ -387,7 +387,7 @@ class VendorChatBloc extends Bloc<VendorChatEvent, VendorChatState> {
 
     emit(state.copyWith(
       filteredConversations: filteredConversations,
-      filters: event,
+      filters: ChatFilters(hasUnreadOnly: event.hasUnreadOnly),
     ));
   }
 

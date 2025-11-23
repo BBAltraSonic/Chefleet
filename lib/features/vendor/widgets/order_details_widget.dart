@@ -182,7 +182,7 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
                   // Notes Section
                   _buildNotesSection(context),
 
-                  const SizedBox(height: 100), // Space for action buttons
+                  const SizedBox(height: 24), // Space before action buttons
                 ],
               ),
             ),

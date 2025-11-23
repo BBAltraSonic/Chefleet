@@ -1,3 +1,19 @@
+// TODO: INCOMPLETE FEATURE - DO NOT USE
+// This screen is not fully implemented and has missing dependencies:
+// - Missing: package:file_picker/file_picker.dart
+// - Missing: ../widgets/media_grid_widget.dart
+// - Missing: ../widgets/upload_progress_widget.dart
+// - Missing: ../widgets/media_details_widget.dart
+// 
+// To complete this feature:
+// 1. Add file_picker package to pubspec.yaml
+// 2. Implement the missing widget files
+// 3. Test the complete upload flow
+// 4. Remove this TODO comment
+//
+// Status: Disabled - Not referenced in routing or navigation
+// Sprint: Deferred to future sprint
+
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';

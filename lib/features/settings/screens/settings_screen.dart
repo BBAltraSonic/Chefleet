@@ -350,7 +350,7 @@ class SettingsScreen extends StatelessWidget {
             '- You agree to provide accurate information\n\n'
             '2. Orders\n'
             '- Orders are binding once confirmed\n'
-            '- Payment is processed through secure channels\n'
+            '- Payment is cash-only at pickup\n'
             '- Refund policy applies to eligible orders\n\n'
             '3. User Conduct\n'
             '- Be respectful to chefs and other users\n'
@@ -398,7 +398,7 @@ class SettingsScreen extends StatelessWidget {
             ),
             SizedBox(height: 8),
             Text('• Order not showing up'),
-            Text('• Payment problems'),
+            Text('• Cash payment questions'),
             Text('• Account access'),
             Text('• Location services'),
           ],

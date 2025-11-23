@@ -68,13 +68,14 @@ class Vendor extends Equatable {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'name': name,
+      'business_name': name, // DB column is 'business_name' (NOT NULL)
       'description': description,
       'latitude': latitude,
       'longitude': longitude,
       'address': address,
       'phone': phoneNumber,
       'is_active': isActive,
+      'dish_count': dishCount,
       'logo_url': logoUrl,
       'cover_image_url': coverImageUrl,
       'cuisine_type': cuisineType,

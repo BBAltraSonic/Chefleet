@@ -1,4 +1,3 @@
-import "https://deno.land/x/deno_joke@v2.0.0/mod.ts";
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 
@@ -9,16 +8,17 @@ const corsHeaders = {
 
 interface ChangeStatusRequest {
   order_id: string
-  new_status: 'pending' | 'accepted' | 'preparing' | 'ready' | 'completed' | 'cancelled'
+  new_status: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'picked_up' | 'completed' | 'cancelled'
   pickup_code?: string // For completion verification
   reason?: string // For cancellation
 }
 
 const VALID_STATUS_TRANSITIONS = {
-  'pending': ['accepted', 'cancelled'],
-  'accepted': ['preparing', 'cancelled'],
+  'pending': ['confirmed', 'cancelled'],
+  'confirmed': ['preparing', 'cancelled'],
   'preparing': ['ready', 'cancelled'],
-  'ready': ['completed'],
+  'ready': ['picked_up', 'cancelled'],
+  'picked_up': ['completed'],
   'completed': [], // Final state
   'cancelled': [] // Final state
 }
@@ -89,15 +89,22 @@ Deno.serve(async (req) => {
     }
 
     // Additional validation for specific status changes
-    if (new_status === 'completed') {
-      // Only vendor can mark as completed
-      if (user.id !== order.vendor_id) {
-        throw new Error('Only vendor can mark order as completed')
+    if (new_status === 'picked_up') {
+      // Only buyer can mark as picked_up
+      if (user.id !== order.buyer_id) {
+        throw new Error('Only buyer can mark order as picked up')
       }
 
       // Pickup code must match
       if (!pickup_code || pickup_code !== order.pickup_code) {
         throw new Error('Invalid pickup code')
+      }
+    }
+
+    if (new_status === 'completed') {
+      // Only vendor can mark as completed (after picked_up)
+      if (user.id !== order.vendor_id) {
+        throw new Error('Only vendor can mark order as completed')
       }
     }
 
@@ -144,8 +151,8 @@ Deno.serve(async (req) => {
     // Create system message for status change
     let statusMessage = ''
     switch (new_status) {
-      case 'accepted':
-        statusMessage = 'Order accepted! Preparing your food now.'
+      case 'confirmed':
+        statusMessage = 'Order confirmed! Preparing your food now.'
         break
       case 'preparing':
         statusMessage = 'Your order is being prepared with care! 🍳'
@@ -153,8 +160,11 @@ Deno.serve(async (req) => {
       case 'ready':
         statusMessage = 'Your order is ready for pickup! 🎉'
         break
+      case 'picked_up':
+        statusMessage = 'Order picked up! Enjoy your meal! 😊'
+        break
       case 'completed':
-        statusMessage = 'Enjoy your meal! Thank you for ordering. 😊'
+        statusMessage = 'Order completed. Thank you for ordering! 🙏'
         break
       case 'cancelled':
         statusMessage = `Order cancelled. Reason: ${reason}`
@@ -167,15 +177,10 @@ Deno.serve(async (req) => {
         .insert({
           order_id,
           sender_id: user.id,
-          sender_role: user.id === order.vendor_id ? 'vendor' : 'buyer',
+          sender_type: user.id === order.vendor_id ? 'vendor' : 'buyer',
           content: statusMessage,
           message_type: 'system',
-          metadata: {
-            status_change: {
-              from: order.status,
-              to: new_status
-            }
-          }
+          is_read: false
         })
     }
 
@@ -188,8 +193,8 @@ Deno.serve(async (req) => {
 
     const { data: buyer } = await supabase
       .from('users_public')
-      .select('name')
-      .eq('id', order.buyer_id)
+      .select('full_name')
+      .eq('user_id', order.buyer_id)
       .single()
 
     // TODO: Send push notifications

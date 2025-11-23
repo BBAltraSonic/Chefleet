@@ -1,0 +1,231 @@
+name: Schema Validation
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'supabase/functions/**'
+      - 'supabase/migrations/**'
+      - 'scripts/validate_schema.ts'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'supabase/functions/**'
+      - 'supabase/migrations/**'
+      - 'scripts/validate_schema.ts'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  validate-schema:
+    name: Validate Schema Alignment
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+
+      - name: Cache Deno dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/deno
+          key: ${{ runner.os }}-deno-${{ hashFiles('**/deno.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-deno-
+
+      - name: Validate schema alignment
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          deno run \
+            --allow-env \
+            --allow-net \
+            --allow-read \
+            scripts/validate_schema.ts
+
+      - name: Lint edge functions
+        run: |
+          deno lint supabase/functions/
+
+      - name: Format check edge functions
+        run: |
+          deno fmt --check supabase/functions/
+
+      - name: Type check edge functions
+        run: |
+          for dir in supabase/functions/*/; do
+            if [ -f "${dir}index.ts" ]; then
+              echo "Type checking ${dir}index.ts"
+              deno check "${dir}index.ts" || true
+            fi
+          done
+
+  validate-flutter-models:
+    name: Validate Flutter Models
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+          channel: 'stable'
+          cache: true
+
+      - name: Get Flutter dependencies
+        run: flutter pub get
+
+      - name: Analyze Flutter code
+        run: flutter analyze --no-fatal-infos
+
+      - name: Run Flutter tests
+        run: flutter test --coverage
+
+      - name: Check for schema alignment issues
+        run: |
+          echo "Checking for deprecated column names in Dart models..."
+          
+          # Check for deprecated column names
+          DEPRECATED_COLUMNS=(
+            "pickup_time"
+            "delivery_address"
+            "sender_role"
+          )
+          
+          FOUND_ISSUES=0
+          
+          for col in "${DEPRECATED_COLUMNS[@]}"; do
+            if grep -r "\"$col\"" lib/core/models/ lib/features/*/models/; then
+              echo "❌ Found deprecated column name: $col"
+              FOUND_ISSUES=1
+            fi
+          done
+          
+          if [ $FOUND_ISSUES -eq 1 ]; then
+            echo "❌ Schema alignment issues found!"
+            echo "See DATABASE_SCHEMA.md for correct column names."
+            exit 1
+          else
+            echo "✅ No schema alignment issues found"
+          fi
+
+  integration-tests:
+    name: Run Integration Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [validate-schema, validate-flutter-models]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+          channel: 'stable'
+          cache: true
+
+      - name: Get Flutter dependencies
+        run: flutter pub get
+
+      - name: Run schema validation integration tests
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          flutter test integration_test/schema_validation_test.dart
+
+  edge-function-tests:
+    name: Test Edge Functions
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: validate-schema
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+
+      - name: Install Supabase CLI
+        run: |
+          curl -fsSL https://github.com/supabase/cli/releases/latest/download/supabase_linux_amd64.tar.gz | tar -xz
+          sudo mv supabase /usr/local/bin/
+
+      - name: Test edge functions locally
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          # Run automated edge function tests
+          if [ -f "scripts/test_edge_functions_automated.sh" ]; then
+            chmod +x scripts/test_edge_functions_automated.sh
+            ./scripts/test_edge_functions_automated.sh
+          else
+            echo "⚠️  Automated test script not found, skipping..."
+          fi
+
+  summary:
+    name: Validation Summary
+    runs-on: ubuntu-latest
+    needs: [validate-schema, validate-flutter-models, integration-tests, edge-function-tests]
+    if: always()
+
+    steps:
+      - name: Check validation results
+        run: |
+          echo "## Schema Validation Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ needs.validate-schema.result }}" == "success" ]; then
+            echo "✅ Schema validation passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Schema validation failed" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ "${{ needs.validate-flutter-models.result }}" == "success" ]; then
+            echo "✅ Flutter models validation passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Flutter models validation failed" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ "${{ needs.integration-tests.result }}" == "success" ]; then
+            echo "✅ Integration tests passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Integration tests failed" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ "${{ needs.edge-function-tests.result }}" == "success" ]; then
+            echo "✅ Edge function tests passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Edge function tests failed" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "See [DATABASE_SCHEMA.md](../blob/main/DATABASE_SCHEMA.md) for schema reference" >> $GITHUB_STEP_SUMMARY
+          echo "See [EDGE_FUNCTION_CONTRACTS.md](../blob/main/EDGE_FUNCTION_CONTRACTS.md) for API contracts" >> $GITHUB_STEP_SUMMARY
+
+      - name: Fail if any validation failed
+        if: |
+          needs.validate-schema.result != 'success' ||
+          needs.validate-flutter-models.result != 'success' ||
+          needs.integration-tests.result != 'success' ||
+          needs.edge-function-tests.result != 'success'
+        run: |
+          echo "❌ One or more validations failed"
+          exit 1

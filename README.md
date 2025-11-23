@@ -4,7 +4,39 @@
 **Status:** 🔄 UAT In Progress  
 **Platform:** Android (iOS planned for v1.2)
 
+[![Test](https://github.com/yourusername/chefleet/workflows/Test/badge.svg)](https://github.com/yourusername/chefleet/actions)
+[![Build](https://github.com/yourusername/chefleet/workflows/Build/badge.svg)](https://github.com/yourusername/chefleet/actions)
+[![Coverage](https://codecov.io/gh/yourusername/chefleet/branch/main/graph/badge.svg)](https://codecov.io/gh/yourusername/chefleet)
+
 Chefleet is a mobile marketplace connecting home chefs with local food enthusiasts. Order authentic homemade dishes from talented cooks in your neighborhood.
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Flutter 3.35.5+
+- Dart 3.9.2+
+- Supabase account
+- Google Cloud account (for Maps API)
+
+### Setup in 3 Steps
+
+1. **Set up environment**:
+   ```bash
+   cp .env.example .env
+   # Edit .env with your credentials (see docs/ENVIRONMENT_SETUP.md)
+   ```
+
+2. **Install dependencies**:
+   ```bash
+   flutter pub get
+   ```
+
+3. **Run the app**:
+   ```bash
+   flutter run
+   ```
+
+For detailed setup instructions, see [docs/ENVIRONMENT_SETUP.md](docs/ENVIRONMENT_SETUP.md)
 
 ## 🎯 Project Status
 
@@ -16,10 +48,12 @@ Chefleet is a mobile marketplace connecting home chefs with local food enthusias
 ### Key Metrics
 - ✅ 19/19 screens implemented (100%)
 - ✅ 95.8% visual parity with design reference
-- ✅ 14 test files (widget, golden, integration, accessibility, performance)
+- ✅ 35+ test files with 250+ tests
+- ✅ ~70% test coverage
+- ✅ Automated CI/CD pipeline
 - ✅ WCAG AA accessibility compliance
 - ✅ All performance benchmarks met
-- ✅ 0 critical issues
+- ✅ 0 critical issues, 0 compilation errors
 
 ## 🚀 Features
 
@@ -313,11 +347,75 @@ lib/
 
 [Contributor information to be added]
 
+## 🔧 Troubleshooting
+
+### Common Issues
+
+#### Schema Mismatch Errors
+**Symptom**: Database errors mentioning missing columns or wrong column names
+
+**Solution**:
+1. Check `DATABASE_SCHEMA.md` for current schema
+2. Review `COMMON_PITFALLS.md` for known issues
+3. Run schema validation tests: `flutter test integration_test/schema_validation_test.dart`
+4. Verify edge functions use correct column names
+
+**Common Mistakes**:
+- Using `pickup_time` instead of `estimated_fulfillment_time`
+- Using `delivery_address` instead of `pickup_address`
+- Using `sender_role` instead of `sender_type`
+
+#### Guest User Access Denied
+**Symptom**: 403 Forbidden errors for guest users
+
+**Solution**:
+1. Verify guest session exists and is not expired
+2. Check edge function sets guest context: `set_config('app.guest_id', ...)`
+3. Review RLS policies in `RLS_POLICY_REFERENCE.md`
+4. Test with: `SET LOCAL app.guest_id = 'guest_test123';`
+
+#### Edge Function Failures
+**Symptom**: 500 errors from edge functions
+
+**Solution**:
+1. Check edge function logs: `supabase functions logs <function_name> --tail`
+2. Verify all required fields are provided
+3. Check `EDGE_FUNCTION_CONTRACTS.md` for API contracts
+4. Run automated tests: `.\scripts\test_edge_functions_automated.ps1`
+
+#### RLS Policy Blocks Access
+**Symptom**: Empty results or access denied errors
+
+**Solution**:
+1. Verify user authentication state
+2. Check RLS policies for the table in `RLS_POLICY_REFERENCE.md`
+3. Test policies manually: `SET LOCAL app.current_user_id = 'user-uuid';`
+4. Run security advisor: `mcp0_get_advisors` (Supabase MCP)
+
+#### NOT NULL Constraint Violations
+**Symptom**: Database error about null values in NOT NULL columns
+
+**Solution**:
+1. Check `DATABASE_SCHEMA.md` for required fields
+2. Verify all NOT NULL fields are included in INSERT/UPDATE
+3. Common missing fields: `total_amount`, `estimated_fulfillment_time`
+4. Review `COMMON_PITFALLS.md` for complete list
+
+### Getting Help
+
+For detailed troubleshooting:
+- **Schema Issues**: See `COMMON_PITFALLS.md`
+- **Guest Users**: See `GUEST_USER_GUIDE.md`
+- **RLS Policies**: See `RLS_POLICY_REFERENCE.md`
+- **Edge Functions**: See `EDGE_FUNCTION_CONTRACTS.md`
+- **Testing**: See `PHASE_5_MANUAL_TESTING_CHECKLIST.md`
+
 ## 📞 Support
 
 For issues and questions:
 - Create an issue in the repository
 - Contact: [support email to be added]
+- Review comprehensive documentation in `/docs` folder
 
 ## 🙏 Acknowledgments
 

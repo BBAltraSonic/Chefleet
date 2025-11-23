@@ -1,4 +1,3 @@
-import "https://deno.land/x/deno_joke@v2.0.0/mod.ts";
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 
@@ -36,26 +35,59 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
-      throw new Error('No authorization header')
-    }
-
     // Create Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    // Verify user authentication
-    const token = authHeader.replace('Bearer ', '')
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
+    // Parse request body first to check for guest user
+    const body: CreateOrderRequest & { guest_user_id?: string } = await req.json()
+    const { vendor_id, items, pickup_time, delivery_address, special_instructions, idempotency_key, guest_user_id } = body
 
-    if (authError || !user) {
-      throw new Error('Unauthorized')
+    // Determine user ID - either from auth token or guest session
+    let userId: string
+
+    if (guest_user_id) {
+      // Guest user flow - validate format and optionally create session
+      if (!guest_user_id.startsWith('guest_')) {
+        throw new Error('Invalid guest user ID format')
+      }
+
+      // Try to find or create guest session
+      const { data: guestSession } = await supabase
+        .from('guest_sessions')
+        .select('guest_id')
+        .eq('guest_id', guest_user_id)
+        .maybeSingle()
+
+      // If session doesn't exist, create it
+      if (!guestSession) {
+        await supabase
+          .from('guest_sessions')
+          .insert({
+            guest_id: guest_user_id,
+            created_at: new Date().toISOString(),
+            last_active_at: new Date().toISOString()
+          })
+      }
+
+      userId = guest_user_id
+    } else {
+      // Registered user flow - verify auth token
+      const authHeader = req.headers.get('Authorization')
+      if (!authHeader) {
+        throw new Error('No authorization header')
+      }
+
+      const token = authHeader.replace('Bearer ', '')
+      const { data: { user }, error: authError } = await supabase.auth.getUser(token)
+
+      if (authError || !user) {
+        throw new Error('Unauthorized')
+      }
+
+      userId = user.id
     }
-
-    const body: CreateOrderRequest = await req.json()
-    const { vendor_id, items, pickup_time, delivery_address, special_instructions, idempotency_key } = body
 
     // Validate required fields
     if (!vendor_id || !items || !pickup_time || !idempotency_key) {
@@ -95,9 +127,15 @@ Deno.serve(async (req) => {
       throw new Error('Vendor not found or inactive')
     }
 
-    // Validate dishes and calculate total
-    let total_cents = 0
-    const validatedItems = []
+    // Validate dishes and calculate subtotal
+    let subtotal_cents = 0
+    const validatedItems: Array<{
+      dish_id: string
+      quantity: number
+      price_cents: number
+      subtotal_cents: number
+      special_instructions: string | null
+    }> = []
 
     for (const item of items) {
       const { data: dish, error: dishError } = await supabase
@@ -112,11 +150,13 @@ Deno.serve(async (req) => {
         throw new Error(`Dish ${item.dish_id} not found or unavailable`)
       }
 
-      total_cents += dish.price_cents * item.quantity
+      const lineSubtotal = dish.price_cents * item.quantity
+      subtotal_cents += lineSubtotal
       validatedItems.push({
         dish_id: item.dish_id,
         quantity: item.quantity,
         price_cents: dish.price_cents,
+        subtotal_cents: lineSubtotal,
         special_instructions: item.special_instructions || null
       })
     }
@@ -124,16 +164,32 @@ Deno.serve(async (req) => {
     // Generate pickup code (6-digit random number)
     const pickup_code = Math.floor(100000 + Math.random() * 900000).toString()
 
+    const tax_cents = 0
+    const delivery_fee_cents = 0
+    const service_fee_cents = 0
+    const tip_cents = 0
+    const total_amount_cents =
+      subtotal_cents +
+      tax_cents +
+      delivery_fee_cents +
+      service_fee_cents +
+      tip_cents
+
     // Create order
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .insert({
-        buyer_id: user.id,
+        buyer_id: userId,
         vendor_id,
         status: 'pending',
-        total_cents,
-        pickup_time,
-        delivery_address: delivery_address || null,
+        subtotal_cents,
+        tax_cents,
+        delivery_fee_cents,
+        service_fee_cents,
+        tip_cents,
+        total_amount: total_amount_cents / 100.0,
+        estimated_fulfillment_time: pickup_time,
+        pickup_address: delivery_address?.street || null,
         special_instructions: special_instructions || null,
         pickup_code,
         idempotency_key,
@@ -152,6 +208,7 @@ Deno.serve(async (req) => {
       dish_id: item.dish_id,
       quantity: item.quantity,
       price_cents: item.price_cents,
+      subtotal_cents: item.subtotal_cents,
       special_instructions: item.special_instructions
     }))
 
@@ -165,23 +222,33 @@ Deno.serve(async (req) => {
       throw new Error(`Failed to create order items: ${itemsError.message}`)
     }
 
-    // Get buyer details for notifications
-    const { data: buyer } = await supabase
-      .from('users_public')
-      .select('name, avatar_url')
-      .eq('id', user.id)
-      .single()
+    // Get buyer details for notifications (skip for guests)
+    let buyer = null
+    if (!guest_user_id) {
+      const { data: buyerData } = await supabase
+        .from('users_public')
+        .select('name, avatar_url')
+        .eq('id', userId)
+        .single()
+      buyer = buyerData
+    }
 
     // Create initial chat message
-    await supabase
-      .from('messages')
-      .insert({
-        order_id: order.id,
-        sender_id: user.id,
-        sender_role: 'buyer',
-        content: special_instructions || 'Order placed! I\'ll be there for pickup.',
-        message_type: 'text'
-      })
+    const messageData: any = {
+      order_id: order.id,
+      sender_type: 'buyer',
+      content: special_instructions || 'Order placed! I\'ll be there for pickup.',
+      message_type: 'text'
+    }
+
+    if (guest_user_id) {
+      messageData.guest_sender_id = userId
+      messageData.sender_id = null
+    } else {
+      messageData.sender_id = userId
+    }
+
+    await supabase.from('messages').insert(messageData)
 
     // Notify vendor via realtime
     // Supabase automatically handles realtime subscriptions for tables

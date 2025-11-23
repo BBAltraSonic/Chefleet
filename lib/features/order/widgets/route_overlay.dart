@@ -163,7 +163,7 @@ class _RouteOverlayState extends State<RouteOverlay>
                         ),
                       ),
                       Container(
-                        decoration: BoxDecoration(
+                        decoration: const BoxDecoration(
                           color: AppTheme.surfaceGreen,
                           shape: BoxShape.circle,
                         ),
@@ -288,7 +288,7 @@ class _RouteOverlayState extends State<RouteOverlay>
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
                             ),
-                            side: BorderSide(
+                            side: const BorderSide(
                               color: AppTheme.borderGreen,
                               width: 1.5,
                             ),
@@ -318,8 +318,6 @@ class _RouteOverlayState extends State<RouteOverlay>
                       ),
                     ],
                   ),
-
-                  // Order ID (small text)
                   const SizedBox(height: AppTheme.spacing8),
                   Center(
                     child: Text(
@@ -335,8 +333,7 @@ class _RouteOverlayState extends State<RouteOverlay>
             ),
           ),
         ),
-      ),
-    );
+      );
   }
 
   String _getStatusText() {

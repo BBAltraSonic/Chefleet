@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -75,6 +76,15 @@ class MapVendorDeselected extends MapFeedEvent {
   const MapVendorDeselected();
 }
 
+class MapCategorySelected extends MapFeedEvent {
+  const MapCategorySelected(this.category);
+
+  final String category;
+
+  @override
+  List<Object?> get props => [category];
+}
+
 class MapClusterTapped extends MapFeedEvent {
   const MapClusterTapped(this.clusterPosition, this.vendorIds);
 
@@ -100,6 +110,7 @@ class MapFeedState extends AppState {
     this.mapBounds,
     this.vendors = const [],
     this.dishes = const [],
+    this.allDishes = const [],
     this.selectedVendor,
     this.markers = const {},
     this.isLoading = false,
@@ -111,12 +122,14 @@ class MapFeedState extends AppState {
     this.isOffline = false,
     this.zoomLevel = 15.0,
     this.searchQuery = '',
+    this.selectedCategory = 'All',
   });
 
   final Position? currentPosition;
   final LatLngBounds? mapBounds;
   final List<Vendor> vendors;
   final List<Dish> dishes;
+  final List<Dish> allDishes;
   final Vendor? selectedVendor;
   final Map<String, Marker> markers;
   final bool isLoading;
@@ -128,12 +141,14 @@ class MapFeedState extends AppState {
   final bool isOffline;
   final double zoomLevel;
   final String searchQuery;
+  final String selectedCategory;
 
   MapFeedState copyWith({
     Position? currentPosition,
     LatLngBounds? mapBounds,
     List<Vendor>? vendors,
     List<Dish>? dishes,
+    List<Dish>? allDishes,
     Vendor? selectedVendor,
     Map<String, Marker>? markers,
     bool? isLoading,
@@ -145,12 +160,14 @@ class MapFeedState extends AppState {
     bool? isOffline,
     double? zoomLevel,
     String? searchQuery,
+    String? selectedCategory,
   }) {
     return MapFeedState(
       currentPosition: currentPosition ?? this.currentPosition,
       mapBounds: mapBounds ?? this.mapBounds,
       vendors: vendors ?? this.vendors,
       dishes: dishes ?? this.dishes,
+      allDishes: allDishes ?? this.allDishes,
       selectedVendor: selectedVendor ?? this.selectedVendor,
       markers: markers ?? this.markers,
       isLoading: isLoading ?? this.isLoading,
@@ -162,6 +179,7 @@ class MapFeedState extends AppState {
       isOffline: isOffline ?? this.isOffline,
       zoomLevel: zoomLevel ?? this.zoomLevel,
       searchQuery: searchQuery ?? this.searchQuery,
+      selectedCategory: selectedCategory ?? this.selectedCategory,
     );
   }
 
@@ -171,6 +189,7 @@ class MapFeedState extends AppState {
         mapBounds,
         vendors,
         dishes,
+        allDishes,
         selectedVendor,
         markers,
         isLoading,
@@ -182,6 +201,7 @@ class MapFeedState extends AppState {
         isOffline,
         zoomLevel,
         searchQuery,
+        selectedCategory,
       ];
 }
 
@@ -202,6 +222,7 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
     on<MapClusterTapped>(_onClusterTapped);
     on<MapMarkersUpdated>(_onMarkersUpdated);
     on<MapSearchQueryChanged>(_onSearchQueryChanged);
+    on<MapCategorySelected>(_onCategorySelected);
 
     _debouncer = Timer(const Duration(milliseconds: 600), () {});
   }
@@ -227,6 +248,9 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
     ));
 
     try {
+      // Allow UI to render by yielding to the event loop
+      await Future.delayed(const Duration(milliseconds: 100));
+      
       final isCacheValid = await _cacheService.isCacheValid();
       
       if (isCacheValid) {
@@ -238,8 +262,21 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
           // Update clustering with cached vendor data
         _clusterManager.setVendors(cachedVendors);
 
+        // Apply category filter if not 'All'
+        final displayDishes = state.selectedCategory == 'All'
+            ? cachedDishes
+            : cachedDishes.where((dish) {
+                if (dish.tags.isNotEmpty) {
+                  return dish.tags.any((tag) =>
+                    tag.toLowerCase().contains(state.selectedCategory.toLowerCase())
+                  );
+                }
+                return dish.name.toLowerCase().contains(state.selectedCategory.toLowerCase());
+              }).toList();
+
         emit(state.copyWith(
-          dishes: cachedDishes,
+          dishes: displayDishes,
+          allDishes: cachedDishes,
           vendors: cachedVendors,
           lastUpdated: lastUpdated,
           isLoading: false,
@@ -250,10 +287,15 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
         }
       }
 
-      final position = await _getCurrentLocation();
-      if (position != null) {
-        add(MapLocationChanged(position));
-      }
+      // Get location in background, don't block on it
+      _getCurrentLocation().then((position) {
+        if (position != null) {
+          add(MapLocationChanged(position));
+        }
+      }).catchError((e) {
+        // Silently fail location, app can work without it
+        debugPrint('Location error: $e');
+      });
 
       await _loadVendorsAndDishes(emit);
 
@@ -366,6 +408,33 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
     Emitter<MapFeedState> emit,
   ) {
     emit(state.copyWith(selectedVendor: null));
+  }
+
+  void _onCategorySelected(
+    MapCategorySelected event,
+    Emitter<MapFeedState> emit,
+  ) {
+    // Use allDishes if available, otherwise use dishes as the source
+    final sourceDishes = state.allDishes.isNotEmpty ? state.allDishes : state.dishes;
+    
+    // Filter dishes by category
+    final filteredDishes = event.category == 'All'
+        ? sourceDishes
+        : sourceDishes.where((dish) {
+            // Check if dish has tags and if any tag contains the category
+            if (dish.tags.isNotEmpty) {
+              return dish.tags.any((tag) =>
+                tag.toLowerCase().contains(event.category.toLowerCase())
+              );
+            }
+            // If no tags, also check dish name for category match
+            return dish.name.toLowerCase().contains(event.category.toLowerCase());
+          }).toList();
+    
+    emit(state.copyWith(
+      selectedCategory: event.category,
+      dishes: filteredDishes,
+    ));
   }
 
   void _onClusterTapped(
@@ -533,9 +602,22 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
         // Update clustering with new vendor data
         _clusterManager.setVendors(vendors);
 
+        // Apply category filter if not 'All'
+        final displayDishes = state.selectedCategory == 'All'
+            ? dishes
+            : dishes.where((dish) {
+                if (dish.tags.isNotEmpty) {
+                  return dish.tags.any((tag) =>
+                    tag.toLowerCase().contains(state.selectedCategory.toLowerCase())
+                  );
+                }
+                return dish.name.toLowerCase().contains(state.selectedCategory.toLowerCase());
+              }).toList();
+
         emit(state.copyWith(
           vendors: vendors,
-          dishes: dishes,
+          dishes: displayDishes,
+          allDishes: dishes,
           currentPage: 0,
           hasMoreData: hasMoreData,
           isOffline: false,
@@ -580,8 +662,21 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
         // Update clustering with cached vendor data
         _clusterManager.setVendors(cachedVendors);
 
+        // Apply category filter if not 'All'
+        final displayDishes = state.selectedCategory == 'All'
+            ? cachedDishes
+            : cachedDishes.where((dish) {
+                if (dish.tags.isNotEmpty) {
+                  return dish.tags.any((tag) =>
+                    tag.toLowerCase().contains(state.selectedCategory.toLowerCase())
+                  );
+                }
+                return dish.name.toLowerCase().contains(state.selectedCategory.toLowerCase());
+              }).toList();
+
         emit(state.copyWith(
-          dishes: cachedDishes,
+          dishes: displayDishes,
+          allDishes: cachedDishes,
           vendors: cachedVendors,
           lastUpdated: lastUpdated,
           isOffline: true,

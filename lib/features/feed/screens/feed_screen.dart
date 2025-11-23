@@ -110,9 +110,24 @@ class _FeedScreenState extends State<FeedScreen> {
                       centerTitle: false,
                       actions: [
                         IconButton(
+                          icon: const Icon(Icons.map_outlined),
+                          tooltip: 'Map View',
+                          onPressed: () {
+                            context.go('/map');
+                          },
+                        ),
+                        IconButton(
                           icon: const Icon(Icons.filter_list),
+                          tooltip: 'Filter',
                           onPressed: () {
                             // TODO: Implement filter
+                          },
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.person_outline),
+                          tooltip: 'Profile',
+                          onPressed: () {
+                            context.go('/profile');
                           },
                         ),
                       ],
@@ -184,9 +199,9 @@ class _FeedScreenState extends State<FeedScreen> {
                           child: Center(child: CircularProgressIndicator()),
                         ),
                       ),
-                    // Bottom padding for nav bar
-                    const SliverToBoxAdapter(
-                      child: SizedBox(height: 100),
+                    // Bottom safe area padding
+                    SliverToBoxAdapter(
+                      child: SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
                     ),
                   ],
                 ),

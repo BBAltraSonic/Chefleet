@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'dart:ui';
 import '../../core/blocs/navigation_bloc.dart';
-import '../../core/router/app_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../features/order/widgets/active_order_modal.dart';
 import '../../features/order/blocs/active_orders_bloc.dart';
@@ -29,115 +27,10 @@ class _PersistentNavigationShellState extends State<PersistentNavigationShell> {
             index: state.currentTab.index,
             children: widget.children,
           ),
-          bottomNavigationBar: const GlassBottomNavigation(),
           floatingActionButton: const OrdersFloatingActionButton(),
-          floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+          floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
         );
       },
-    );
-  }
-}
-
-class GlassBottomNavigation extends StatelessWidget {
-  const GlassBottomNavigation({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final glassTokens = AppTheme.glassTokens(context);
-
-    return Container(
-      height: 80,
-      margin: const EdgeInsets.all(AppTheme.spacing16),
-      decoration: AppTheme.glassBoxDecoration(
-        isDark: isDark,
-        borderRadius: glassTokens.borderRadius,
-      ).copyWith(
-        boxShadow: glassTokens.shadow,
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(glassTokens.borderRadius),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(
-            sigmaX: glassTokens.blurSigma,
-            sigmaY: glassTokens.blurSigma,
-          ),
-          child: BlocBuilder<NavigationBloc, NavigationState>(
-            builder: (context, state) {
-              return Row(
-                children: [
-                  Expanded(
-                    child: _buildNavItem(
-                      context,
-                      NavigationTab.map,
-                      state.currentTab == NavigationTab.map,
-                    ),
-                  ),
-                  Expanded(
-                    child: _buildNavItem(
-                      context,
-                      NavigationTab.feed,
-                      state.currentTab == NavigationTab.feed,
-                    ),
-                  ),
-                  const Expanded(child: SizedBox()), // Space for FAB
-                  Expanded(
-                    child: _buildNavItem(
-                      context,
-                      NavigationTab.chat,
-                      state.currentTab == NavigationTab.chat,
-                    ),
-                  ),
-                  Expanded(
-                    child: _buildNavItem(
-                      context,
-                      NavigationTab.profile,
-                      state.currentTab == NavigationTab.profile,
-                    ),
-                  ),
-                ],
-              );
-            },
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavItem(BuildContext context, NavigationTab tab, bool isSelected) {
-    return InkWell(
-      onTap: () {
-        context.read<NavigationBloc>().selectTab(tab);
-        AppRouter.navigateToTab(context, tab);
-      },
-      borderRadius: BorderRadius.circular(24),
-      child: Container(
-        height: double.infinity,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              tab.icon,
-              size: 24,
-              color: isSelected
-                  ? Theme.of(context).colorScheme.primary
-                  : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              tab.label,
-              style: TextStyle(
-                fontSize: 12,
-                color: isSelected
-                    ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

@@ -74,7 +74,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
   }
 
   void _navigateToHome() {
-    context.go(AppRouter.feedRoute);
+    context.go(AppRouter.mapRoute);
   }
 
   @override

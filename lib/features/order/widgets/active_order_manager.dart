@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../auth/blocs/auth_bloc.dart';
 import '../blocs/active_orders_bloc.dart';
 import 'active_order_fab.dart';
 
@@ -24,6 +25,7 @@ class _ActiveOrderManagerState extends State<ActiveOrderManager> {
     super.initState();
     _activeOrdersBloc = ActiveOrdersBloc(
       supabaseClient: Supabase.instance.client,
+      authBloc: context.read<AuthBloc>(),
     );
     _activeOrdersBloc.loadActiveOrders();
   }

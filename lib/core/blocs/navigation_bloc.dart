@@ -10,12 +10,9 @@ class NavigationTab {
   final int index;
 
   static const map = NavigationTab(Icons.map, 'Map', 0);
-  static const feed = NavigationTab(Icons.rss_feed, 'Feed', 1);
-  static const orders = NavigationTab(Icons.shopping_bag, 'Orders', 2);
-  static const chat = NavigationTab(Icons.chat, 'Chat', 3);
-  static const profile = NavigationTab(Icons.person, 'Profile', 4);
+  static const profile = NavigationTab(Icons.person, 'Profile', 1);
 
-  static const List<NavigationTab> values = [map, feed, orders, chat, profile];
+  static const List<NavigationTab> values = [map, profile];
 }
 
 // Extension for static methods on NavigationTab
@@ -29,8 +26,6 @@ extension NavigationTabExtension on NavigationTab {
 
   static List<NavigationTab> get navigationTabs => [
         NavigationTab.map,
-        NavigationTab.feed,
-        NavigationTab.chat,
         NavigationTab.profile,
       ];
 }

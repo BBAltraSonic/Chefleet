@@ -218,7 +218,7 @@ class VendorChatState extends Equatable {
     'Greeting',
     'Order Status',
     'Preparation Time',
-    'Payment',
+    'Cash Payment',
     'Location',
     'Menu',
     'Common Questions',

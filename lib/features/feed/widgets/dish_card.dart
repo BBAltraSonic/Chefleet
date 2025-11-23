@@ -11,6 +11,7 @@ class DishCard extends StatelessWidget {
     this.onFavorite,
     this.isFavorite = false,
     this.distance,
+    this.onAddToCart,
   });
 
   final Dish dish;
@@ -19,6 +20,7 @@ class DishCard extends StatelessWidget {
   final VoidCallback? onFavorite;
   final bool isFavorite;
   final double? distance;
+  final VoidCallback? onAddToCart;
 
   @override
   Widget build(BuildContext context) {
@@ -110,8 +112,10 @@ class DishCard extends StatelessWidget {
                       ),
                     const SizedBox(height: 12),
 
-                    // Bottom row: price, prep time, and distance
+                    // Bottom row: price and add button
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         // Price
                         Text(
@@ -122,29 +126,47 @@ class DishCard extends StatelessWidget {
                             fontSize: 18,
                           ),
                         ),
-                        const Spacer(),
                         
-                        // Stats Row
-                        Row(
-                          children: [
-                            // Prep time
-                            _buildStatBadge(
-                              context,
-                              Icons.access_time_rounded,
-                              dish.formattedPrepTime,
-                            ),
-                            
-                            if (distance != null) ...[
-                              const SizedBox(width: 8),
-                              // Distance
-                              _buildStatBadge(
-                                context,
-                                Icons.location_on_outlined,
-                                '${distance?.toStringAsFixed(1) ?? '0.0'} km',
+                        // Add to cart button (if callback provided)
+                        if (onAddToCart != null && dish.available)
+                          GestureDetector(
+                            onTap: onAddToCart,
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: const BoxDecoration(
+                                color: AppTheme.primaryGreen,
+                                shape: BoxShape.circle,
                               ),
-                            ],
-                          ],
+                              child: const Icon(
+                                Icons.add,
+                                size: 18,
+                                color: AppTheme.darkText,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    
+                    // Stats Row (prep time and distance)
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        // Prep time
+                        _buildStatBadge(
+                          context,
+                          Icons.access_time_rounded,
+                          dish.formattedPrepTime,
                         ),
+                        
+                        if (distance != null) ...[
+                          const SizedBox(width: 8),
+                          // Distance
+                          _buildStatBadge(
+                            context,
+                            Icons.location_on_outlined,
+                            '${distance?.toStringAsFixed(1) ?? '0.0'} km',
+                          ),
+                        ],
                       ],
                     ),
                   ],

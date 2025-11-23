@@ -18,6 +18,9 @@ This directory contains all production Supabase Edge Functions for the Chefleet 
 ### Notifications (Placeholder)
 - **send_push** - Push notification infrastructure (not yet integrated with FCM/APNs)
 
+### Guest Account Management
+- **migrate_guest_data** - Migrates guest user data to registered accounts
+
 ## Payment Functions
 
 ⚠️ **Cash-Only Mode**: Payment-related functions have been removed as the app operates on cash-only basis for pickup orders.

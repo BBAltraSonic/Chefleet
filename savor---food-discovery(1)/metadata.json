@@ -1,0 +1,7 @@
+{
+  "name": "Savor - Food Discovery",
+  "description": "A location-based food discovery app featuring an interactive map, AI-powered dish recommendations, and a culinary chat assistant.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}

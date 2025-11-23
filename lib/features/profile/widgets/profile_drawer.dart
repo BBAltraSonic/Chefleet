@@ -72,16 +72,19 @@ class ProfileDrawer extends StatelessWidget {
                       },
                     ),
                     const SizedBox(height: AppTheme.spacing12),
-                    _buildMenuItem(
-                      context,
-                      icon: Icons.history,
-                      title: 'Order History',
-                      subtitle: 'View past orders',
-                      onTap: () {
-                        Navigator.pop(context);
-                        context.push(AppRouter.ordersRoute);
-                      },
-                    ),
+                    // TODO: Re-implement Order History access after navigation redesign
+                    // Active orders are now accessed via FAB, need to decide on
+                    // past order history access pattern
+                    // _buildMenuItem(
+                    //   context,
+                    //   icon: Icons.history,
+                    //   title: 'Order History',
+                    //   subtitle: 'View past orders',
+                    //   onTap: () {
+                    //     Navigator.pop(context);
+                    //     // context.push(AppRouter.ordersRoute);
+                    //   },
+                    // ),
                     const SizedBox(height: AppTheme.spacing12),
                     _buildMenuItem(
                       context,

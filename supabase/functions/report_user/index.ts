@@ -90,12 +90,8 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Check if reported user exists
-    const { data: reportedUser, error: userError } = await supabase
-      .from("users")
-      .select("id, email")
-      .eq("id", body.reported_user_id)
-      .single();
+    // Check if reported user exists in auth.users
+    const { data: reportedUser, error: userError } = await supabase.auth.admin.getUserById(body.reported_user_id);
 
     if (userError || !reportedUser) {
       return new Response(
@@ -118,8 +114,6 @@ Deno.serve(async (req: Request) => {
       .select("id")
       .eq("reporter_id", user.id)
       .eq("reported_user_id", body.reported_user_id)
-      .eq("context_type", body.context_type || "profile")
-      .eq("context_id", body.context_id || "")
       .eq("status", "pending")
       .single();
 
@@ -141,34 +135,31 @@ Deno.serve(async (req: Request) => {
         id: reportId,
         reporter_id: user.id,
         reported_user_id: body.reported_user_id,
-        reason: body.reason,
+        report_type: body.reason,
+        reason: body.reason.replace('_', ' '),
         description: body.description.trim(),
-        context_type: body.context_type || "profile",
-        context_id: body.context_id || null,
         status: "pending",
-        priority: body.reason === "harassment" || body.reason === "fraud" ? "high" : "medium",
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        priority: body.reason === "harassment" || body.reason === "fraud" ? "high" : "medium"
+        // created_at and updated_at auto-generated
       });
 
     if (reportError) {
       throw reportError;
     }
 
-    // Get admin users to notify
+    // Get admin users to notify (from users_public with admin role or specific IDs)
     const { data: adminUsers } = await supabase
-      .from("users")
-      .select("id")
-      .eq("id", "33333333-3333-3333-3333-333333333333") // Admin user from test data
+      .from("users_public")
+      .select("user_id")
       .limit(10);
 
     // Create notifications for admins
-    if (adminUsers) {
+    if (adminUsers && adminUsers.length > 0) {
       for (const admin of adminUsers) {
         await supabase
           .from("notifications")
           .insert({
-            user_id: admin.id,
+            user_id: admin.user_id,
             type: "moderation_report",
             title: "New User Report",
             message: `A user has been reported for ${body.reason.replace('_', ' ')}`,
@@ -177,10 +168,9 @@ Deno.serve(async (req: Request) => {
               reporter_id: user.id,
               reported_user_id: body.reported_user_id,
               reason: body.reason,
-            },
-            read: false,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
+            }
+            // read_at defaults to null
+            // created_at auto-generated
           });
       }
     }

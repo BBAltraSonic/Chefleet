@@ -323,6 +323,7 @@ class QuickReplyWidget extends StatelessWidget {
       case 'preparation time':
         return Colors.orange;
       case 'payment':
+      case 'cash payment':
         return Colors.purple;
       case 'location':
         return Colors.red;
@@ -346,7 +347,8 @@ class QuickReplyWidget extends StatelessWidget {
       case 'preparation time':
         return Icons.schedule;
       case 'payment':
-        return Icons.payment;
+      case 'cash payment':
+        return Icons.payments_outlined;
       case 'location':
         return Icons.location_on;
       case 'menu':

@@ -50,7 +50,7 @@ android {
             localProperties.load(FileInputStream(localPropertiesFile))
         }
 
-        // Set the Google Maps API key as a build config field
+        // Set the Google Maps API key as a build config field and manifest placeholder
         // Priority: .env file > local.properties > empty string
         val mapsApiKey = envProperties.getProperty("MAPS_API_KEY")
             ?: localProperties.getProperty("GOOGLE_MAPS_API_KEY", "")
@@ -61,6 +61,9 @@ android {
         println("Final maps API key: $mapsApiKey")
 
         buildConfigField("String", "MAPS_API_KEY", "\"$mapsApiKey\"")
+        
+        // Set manifest placeholder for Google Maps API key
+        manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
     }
 
     buildTypes {

@@ -122,28 +122,28 @@ class GuestConversionPrompt extends StatelessWidget {
   PromptData _getPromptData() {
     switch (context) {
       case ConversionPromptContext.afterOrder:
-        return PromptData(
+        return const PromptData(
           icon: Icons.shopping_bag_outlined,
           title: 'Save Your Order',
           message:
               'Create an account to track your order and access your history.',
         );
       case ConversionPromptContext.afterChat:
-        return PromptData(
+        return const PromptData(
           icon: Icons.chat_bubble_outline,
           title: 'Continue Chatting',
           message:
               'Create an account to keep your conversations and get notifications.',
         );
       case ConversionPromptContext.profile:
-        return PromptData(
+        return const PromptData(
           icon: Icons.account_circle_outlined,
           title: 'Unlock All Features',
           message:
               'Create an account to save favorites, track orders, and more.',
         );
       case ConversionPromptContext.general:
-        return PromptData(
+        return const PromptData(
           icon: Icons.star_outline,
           title: 'Get More from Chefleet',
           message:
@@ -152,7 +152,7 @@ class GuestConversionPrompt extends StatelessWidget {
     }
   }
 
-  void _showConversionScreen(BuildContext context) async {
+  Future<void> _showConversionScreen(BuildContext context) async {
     final authState = context.read<AuthBloc>().state;
     final guestId = authState.guestId;
 
@@ -275,7 +275,7 @@ class GuestConversionBanner extends StatelessWidget {
     );
   }
 
-  void _showConversionScreen(BuildContext context) async {
+  Future<void> _showConversionScreen(BuildContext context) async {
     final authState = context.read<AuthBloc>().state;
     final guestId = authState.guestId;
 

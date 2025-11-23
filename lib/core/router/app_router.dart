@@ -7,7 +7,6 @@ import '../../features/auth/screens/role_selection_screen.dart';
 import '../../features/auth/screens/profile_creation_screen.dart';
 import '../../features/map/screens/map_screen.dart';
 import '../../features/feed/screens/feed_screen.dart';
-import '../../features/chat/screens/chat_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
 import '../../features/profile/screens/favourites_screen.dart';
 import '../../features/settings/screens/settings_screen.dart';
@@ -23,7 +22,6 @@ import '../../features/vendor/screens/vendor_quick_tour_screen.dart';
 import '../../features/feed/models/dish_model.dart';
 import '../../features/auth/blocs/auth_bloc.dart' show AuthBloc, AuthMode;
 import '../../features/auth/blocs/user_profile_bloc.dart';
-import '../../features/order/blocs/active_orders_bloc.dart';
 import '../../features/chat/screens/chat_detail_screen.dart';
 import '../blocs/navigation_bloc.dart';
 import '../../../shared/widgets/persistent_navigation_shell.dart';
@@ -35,14 +33,17 @@ class AppRouter {
   static const String authRoute = '/auth';
   static const String profileCreationRoute = '/profile-creation';
   static const String mapRoute = '/map';
-  static const String feedRoute = '/feed';
-  static const String ordersRoute = '/orders';
-  static const String chatRoute = '/chat';
+  static const String nearbyRoute = '/nearby';
   static const String profileRoute = '/profile';
   static const String favouritesRoute = '/favourites';
   static const String notificationsRoute = '/notifications';
   static const String settingsRoute = '/settings';
   static const String dishDetailRoute = '/dish';
+  // Chat routes - IMPORTANT: Chat is only accessible via order-specific routes.
+  // There is NO global chat tab. Users access chat through:
+  // - Active Orders modal (primary entry point)
+  // - Order detail screens
+  // - Order confirmation screen
   static const String chatDetailRoute = '/chat/detail';
   static const String profileEditRoute = '/profile/edit';
 
@@ -75,9 +76,7 @@ class AppRouter {
         // Routes accessible to guest users
         final guestAllowedRoutes = [
           mapRoute,
-          feedRoute,
-          ordersRoute,
-          chatRoute,
+          nearbyRoute,
           settingsRoute,
         ];
         
@@ -108,7 +107,6 @@ class AppRouter {
           // Allow access to core features without profile
           if (state.matchedLocation == settingsRoute || 
               state.matchedLocation == mapRoute || 
-              state.matchedLocation == feedRoute || 
               state.matchedLocation == profileRoute) {
             return null;
           }
@@ -152,6 +150,10 @@ class AppRouter {
           },
         ),
         GoRoute(
+          path: nearbyRoute,
+          builder: (context, state) => const FeedScreen(),
+        ),
+        GoRoute(
           path: favouritesRoute,
           builder: (context, state) => const FavouritesScreen(),
         ),
@@ -184,9 +186,6 @@ class AppRouter {
             return PersistentNavigationShell(
               children: [
                 MapScreen(),
-                FeedScreen(),
-                OrdersScreen(),
-                ChatScreen(),
                 ProfileScreen(),
               ],
             );
@@ -194,24 +193,6 @@ class AppRouter {
           routes: [
             GoRoute(
               path: mapRoute,
-              pageBuilder: (context, state) => const NoTransitionPage(
-                child: SizedBox.shrink(),
-              ),
-            ),
-            GoRoute(
-              path: feedRoute,
-              pageBuilder: (context, state) => const NoTransitionPage(
-                child: SizedBox.shrink(),
-              ),
-            ),
-            GoRoute(
-              path: ordersRoute,
-              pageBuilder: (context, state) => const NoTransitionPage(
-                child: SizedBox.shrink(),
-              ),
-            ),
-            GoRoute(
-              path: chatRoute,
               pageBuilder: (context, state) => const NoTransitionPage(
                 child: SizedBox.shrink(),
               ),
@@ -267,92 +248,9 @@ class AppRouter {
   static void navigateToTab(BuildContext context, NavigationTab tab) {
     final route = switch (tab.index) {
       0 => mapRoute,
-      1 => feedRoute,
-      2 => ordersRoute,
-      3 => chatRoute,
-      4 => profileRoute,
+      1 => profileRoute,
       _ => mapRoute,
     };
     context.go(route);
-  }
-}
-
-class OrdersScreen extends StatelessWidget {
-  OrdersScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      appBar: AppBar(
-        title: const Text('Your Orders'),
-        backgroundColor: Colors.transparent,
-      ),
-      body: BlocBuilder<ActiveOrdersBloc, ActiveOrdersState>(
-        builder: (context, state) {
-          if (state.isLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (state.errorMessage != null) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.error_outline, size: 48),
-                    const SizedBox(height: 12),
-                    Text(state.errorMessage!),
-                    const SizedBox(height: 12),
-                    ElevatedButton(
-                      onPressed: () => context.read<ActiveOrdersBloc>().refresh(),
-                      child: const Text('Retry'),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }
-          final orders = state.orders;
-          if (orders.isEmpty) {
-            return const Center(child: Text('No active orders'));
-          }
-
-          return RefreshIndicator(
-            onRefresh: () async => context.read<ActiveOrdersBloc>().refresh(),
-            child: ListView.separated(
-              padding: const EdgeInsets.all(12),
-              itemBuilder: (context, index) {
-                final order = orders[index];
-                final vendorName = order['vendors']?['business_name'] as String? ?? 'Vendor';
-                final status = order['status'] as String? ?? 'pending';
-                final total = (order['total_amount'] as num?)?.toDouble() ?? 0.0;
-                final pickupCode = order['pickup_code'] as String?;
-                return ListTile(
-                  tileColor: Colors.white.withOpacity(0.04),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  title: Text(vendorName),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Status: ${status[0].toUpperCase()}${status.substring(1)}'),
-                      if (pickupCode != null) Text('Code: $pickupCode'),
-                    ],
-                  ),
-                  trailing: Text('\$${total.toStringAsFixed(2)}'),
-                  onTap: () {
-                    final orderId = order['id'] as String;
-                    final status = order['status'] as String? ?? 'pending';
-                    context.push('${AppRouter.chatDetailRoute}/$orderId?orderStatus=$status');
-                  },
-                );
-              },
-              separatorBuilder: (_, __) => const SizedBox(height: 8),
-              itemCount: orders.length,
-            ),
-          );
-        },
-      ),
-    );
   }
 }

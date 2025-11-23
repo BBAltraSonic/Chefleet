@@ -22,18 +22,22 @@ void main() {
 
     group('Dish Caching', () {
       test('caches and retrieves dishes', () async {
-        final dishes = [
+        final dishes = <Dish>[
           Dish(
             id: 'dish1',
             name: 'Test Dish',
-            price: 10.99,
+            description: 'Test description',
+            priceCents: 1099,
+            prepTimeMinutes: 15,
             vendorId: 'vendor1',
             available: true,
           ),
           Dish(
             id: 'dish2',
             name: 'Another Dish',
-            price: 15.99,
+            description: 'Another description',
+            priceCents: 1599,
+            prepTimeMinutes: 20,
             vendorId: 'vendor1',
             available: true,
           ),
@@ -55,12 +59,15 @@ void main() {
 
     group('Vendor Caching', () {
       test('caches and retrieves vendors', () async {
-        final vendors = [
+        final vendors = <Vendor>[
           Vendor(
             id: 'vendor1',
             name: 'Test Vendor',
+            description: 'Test vendor description',
             latitude: 37.7749,
             longitude: -122.4194,
+            address: '123 Test St',
+            phoneNumber: '555-0100',
             isActive: true,
             dishCount: 5,
           ),
@@ -105,11 +112,13 @@ void main() {
 
     group('Cache Validity', () {
       test('cache is valid within 1 hour', () async {
-        final dishes = [
+        final dishes = <Dish>[
           Dish(
             id: 'dish1',
             name: 'Test Dish',
-            price: 10.99,
+            description: 'Test description',
+            priceCents: 1099,
+            prepTimeMinutes: 15,
             vendorId: 'vendor1',
             available: true,
           ),
@@ -127,12 +136,15 @@ void main() {
       });
 
       test('vendor cache validity works correctly', () async {
-        final vendors = [
+        final vendors = <Vendor>[
           Vendor(
             id: 'vendor1',
             name: 'Test Vendor',
+            description: 'Test vendor description',
             latitude: 37.7749,
             longitude: -122.4194,
+            address: '123 Test St',
+            phoneNumber: '555-0100',
             isActive: true,
             dishCount: 5,
           ),
@@ -144,11 +156,13 @@ void main() {
       });
 
       test('dish cache validity works correctly', () async {
-        final dishes = [
+        final dishes = <Dish>[
           Dish(
             id: 'dish1',
             name: 'Test Dish',
-            price: 10.99,
+            description: 'Test description',
+            priceCents: 1099,
+            prepTimeMinutes: 15,
             vendorId: 'vendor1',
             available: true,
           ),
@@ -160,12 +174,15 @@ void main() {
       });
 
       test('location-based cache invalidation works', () async {
-        final vendors = [
+        final vendors = <Vendor>[
           Vendor(
             id: 'vendor1',
             name: 'Test Vendor',
+            description: 'Test vendor description',
             latitude: 37.7749,
             longitude: -122.4194,
+            address: '123 Test St',
+            phoneNumber: '555-0100',
             isActive: true,
             dishCount: 5,
           ),
@@ -186,12 +203,15 @@ void main() {
       });
 
       test('nearby location maintains cache validity', () async {
-        final vendors = [
+        final vendors = <Vendor>[
           Vendor(
             id: 'vendor1',
             name: 'Test Vendor',
+            description: 'Test vendor description',
             latitude: 37.7749,
             longitude: -122.4194,
+            address: '123 Test St',
+            phoneNumber: '555-0100',
             isActive: true,
             dishCount: 5,
           ),
@@ -214,11 +234,13 @@ void main() {
 
     group('Cache Management', () {
       test('clears all cached data', () async {
-        final dishes = [
+        final dishes = <Dish>[
           Dish(
             id: 'dish1',
             name: 'Test Dish',
-            price: 10.99,
+            description: 'Test description',
+            priceCents: 1099,
+            prepTimeMinutes: 15,
             vendorId: 'vendor1',
             available: true,
           ),
@@ -232,11 +254,13 @@ void main() {
       });
 
       test('calculates cache size', () async {
-        final dishes = [
+        final dishes = <Dish>[
           Dish(
             id: 'dish1',
             name: 'Test Dish',
-            price: 10.99,
+            description: 'Test description',
+            priceCents: 1099,
+            prepTimeMinutes: 15,
             vendorId: 'vendor1',
             available: true,
           ),
@@ -254,8 +278,11 @@ void main() {
         final vendors = List.generate(550, (index) => Vendor(
           id: 'vendor_$index',
           name: 'Vendor $index',
+          description: 'Vendor $index description',
           latitude: 37.7749 + (index * 0.001),
           longitude: -122.4194 + (index * 0.001),
+          address: '$index Test St',
+          phoneNumber: '555-${index.toString().padLeft(4, '0')}',
           isActive: true,
           dishCount: index % 20 + 1,
         ));
@@ -271,7 +298,9 @@ void main() {
         final dishes = List.generate(2100, (index) => Dish(
           id: 'dish_$index',
           name: 'Dish $index',
-          price: 10.0 + (index % 50),
+          description: 'Dish $index description',
+          priceCents: 1000 + (index % 50) * 100,
+          prepTimeMinutes: 15,
           vendorId: 'vendor_1',
           available: true,
         ));
@@ -286,21 +315,26 @@ void main() {
 
     group('Cache Integrity', () {
       test('validates cache with good data', () async {
-        final vendors = [
+        final vendors = <Vendor>[
           Vendor(
             id: 'vendor1',
             name: 'Test Vendor',
+            description: 'Test vendor description',
             latitude: 37.7749,
             longitude: -122.4194,
+            address: '123 Test St',
+            phoneNumber: '555-0100',
             isActive: true,
             dishCount: 5,
           ),
         ];
-        final dishes = [
+        final dishes = <Dish>[
           Dish(
             id: 'dish1',
             name: 'Test Dish',
-            price: 10.99,
+            description: 'Test description',
+            priceCents: 1099,
+            prepTimeMinutes: 15,
             vendorId: 'vendor1',
             available: true,
           ),
@@ -372,11 +406,13 @@ void main() {
 
     group('Last Updated', () {
       test('stores and retrieves last updated timestamp', () async {
-        final dishes = [
+        final dishes = <Dish>[
           Dish(
             id: 'dish1',
             name: 'Test Dish',
-            price: 10.99,
+            description: 'Test description',
+            priceCents: 1099,
+            prepTimeMinutes: 15,
             vendorId: 'vendor1',
             available: true,
           ),

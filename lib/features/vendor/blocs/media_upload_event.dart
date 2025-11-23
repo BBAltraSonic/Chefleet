@@ -154,12 +154,12 @@ class FilterMedia extends MediaUploadEvent {
   });
 
   @override
-  List<Object?> get props => [
-        category,
-        fileType,
-        startDate,
-        endDate,
-        minSize,
-        maxSize,
+  List<Object> get props => [
+        if (category != null) category!,
+        if (fileType != null) fileType!,
+        if (startDate != null) startDate!,
+        if (endDate != null) endDate!,
+        if (minSize != null) minSize!,
+        if (maxSize != null) maxSize!,
       ];
 }

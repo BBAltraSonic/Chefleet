@@ -33,13 +33,17 @@ class Dish extends Equatable {
        preparationTimeMinutes = preparationTimeMinutes ?? prepTimeMinutes;
 
   factory Dish.fromJson(Map<String, dynamic> json) {
+    // Handle both price (numeric) and price_cents (integer) from DB
+    final priceCents = json['price_cents'] as int? ?? 
+                       ((json['price'] as num?)?.toDouble() ?? 0.0 * 100).toInt();
+    
     return Dish(
       id: json['id'] as String,
       vendorId: json['vendor_id'] as String,
       name: json['name'] as String,
       description: json['description'] as String? ?? '',
-      priceCents: (json['price'] as num?)?.toInt() ?? 0,
-      prepTimeMinutes: json['prep_time_minutes'] as int? ?? 0,
+      priceCents: priceCents,
+      prepTimeMinutes: json['preparation_time_minutes'] as int? ?? 15,
       available: json['available'] as bool? ?? true,
       imageUrl: json['image_url'] as String?,
       category: json['category'] as String?,
@@ -142,8 +146,9 @@ class Dish extends Equatable {
       'vendor_id': vendorId,
       'name': name,
       'description': description,
+      'price': price, // DB uses numeric 'price' as primary (NOT NULL)
       'price_cents': priceCents,
-      'prep_time_minutes': prepTimeMinutes,
+      'preparation_time_minutes': prepTimeMinutes,
       'available': available,
       'image_url': imageUrl,
       'category': category,
@@ -154,8 +159,13 @@ class Dish extends Equatable {
       'is_gluten_free': isGlutenFree,
       'nutritional_info': nutritionalInfo,
       'allergens': allergens,
+      'ingredients': ingredients,
+      'dietary_restrictions': dietaryRestrictions,
+      'description_long': descriptionLong,
       'popularity_score': popularityScore,
       'order_count': orderCount,
+      'is_featured': isFeatured,
+      'category_enum': categoryEnum,
       'created_at': createdAt?.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
     };
