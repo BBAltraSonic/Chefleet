@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/routes/app_routes.dart';
 import '../../../core/utils/greeting_helper.dart';
 import '../../auth/blocs/auth_bloc.dart';
 
@@ -37,7 +38,7 @@ class PersonalizedHeader extends StatelessWidget {
               Material(
                 color: Colors.transparent,
                 child: InkWell(
-                  onTap: () => context.go('/profile'),
+                  onTap: () => context.go(CustomerRoutes.profile),
                   borderRadius: BorderRadius.circular(28),
                   child: Container(
                     padding: const EdgeInsets.all(3),

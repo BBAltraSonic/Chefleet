@@ -3,7 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/glass_container.dart';
-import '../../../core/router/app_router.dart';
+import '../../../core/routes/app_routes.dart';
 
 class FavouritesScreen extends StatefulWidget {
   const FavouritesScreen({super.key});
@@ -246,7 +246,7 @@ class _FavouritesScreenState extends State<FavouritesScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: () => context.go(AppRouter.mapRoute),
+                  onPressed: () => context.go(CustomerRoutes.map),
                   icon: const Icon(Icons.explore),
                   label: const Text('Explore Dishes'),
                 ),
@@ -276,7 +276,7 @@ class _FavouritesScreenState extends State<FavouritesScreen> {
         blur: 12,
         opacity: 0.6,
         child: InkWell(
-          onTap: () => context.push('${AppRouter.dishDetailRoute}/$dishId'),
+          onTap: () => context.push(CustomerRoutes.dishDetail(dishId)),
           borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
           child: Padding(
             padding: const EdgeInsets.all(AppTheme.spacing12),

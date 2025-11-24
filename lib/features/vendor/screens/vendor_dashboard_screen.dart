@@ -9,6 +9,7 @@ import '../widgets/stats_card.dart';
 import '../widgets/menu_item_card.dart';
 import 'order_history_screen.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/routes/app_routes.dart';
 import '../../../shared/widgets/glass_container.dart';
 
 class VendorDashboardScreen extends StatefulWidget {
@@ -114,7 +115,7 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen>
               Row(
                 children: [
                   IconButton(
-                    onPressed: () => context.push('/vendor/quick-tour'),
+                    onPressed: () => context.push(VendorRoutes.quickTour),
                     icon: const Icon(Icons.help_outline),
                     tooltip: 'Quick Tour',
                     style: IconButton.styleFrom(
@@ -285,7 +286,7 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen>
                       padding: const EdgeInsets.only(bottom: 12),
                       child: OrderCard(
                         order: order,
-                        onTap: () => context.push('/vendor/orders/${order['id']}'),
+                        onTap: () => context.push('${VendorRoutes.orders}/${order['id']}'),
                         onStatusUpdate: (newStatus) {
                           context.read<VendorDashboardBloc>().add(
                             UpdateOrderStatus(
@@ -376,7 +377,7 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen>
                 ),
               ),
               TextButton.icon(
-                onPressed: () => context.push('/vendor/dishes/add'),
+                onPressed: () => context.push(VendorRoutes.dishAdd),
                 icon: const Icon(Icons.add),
                 label: const Text('Add Item'),
               ),
@@ -398,7 +399,7 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen>
                             // Ensure all required fields for Dish are present or handled
                             try {
                               final dish = Dish.fromJson(item);
-                              context.push('/vendor/dishes/edit', extra: dish);
+                              context.push('${VendorRoutes.dishes}/edit', extra: dish);
                             } catch (e) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(content: Text('Error opening dish: $e')),
@@ -556,7 +557,7 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen>
           ),
           const SizedBox(height: 16),
           ElevatedButton.icon(
-            onPressed: () => context.push('/vendor/dishes/add'),
+            onPressed: () => context.push(VendorRoutes.dishAdd),
             icon: const Icon(Icons.add),
             label: const Text('Add First Item'),
           ),

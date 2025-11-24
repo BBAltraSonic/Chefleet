@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../blocs/auth_bloc.dart';
 import '../../../shared/widgets/glass_container.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/router/app_router.dart';
+import '../../../core/routes/app_routes.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -411,6 +411,6 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
     context.read<AuthBloc>().add(const AuthGuestModeStarted());
     
     // Navigate to map feed
-    context.go(AppRouter.mapRoute);
+    context.go(CustomerRoutes.map);
   }
 }

@@ -2,14 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../feed/models/dish_model.dart';
 import '../blocs/menu_management_bloc.dart';
-import '../blocs/menu_management_event.dart';
-import '../blocs/menu_management_state.dart';
 import '../widgets/dish_card.dart';
 import '../widgets/dish_form.dart';
 import '../widgets/search_filter_bar.dart';
 import '../widgets/dish_list_view.dart';
-import '../../core/repositories/supabase_repository.dart';
 
 class MenuManagementScreen extends StatefulWidget {
   const MenuManagementScreen({super.key});

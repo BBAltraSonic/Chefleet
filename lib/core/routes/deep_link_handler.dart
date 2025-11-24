@@ -284,7 +284,7 @@ class DeepLinkHandler {
               onPressed: () {
                 Navigator.of(context).pop();
                 // Navigate to vendor onboarding
-                _goRouter.go('/auth/vendor-onboarding');
+                _goRouter.go(VendorRoutes.onboarding);
               },
               child: const Text('Become a Vendor'),
             ),

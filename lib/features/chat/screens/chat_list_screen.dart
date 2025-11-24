@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/routes/app_routes.dart';
 import '../../../shared/widgets/glass_container.dart';
 import '../blocs/chat_bloc.dart';
 import '../widgets/chat_list_item.dart';
-import '../../../core/router/app_router.dart';
 
 class ChatListScreen extends StatefulWidget {
   const ChatListScreen({super.key});
@@ -184,7 +184,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                               onTap: () {
                                 final orderId = orderChat['id'] as String;
                                 final status = orderChat['status'] as String;
-                                context.push('${AppRouter.chatDetailRoute}/$orderId?orderStatus=$status');
+                                context.push('${CustomerRoutes.chat}/$orderId?orderStatus=$status');
                               },
                             ),
                           );

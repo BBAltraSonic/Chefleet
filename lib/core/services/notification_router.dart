@@ -277,32 +277,50 @@ class NotificationRouter {
   }) {
     switch (type) {
       case 'new_order':
+        // Vendors receive new order notifications, customers see their own orders
         return role.isVendor
-            ? CustomerRoutes.orders
-            : VendorRoutes.orders;
+            ? VendorRoutes.orders
+            : CustomerRoutes.orders;
       
       case 'order_status_update':
         final orderId = params?['order_id'];
+        if (orderId == null) {
+          return role.isCustomer ? CustomerRoutes.orders : VendorRoutes.orders;
+        }
         return role.isCustomer
-            ? '${CustomerRoutes.orders}/$orderId'
-            : '${VendorRoutes.orders}/$orderId';
+            ? CustomerRoutes.orderDetail(orderId)
+            : VendorRoutes.orderDetailWithId(orderId);
       
       case 'new_message':
         final chatId = params?['chat_id'];
+        if (chatId == null) {
+          return role.isCustomer ? CustomerRoutes.chat : VendorRoutes.chat;
+        }
         return role.isCustomer
-            ? '${CustomerRoutes.chat}/$chatId'
-            : '${VendorRoutes.chat}/$chatId';
+            ? CustomerRoutes.chatDetail(chatId)
+            : VendorRoutes.chatDetail(chatId);
       
       case 'dish_update':
         final dishId = params?['dish_id'];
+        if (dishId == null) {
+          return role.isVendor ? VendorRoutes.dishes : CustomerRoutes.map;
+        }
         return role.isVendor
-            ? '${VendorRoutes.dishes}/$dishId'
-            : '${CustomerRoutes.dish}/$dishId';
+            ? VendorRoutes.dishEditWithId(dishId)
+            : CustomerRoutes.dishDetail(dishId);
+      
+      case 'vendor_application_status':
+        return role.isVendor
+            ? VendorRoutes.dashboard
+            : VendorRoutes.onboarding;
+      
+      case 'vendor_moderation':
+        return VendorRoutes.moderation;
       
       default:
         return role.isCustomer
-            ? CustomerRoutes.root
-            : VendorRoutes.root;
+            ? CustomerRoutes.map
+            : VendorRoutes.dashboard;
     }
   }
 }

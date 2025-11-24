@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:async';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/router/app_router.dart';
+import '../../../core/routes/app_routes.dart';
 import '../blocs/auth_bloc.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -66,13 +66,13 @@ class _SplashScreenState extends State<SplashScreen>
     // Navigate based on auth mode
     if (authState.isAuthenticated) {
       // Registered user - go to map
-      context.go(AppRouter.mapRoute);
+      context.go(CustomerRoutes.map);
     } else if (authState.isGuest) {
       // Guest user - go to map
-      context.go(AppRouter.mapRoute);
+      context.go(CustomerRoutes.map);
     } else {
       // No session - go to auth screen
-      context.go(AppRouter.authRoute);
+      context.go(SharedRoutes.auth);
     }
   }
 

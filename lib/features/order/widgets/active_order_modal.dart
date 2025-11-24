@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../blocs/active_orders_bloc.dart';
-import '../../../core/router/app_router.dart';
+import '../../../core/routes/app_routes.dart';
 
 class ActiveOrderModal extends StatefulWidget {
   const ActiveOrderModal({super.key});
@@ -404,7 +404,7 @@ class _ActiveOrderModalState extends State<ActiveOrderModal> {
     final status = order['status'] as String? ?? 'pending';
 
     context.pop();
-    context.push('${AppRouter.chatDetailRoute}/$orderId?orderStatus=$status');
+    context.push('${CustomerRoutes.chat}/$orderId?orderStatus=$status');
   }
 
   // Helper methods for enhanced order display

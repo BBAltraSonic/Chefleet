@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../auth/blocs/user_profile_bloc.dart';
 import '../../auth/models/user_profile_model.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/router/app_router.dart';
+import '../../../core/routes/app_routes.dart';
 import '../widgets/profile_drawer.dart';
 import '../widgets/role_switcher_widget.dart';
 import '../../../shared/widgets/glass_container.dart';
@@ -80,7 +80,7 @@ class ProfileScreen extends StatelessWidget {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
-                    onPressed: () => context.push(AppRouter.profileCreationRoute),
+                    onPressed: () => context.push(SharedRoutes.profileCreation),
                     icon: const Icon(Icons.add_circle_outline),
                     label: const Text('Create Profile'),
                   ),
@@ -277,7 +277,7 @@ class ProfileScreen extends StatelessWidget {
                 icon: Icons.favorite_outline,
                 title: 'Favourites',
                 subtitle: 'Your saved dishes',
-                onTap: () => context.push(AppRouter.favouritesRoute),
+                onTap: () => context.push(CustomerRoutes.favourites),
               ),
               const Divider(height: 1, indent: 64),
               _buildActionTile(
@@ -285,7 +285,7 @@ class ProfileScreen extends StatelessWidget {
                 icon: Icons.notifications_outlined,
                 title: 'Notifications',
                 subtitle: 'Manage preferences',
-                onTap: () => context.push(AppRouter.notificationsRoute),
+                onTap: () => context.push(CustomerRoutes.notifications),
               ),
               const Divider(height: 1, indent: 64),
               _buildActionTile(
@@ -293,7 +293,7 @@ class ProfileScreen extends StatelessWidget {
                 icon: Icons.settings_outlined,
                 title: 'Settings',
                 subtitle: 'App preferences',
-                onTap: () => context.push(AppRouter.settingsRoute),
+                onTap: () => context.push(CustomerRoutes.settings),
               ),
             ],
           ),

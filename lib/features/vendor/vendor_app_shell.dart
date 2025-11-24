@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/models/user_role.dart';
+import '../../core/routes/app_routes.dart';
 import '../../core/theme/app_theme.dart';
 import '../../shared/widgets/role_indicator.dart';
-import 'screens/vendor_dashboard_screen.dart';
-import 'screens/vendor_orders_screen.dart';
-import 'screens/vendor_dishes_screen.dart';
-import '../profile/screens/profile_screen.dart';
 
 /// Vendor app shell with bottom navigation and vendor-specific features.
 ///
@@ -18,9 +15,11 @@ import '../profile/screens/profile_screen.dart';
 class VendorAppShell extends StatefulWidget {
   const VendorAppShell({
     super.key,
+    required this.child,
     required this.availableRoles,
   });
 
+  final Widget child;
   final Set<UserRole> availableRoles;
 
   @override
@@ -28,22 +27,6 @@ class VendorAppShell extends StatefulWidget {
 }
 
 class _VendorAppShellState extends State<VendorAppShell> {
-  int _currentIndex = 0;
-
-  final List<Widget> _screens = const [
-    VendorDashboardScreen(),
-    VendorOrdersScreen(),
-    VendorDishesScreen(),
-    ProfileScreen(),
-  ];
-
-  final List<_NavItem> _navItems = const [
-    _NavItem(icon: Icons.dashboard_outlined, label: 'Dashboard'),
-    _NavItem(icon: Icons.receipt_long_outlined, label: 'Orders'),
-    _NavItem(icon: Icons.restaurant_outlined, label: 'Dishes'),
-    _NavItem(icon: Icons.person_outline, label: 'Profile'),
-  ];
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -88,15 +71,23 @@ class _VendorAppShellState extends State<VendorAppShell> {
             ),
         ],
       ),
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _screens,
-      ),
+      body: widget.child,
       bottomNavigationBar: _buildBottomNavigationBar(),
     );
   }
 
   Widget _buildBottomNavigationBar() {
+    // Get current location to highlight correct tab
+    final location = GoRouter.of(context).routerDelegate.currentConfiguration.uri.toString();
+    
+    int getCurrentIndex() {
+      if (location.contains('/vendor/dashboard')) return 0;
+      if (location.contains('/vendor/orders')) return 1;
+      if (location.contains('/vendor/dishes')) return 2;
+      if (location.contains('/vendor/profile')) return 3;
+      return 0;
+    }
+
     return Container(
       decoration: BoxDecoration(
         boxShadow: [
@@ -108,11 +99,22 @@ class _VendorAppShellState extends State<VendorAppShell> {
         ],
       ),
       child: BottomNavigationBar(
-        currentIndex: _currentIndex,
+        currentIndex: getCurrentIndex(),
         onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
+          switch (index) {
+            case 0:
+              context.go(VendorRoutes.dashboard);
+              break;
+            case 1:
+              context.go(VendorRoutes.orders);
+              break;
+            case 2:
+              context.go(VendorRoutes.dishes);
+              break;
+            case 3:
+              context.go(VendorRoutes.profile);
+              break;
+          }
         },
         type: BottomNavigationBarType.fixed,
         backgroundColor: Colors.white,
@@ -120,12 +122,24 @@ class _VendorAppShellState extends State<VendorAppShell> {
         unselectedItemColor: Colors.grey[600],
         selectedFontSize: 12,
         unselectedFontSize: 12,
-        items: _navItems
-            .map((item) => BottomNavigationBarItem(
-                  icon: Icon(item.icon),
-                  label: item.label,
-                ))
-            .toList(),
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.dashboard_outlined),
+            label: 'Dashboard',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.receipt_long_outlined),
+            label: 'Orders',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.restaurant_outlined),
+            label: 'Dishes',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_outline),
+            label: 'Profile',
+          ),
+        ],
       ),
     );
   }

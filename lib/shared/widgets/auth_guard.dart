@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/auth/blocs/auth_bloc.dart';
-import '../../core/router/app_router.dart';
+import '../../core/routes/app_routes.dart';
 
 @Deprecated('Auth is now handled by go_router redirects in AppRouter')
 class AuthGuard extends StatelessWidget {
@@ -29,9 +29,9 @@ class AuthGuard extends StatelessWidget {
         }
         
         if (state.isAuthenticated) {
-          context.go(AppRouter.mapRoute);
+          context.go(CustomerRoutes.map);
         } else {
-          context.go(AppRouter.authRoute);
+          context.go(SharedRoutes.auth);
         }
       },
       child: const Scaffold(

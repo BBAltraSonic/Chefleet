@@ -9,7 +9,12 @@ import '../widgets/quick_reply_widget.dart';
 import '../widgets/chat_input_widget.dart';
 
 class VendorChatScreen extends StatefulWidget {
-  const VendorChatScreen({super.key});
+  const VendorChatScreen({
+    super.key,
+    required this.orderId,
+  });
+
+  final String orderId;
 
   @override
   State<VendorChatScreen> createState() => _VendorChatScreenState();

@@ -5,7 +5,7 @@ import '../../auth/blocs/user_profile_bloc.dart';
 import '../../auth/blocs/auth_bloc.dart';
 import '../../auth/utils/conversion_prompt_helper.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/router/app_router.dart';
+import '../../../core/routes/app_routes.dart';
 import '../../../shared/widgets/glass_container.dart';
 
 class ProfileDrawer extends StatelessWidget {
@@ -68,7 +68,7 @@ class ProfileDrawer extends StatelessWidget {
                       subtitle: 'Your saved dishes',
                       onTap: () {
                         Navigator.pop(context);
-                        context.push(AppRouter.favouritesRoute);
+                        context.push(CustomerRoutes.favourites);
                       },
                     ),
                     const SizedBox(height: AppTheme.spacing12),
@@ -93,7 +93,7 @@ class ProfileDrawer extends StatelessWidget {
                       subtitle: 'Manage preferences',
                       onTap: () {
                         Navigator.pop(context);
-                        context.push(AppRouter.notificationsRoute);
+                        context.push(CustomerRoutes.notifications);
                       },
                     ),
                     const SizedBox(height: AppTheme.spacing12),
@@ -104,7 +104,7 @@ class ProfileDrawer extends StatelessWidget {
                       subtitle: 'App preferences',
                       onTap: () {
                         Navigator.pop(context);
-                        context.push(AppRouter.settingsRoute);
+                        context.push(CustomerRoutes.settings);
                       },
                     ),
                     const SizedBox(height: AppTheme.spacing12),

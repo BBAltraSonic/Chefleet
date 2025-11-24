@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../auth/blocs/auth_bloc.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/glass_container.dart';
-import '../../../core/router/app_router.dart';
+import '../../../core/routes/app_routes.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -110,7 +110,7 @@ class SettingsScreen extends StatelessWidget {
                     icon: Icons.notifications_outlined,
                     title: 'Notifications',
                     subtitle: 'Manage notification preferences',
-                    onTap: () => context.push(AppRouter.notificationsRoute),
+                    onTap: () => context.push(CustomerRoutes.notifications),
                   ),
                   const Divider(height: 1, indent: 64),
                   _buildSettingsTile(

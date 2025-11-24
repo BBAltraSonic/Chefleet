@@ -23,6 +23,9 @@ class CustomerRoutes {
   /// Returns the dish detail route with the given dish ID.
   static String dishDetail(String dishId) => '$dish/$dishId';
 
+  /// Returns the order detail route with the given order ID.
+  static String orderDetail(String orderId) => '$orders/$orderId';
+
   /// Returns the chat detail route with the given order ID.
   static String chatDetail(String orderId) => '$chat/$orderId';
 }

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../routes/app_routes.dart';
+import '../models/user_role.dart';
 
 class NavigationStateService {
   static const String _lastDishKey = 'last_dish_id';
@@ -60,20 +62,32 @@ class NavigationStateService {
   }
 
   /// Handle back navigation with proper state management
-  static bool handleBackNavigation(BuildContext context) {
+  static bool handleBackNavigation(BuildContext context, {UserRole? currentRole}) {
     // Check if we can pop the current route
     if (context.mounted && context.canPop()) {
       context.pop();
       return true;
     }
 
-    // If we can't pop, try to navigate to a safe route
+    // If we can't pop, navigate to role-appropriate home route
     if (context.mounted) {
-      context.go('/map');
+      final safeRoute = _getSafeRouteForRole(currentRole);
+      context.go(safeRoute);
       return true;
     }
 
     return false;
+  }
+
+  /// Gets the safe fallback route based on user role
+  static String _getSafeRouteForRole(UserRole? role) {
+    if (role == null) {
+      return SharedRoutes.splash;
+    }
+    
+    return role.isCustomer 
+        ? CustomerRoutes.map 
+        : VendorRoutes.dashboard;
   }
 
   /// Show back navigation confirmation dialog

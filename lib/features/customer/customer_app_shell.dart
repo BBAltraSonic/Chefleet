@@ -16,9 +16,11 @@ import '../cart/cart.dart';
 class CustomerAppShell extends StatefulWidget {
   const CustomerAppShell({
     super.key,
+    required this.child,
     required this.availableRoles,
   });
 
+  final Widget child;
   final Set<UserRole> availableRoles;
 
   @override
@@ -29,7 +31,7 @@ class _CustomerAppShellState extends State<CustomerAppShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: MapScreen(),
+      body: widget.child,
       floatingActionButton: const _CustomerFloatingActionButton(),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );

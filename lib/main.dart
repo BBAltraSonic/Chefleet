@@ -3,13 +3,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:go_router/go_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/blocs/app_bloc_observer.dart';
 import 'core/blocs/navigation_bloc.dart';
 import 'core/blocs/role_bloc.dart';
+import 'core/router/app_router.dart';
 import 'core/services/role_storage_service.dart';
 import 'core/services/role_sync_service.dart';
-import 'core/app_root.dart';
 import 'features/auth/blocs/auth_bloc.dart';
 import 'features/auth/blocs/user_profile_bloc.dart';
 import 'features/order/blocs/active_orders_bloc.dart';
@@ -68,12 +69,21 @@ class _ChefleetAppState extends State<ChefleetApp> {
   // Initialize role services
   late final RoleStorageService _roleStorageService;
   late final RoleSyncService _roleSyncService;
+  late final GoRouter _router;
 
   @override
   void initState() {
     super.initState();
     _roleStorageService = RoleStorageService();
     _roleSyncService = RoleSyncService();
+  }
+
+  void _initializeRouter(BuildContext context) {
+    _router = AppRouter.createRouter(
+      authBloc: context.read<AuthBloc>(),
+      profileBloc: context.read<UserProfileBloc>(),
+      roleBloc: context.read<RoleBloc>(),
+    );
   }
 
   @override
@@ -108,13 +118,16 @@ class _ChefleetAppState extends State<ChefleetApp> {
       ],
       child: Builder(
         builder: (context) {
-          return MaterialApp(
+          // Initialize router with bloc instances
+          _initializeRouter(context);
+          
+          return MaterialApp.router(
             title: 'Chefleet',
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
             themeMode: ThemeMode.system,
             debugShowCheckedModeBanner: false,
-            home: const AppRoot(),
+            routerConfig: _router,
           );
         },
       ),

@@ -7,7 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../auth/utils/conversion_prompt_helper.dart';
 import '../../../shared/widgets/glass_container.dart';
 import '../../../core/theme/app_theme.dart' show AppTheme;
-import '../../../core/router/app_router.dart';
+import '../../../core/routes/app_routes.dart';
 
 class OrderConfirmationScreen extends StatefulWidget {
   final String orderId;
@@ -74,7 +74,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
   }
 
   void _navigateToHome() {
-    context.go(AppRouter.mapRoute);
+    context.go(CustomerRoutes.map);
   }
 
   @override
@@ -776,6 +776,6 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
   void _contactVendor() {
     // Navigate to chat screen with vendor
     final status = _orderDetails!['status'] as String? ?? 'pending';
-    context.push('${AppRouter.chatDetailRoute}/${widget.orderId}?orderStatus=$status');
+    context.push('${CustomerRoutes.chat}/${widget.orderId}?orderStatus=$status');
   }
 }

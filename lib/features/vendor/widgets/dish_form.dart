@@ -175,8 +175,8 @@ class _DishFormState extends State<DishForm> {
 
       final priceCents = (double.parse(_priceController.text) * 100).round();
       final prepTime = _prepTimeController.text.isNotEmpty
-          ? int.tryParse(_prepTimeController.text)
-          : null;
+          ? int.tryParse(_prepTimeController.text) ?? 0
+          : 0;
 
       final ingredients = _ingredientsController.text
           .split(',')

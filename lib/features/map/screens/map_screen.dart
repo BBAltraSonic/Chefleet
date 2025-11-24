@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/routes/app_routes.dart';
 import '../../cart/cart.dart';
 import '../../feed/models/vendor_model.dart';
 import '../../feed/widgets/dish_card.dart';
@@ -211,7 +212,7 @@ class _MapScreenState extends State<MapScreen> {
                 color: Colors.transparent,
                 child: InkWell(
                   onTap: () {
-                    context.go('/profile');
+                    context.go(CustomerRoutes.profile);
                   },
                   borderRadius: BorderRadius.circular(24),
                   child: Padding(
@@ -381,7 +382,7 @@ class _MapScreenState extends State<MapScreen> {
                                   vendorName: vendor.displayName,
                                   distance: distance,
                                   onTap: () {
-                                    context.push('/dish/${dish.id}');
+                                    context.push(CustomerRoutes.dishDetail(dish.id));
                                   },
                                   onAddToCart: () {
                                     context.read<CartBloc>().add(

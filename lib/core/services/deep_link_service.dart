@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../router/app_router.dart';
+import '../routes/app_routes.dart';
+import '../models/user_role.dart';
 
 class DeepLinkService {
   static const String _baseUrl = 'https://chefleet.app';
 
   /// Generate a shareable deep link for a dish
   static String generateDishDeepLink(String dishId) {
-    return '$_baseUrl${AppRouter.dishDetailRoute}/$dishId';
+    return '$_baseUrl${CustomerRoutes.dish}/$dishId';
   }
 
   /// Generate a shareable deep link for a vendor
   static String generateVendorDeepLink(String vendorId) {
-    return '$_baseUrl${AppRouter.mapRoute}?vendor=$vendorId';
+    return '$_baseUrl${CustomerRoutes.map}?vendor=$vendorId';
   }
 
   /// Share a dish link with other apps
@@ -81,9 +82,9 @@ class DeepLinkService {
     final uri = Uri.parse(url);
 
     // Handle dish detail links
-    if (uri.path.startsWith(AppRouter.dishDetailRoute)) {
+    if (uri.path.startsWith(CustomerRoutes.dish)) {
       final pathSegments = uri.pathSegments;
-      if (pathSegments.length > 1) {
+      if (pathSegments.length > 2) { // /customer/dish/[id]
         return {
           'type': 'dish',
           'dishId': pathSegments.last,
@@ -91,8 +92,8 @@ class DeepLinkService {
       }
     }
 
-    // Handle vendor links
-    if (uri.path == AppRouter.mapRoute) {
+    // Handle vendor/map links
+    if (uri.path == CustomerRoutes.map || uri.path.startsWith(CustomerRoutes.map)) {
       return {
         'type': 'vendor',
         'vendorId': uri.queryParameters['vendor'],

@@ -7,6 +7,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../blocs/user_profile_bloc.dart';
 import '../models/user_profile_model.dart';
+import '../../../core/routes/app_routes.dart';
 
 class ProfileCreationScreen extends StatefulWidget {
   const ProfileCreationScreen({super.key});
@@ -136,7 +137,7 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
             // Navigate to main map after profile completion
             // Uses go_router for consistency
             // ignore: use_build_context_synchronously
-            context.go('/map');
+            context.go(CustomerRoutes.map);
           }
         },
         child: Stack(
