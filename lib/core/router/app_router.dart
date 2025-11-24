@@ -6,7 +6,6 @@ import '../../features/auth/screens/splash_screen.dart';
 import '../../features/auth/screens/role_selection_screen.dart';
 import '../../features/auth/screens/profile_creation_screen.dart';
 import '../../features/map/screens/map_screen.dart';
-import '../../features/feed/screens/feed_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
 import '../../features/profile/screens/favourites_screen.dart';
 import '../../features/settings/screens/settings_screen.dart';
@@ -24,6 +23,10 @@ import '../../features/auth/blocs/auth_bloc.dart' show AuthBloc, AuthMode;
 import '../../features/auth/blocs/user_profile_bloc.dart';
 import '../../features/chat/screens/chat_detail_screen.dart';
 import '../blocs/navigation_bloc.dart';
+import '../blocs/role_bloc.dart';
+import '../blocs/role_state.dart';
+import '../routes/app_routes.dart';
+import '../routes/role_route_guard.dart';
 import '../../../shared/widgets/persistent_navigation_shell.dart';
 
 class AppRouter {
@@ -33,7 +36,6 @@ class AppRouter {
   static const String authRoute = '/auth';
   static const String profileCreationRoute = '/profile-creation';
   static const String mapRoute = '/map';
-  static const String nearbyRoute = '/nearby';
   static const String profileRoute = '/profile';
   static const String favouritesRoute = '/favourites';
   static const String notificationsRoute = '/notifications';
@@ -63,11 +65,13 @@ class AppRouter {
       redirect: (BuildContext context, GoRouterState state) {
         final authBloc = context.read<AuthBloc>();
         final profileBloc = context.read<UserProfileBloc>();
+        final roleBloc = context.read<RoleBloc>();
         
         final authMode = authBloc.state.mode;
         final isAuthenticated = authBloc.state.isAuthenticated;
         final isGuest = authMode == AuthMode.guest;
         final hasProfile = profileBloc.state.profile.isNotEmpty;
+        final roleState = roleBloc.state;
         
         final isSplashRoute = state.matchedLocation == splashRoute;
         final isAuthRoute = state.matchedLocation == authRoute;
@@ -76,7 +80,6 @@ class AppRouter {
         // Routes accessible to guest users
         final guestAllowedRoutes = [
           mapRoute,
-          nearbyRoute,
           settingsRoute,
         ];
         
@@ -90,6 +93,18 @@ class AppRouter {
         
         // If on splash, let it through
         if (isSplashRoute) return null;
+        
+        // Role-based routing guard
+        if (roleState is RoleLoaded && isAuthenticated) {
+          final roleRedirect = RoleRouteGuard.validateAccess(
+            route: state.matchedLocation,
+            activeRole: roleState.activeRole,
+            availableRoles: roleState.availableRoles,
+          );
+          if (roleRedirect != null) {
+            return roleRedirect;
+          }
+        }
         
         // If unauthenticated (not guest, not registered) and not on auth route, redirect to auth
         if (!isAuthenticated && !isGuest && !isAuthRoute) {
@@ -148,10 +163,6 @@ class AppRouter {
             final dishId = state.pathParameters['dishId']!;
             return DishDetailScreen(dishId: dishId);
           },
-        ),
-        GoRoute(
-          path: nearbyRoute,
-          builder: (context, state) => const FeedScreen(),
         ),
         GoRoute(
           path: favouritesRoute,

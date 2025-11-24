@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/greeting_helper.dart';
 import '../../auth/blocs/auth_bloc.dart';
 
@@ -28,51 +30,70 @@ class PersonalizedHeader extends StatelessWidget {
         final subtitle = GreetingHelper.getSubtitle();
 
         return Padding(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
           child: Row(
             children: [
-              // Avatar with online indicator
-              Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  // Avatar
-                  CircleAvatar(
-                    radius: 24,
-                    backgroundColor: Colors.grey[200],
-                    backgroundImage: userPhotoUrl != null
-                        ? NetworkImage(userPhotoUrl)
-                        : null,
-                    child: userPhotoUrl == null
-                        ? Icon(
-                            authState.isGuest
-                                ? Icons.person_outline
-                                : Icons.person,
-                            color: Colors.grey[600],
-                            size: 28,
-                          )
-                        : null,
-                  ),
-                  // Online indicator (only for authenticated users)
-                  if (authState.isAuthenticated && !authState.isGuest)
-                    Positioned(
-                      bottom: 0,
-                      right: 0,
-                      child: Container(
-                        width: 12,
-                        height: 12,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF10B981), // Green indicator
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: Colors.white,
-                            width: 2,
-                          ),
-                        ),
+              // Avatar with online indicator - tappable to open profile
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () => context.go('/profile'),
+                  borderRadius: BorderRadius.circular(28),
+                  child: Container(
+                    padding: const EdgeInsets.all(3),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.grey[200]!,
+                        width: 1.5,
                       ),
                     ),
-                ],
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        // Avatar
+                        CircleAvatar(
+                          radius: 24,
+                          backgroundColor: Colors.grey[100],
+                          backgroundImage: userPhotoUrl != null
+                              ? NetworkImage(userPhotoUrl)
+                              : null,
+                          child: userPhotoUrl == null
+                              ? Icon(
+                                  authState.isGuest
+                                      ? Icons.person_outline_rounded
+                                      : Icons.person_rounded,
+                                  color: Colors.grey[400],
+                                  size: 28,
+                                )
+                              : null,
+                        ),
+                        // Online indicator (only for authenticated users)
+                        if (authState.isAuthenticated && !authState.isGuest)
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: Container(
+                              width: 14,
+                              height: 14,
+                              decoration: BoxDecoration(
+                                color: AppTheme.primaryColor, // Green indicator
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 2.5,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
-              const SizedBox(width: 12),
+              
+              const SizedBox(width: 16),
+              
               // Greeting text
               Expanded(
                 child: Column(
@@ -81,19 +102,21 @@ class PersonalizedHeader extends StatelessWidget {
                     Text(
                       greeting,
                       style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF1F2937), // Dark grey
                         letterSpacing: -0.5,
+                        height: 1.2,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 6),
                     Text(
                       subtitle,
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 14,
                         color: Colors.grey[600],
-                        height: 1.3,
+                        height: 1.4,
+                        fontWeight: FontWeight.w500,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,

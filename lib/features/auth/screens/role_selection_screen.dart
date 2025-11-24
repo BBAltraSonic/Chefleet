@@ -3,6 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/router/app_router.dart';
+import '../../../core/models/user_role.dart';
+import '../../../core/blocs/role_bloc.dart';
+import '../../../core/blocs/role_event.dart';
 import '../../../shared/widgets/glass_container.dart';
 import '../blocs/auth_bloc.dart';
 
@@ -14,7 +17,7 @@ class RoleSelectionScreen extends StatefulWidget {
 }
 
 class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
-  String? _selectedRole;
+  UserRole? _selectedRole;
   bool _isLoading = false;
 
   @override
@@ -132,25 +135,25 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                     children: [
                       _buildRoleCard(
                         context,
-                        role: 'buyer',
+                        role: UserRole.customer,
                         icon: Icons.shopping_bag_outlined,
                         title: 'Order Food',
                         description: 'Discover and order delicious homemade dishes from local chefs',
-                        isSelected: _selectedRole == 'buyer',
+                        isSelected: _selectedRole == UserRole.customer,
                         onTap: () {
-                          setState(() => _selectedRole = 'buyer');
+                          setState(() => _selectedRole = UserRole.customer);
                         },
                       ),
                       const SizedBox(height: AppTheme.spacing16),
                       _buildRoleCard(
                         context,
-                        role: 'vendor',
+                        role: UserRole.vendor,
                         icon: Icons.store_outlined,
                         title: 'Sell Food',
                         description: 'Share your culinary creations and earn money as a home chef',
-                        isSelected: _selectedRole == 'vendor',
+                        isSelected: _selectedRole == UserRole.vendor,
                         onTap: () {
-                          setState(() => _selectedRole = 'vendor');
+                          setState(() => _selectedRole = UserRole.vendor);
                         },
                       ),
                     ],
@@ -212,7 +215,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
 
   Widget _buildRoleCard(
     BuildContext context, {
-    required String role,
+    required UserRole role,
     required IconData icon,
     required String title,
     required String description,
@@ -301,15 +304,19 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // Save role preference to user profile or preferences
-      // For now, just navigate based on role
-      if (_selectedRole == 'vendor') {
+      // Set the selected role in RoleBloc
+      context.read<RoleBloc>().add(
+        RoleSwitchRequested(newRole: _selectedRole!, skipConfirmation: true),
+      );
+
+      // Navigate based on role
+      if (_selectedRole == UserRole.vendor) {
         // Navigate to vendor onboarding
         if (mounted) {
           context.go(AppRouter.vendorOnboardingRoute);
         }
       } else {
-        // Navigate to buyer home
+        // Navigate to customer home (map/feed)
         if (mounted) {
           context.go(AppRouter.mapRoute);
         }

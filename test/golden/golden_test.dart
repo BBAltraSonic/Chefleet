@@ -3,7 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:chefleet/features/map/screens/map_screen.dart';
-import 'package:chefleet/features/feed/screens/feed_screen.dart';
 import 'package:chefleet/features/dish/screens/dish_detail_screen.dart';
 import 'package:chefleet/features/order/screens/order_confirmation_screen.dart';
 import 'package:chefleet/features/vendor/screens/vendor_dashboard_screen.dart';

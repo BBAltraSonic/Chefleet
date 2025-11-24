@@ -12,96 +12,54 @@ class ActiveOrderModal extends StatefulWidget {
   State<ActiveOrderModal> createState() => _ActiveOrderModalState();
 }
 
-class _ActiveOrderModalState extends State<ActiveOrderModal>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _scaleAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
-    _scaleAnimation = CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOutBack,
-    );
-    _animationController.forward();
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
-
+class _ActiveOrderModalState extends State<ActiveOrderModal> {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<ActiveOrdersBloc, ActiveOrdersState>(
       builder: (context, state) {
         final activeOrders = state.orders;
 
-        return AnimatedBuilder(
-          animation: _scaleAnimation,
-          builder: (context, child) {
-            return Transform.scale(
-              scale: _scaleAnimation.value,
-              child: Stack(
+        return DraggableScrollableSheet(
+          initialChildSize: 0.6,
+          minChildSize: 0.3,
+          maxChildSize: 0.9,
+          expand: false,
+          builder: (context, scrollController) {
+            return Container(
+              decoration: BoxDecoration(
+                color: AppTheme.backgroundColor,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(AppTheme.radiusMedium),
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  GestureDetector(
-                    onTap: () => context.pop(),
+                  // Drag handle
+                  Center(
                     child: Container(
-                      color: AppTheme.modalOverlay,
+                      margin: const EdgeInsets.symmetric(vertical: 10),
+                      width: 36,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: AppTheme.borderGreen,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
                     ),
                   ),
-                  Align(
-                    alignment: Alignment.bottomCenter,
-                    child: Container(
-                      constraints: BoxConstraints(
-                        maxHeight: MediaQuery.of(context).size.height * 0.8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppTheme.backgroundColor,
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(AppTheme.radiusMedium)),
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Center(
-                            child: Container(
-                              margin: const EdgeInsets.symmetric(vertical: 10),
-                              width: 36,
-                              height: 4,
-                              decoration: BoxDecoration(
-                                color: AppTheme.borderGreen,
-                                borderRadius: BorderRadius.circular(2),
-                              ),
-                            ),
-                          ),
-                          Flexible(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                _buildHeader(),
-                                if (state.isLoading)
-                                  const Padding(
-                                    padding: EdgeInsets.all(40),
-                                    child: CircularProgressIndicator(),
-                                  )
-                                else if (state.errorMessage != null)
-                                  _buildErrorState(state.errorMessage!)
-                                else if (activeOrders.isEmpty)
-                                  _buildEmptyState()
-                                else
-                                  Flexible(child: _buildActiveOrdersList(activeOrders)),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                  // Header with close button
+                  _buildHeader(),
+                  // Content
+                  Expanded(
+                    child: state.isLoading
+                        ? const Center(
+                            child: CircularProgressIndicator(),
+                          )
+                        : state.errorMessage != null
+                            ? _buildErrorState(state.errorMessage!)
+                            : activeOrders.isEmpty
+                                ? _buildEmptyState()
+                                : _buildActiveOrdersList(activeOrders, scrollController),
                   ),
                 ],
               ),
@@ -114,13 +72,23 @@ class _ActiveOrderModalState extends State<ActiveOrderModal>
 
   Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
-      child: Text(
-        'Active Order',
-        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-          fontWeight: FontWeight.bold,
-          color: AppTheme.darkText,
-        ),
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            'Active Orders',
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: AppTheme.darkText,
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.close),
+            onPressed: () => context.pop(),
+            tooltip: 'Close',
+          ),
+        ],
       ),
     );
   }
@@ -189,21 +157,23 @@ class _ActiveOrderModalState extends State<ActiveOrderModal>
     );
   }
 
-  Widget _buildActiveOrdersList(List<Map<String, dynamic>> activeOrders) {
-    return Flexible(
-      child: RefreshIndicator(
-        onRefresh: () async {
-          context.read<ActiveOrdersBloc>().refresh();
+  Widget _buildActiveOrdersList(
+    List<Map<String, dynamic>> activeOrders,
+    ScrollController scrollController,
+  ) {
+    return RefreshIndicator(
+      onRefresh: () async {
+        context.read<ActiveOrdersBloc>().refresh();
+      },
+      child: ListView.separated(
+        controller: scrollController,
+        padding: const EdgeInsets.only(bottom: 24),
+        itemCount: activeOrders.length,
+        separatorBuilder: (context, index) => const SizedBox(height: 12),
+        itemBuilder: (context, index) {
+          final order = activeOrders[index];
+          return _buildOrderCard(order);
         },
-        child: ListView.separated(
-          shrinkWrap: true,
-          itemCount: activeOrders.length,
-          separatorBuilder: (context, index) => const SizedBox(height: 12),
-          itemBuilder: (context, index) {
-            final order = activeOrders[index];
-            return _buildOrderCard(order);
-          },
-        ),
       ),
     );
   }

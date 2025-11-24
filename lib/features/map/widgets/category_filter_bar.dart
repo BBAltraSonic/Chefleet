@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_theme.dart';
 
 /// Horizontal scrollable category filter bar
 class CategoryFilterBar extends StatelessWidget {
@@ -16,13 +17,13 @@ class CategoryFilterBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 50,
+      height: 48,
       margin: const EdgeInsets.only(bottom: 8),
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 20),
         itemCount: categories.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 12),
+        separatorBuilder: (_, __) => const SizedBox(width: 10),
         itemBuilder: (context, index) {
           final category = categories[index];
           final isSelected = category == selectedCategory;
@@ -55,38 +56,72 @@ class _CategoryChip extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
+        duration: const Duration(milliseconds: 200),
         curve: Curves.easeInOut,
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.grey[900] : Colors.white,
-          borderRadius: BorderRadius.circular(12),
+          color: isSelected ? const Color(0xFF1F2937) : Colors.white,
+          borderRadius: BorderRadius.circular(24),
           border: Border.all(
-            color: isSelected ? Colors.grey[900]! : Colors.grey[200]!,
-            width: 1.5,
+            color: isSelected ? const Color(0xFF1F2937) : Colors.grey[200]!,
+            width: 1,
           ),
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: const Color(0xFF1F2937).withOpacity(0.3),
                     blurRadius: 8,
-                    offset: const Offset(0, 2),
+                    offset: const Offset(0, 3),
                   ),
                 ]
-              : [],
+              : [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.03),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
         ),
-        child: Center(
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: isSelected ? Colors.white : Colors.grey[700],
-              letterSpacing: 0.2,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (label != 'All') ...[
+              Icon(
+                _getIconForCategory(label),
+                size: 16,
+                color: isSelected ? Colors.white : Colors.grey[600],
+              ),
+              const SizedBox(width: 6),
+            ],
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                color: isSelected ? Colors.white : Colors.grey[700],
+                letterSpacing: 0.3,
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
+  }
+
+  IconData _getIconForCategory(String category) {
+    switch (category.toLowerCase()) {
+      case 'sushi':
+        return Icons.set_meal_rounded;
+      case 'burger':
+        return Icons.lunch_dining_rounded;
+      case 'pizza':
+        return Icons.local_pizza_rounded;
+      case 'healthy':
+        return Icons.spa_rounded;
+      case 'dessert':
+        return Icons.icecream_rounded;
+      default:
+        return Icons.restaurant_rounded;
+    }
   }
 }

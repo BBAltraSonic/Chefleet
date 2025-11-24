@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../features/map/screens/map_screen.dart';
-import '../../features/feed/screens/feed_screen.dart';
 import '../../features/chat/screens/chat_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
 import 'persistent_navigation_shell.dart';
@@ -14,7 +13,6 @@ class MainAppShell extends StatelessWidget {
     return PersistentNavigationShell(
       children: const [
         MapScreen(),
-        FeedScreen(),
         LegacyOrdersScreen(),
         ChatScreen(),
         ProfileScreen(),

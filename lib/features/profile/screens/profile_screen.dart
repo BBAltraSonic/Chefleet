@@ -6,6 +6,7 @@ import '../../auth/models/user_profile_model.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/router/app_router.dart';
 import '../widgets/profile_drawer.dart';
+import '../widgets/role_switcher_widget.dart';
 import '../../../shared/widgets/glass_container.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -189,6 +190,10 @@ class ProfileScreen extends StatelessWidget {
             delegate: SliverChildListDelegate([
               // Quick stats
               _buildStatsSection(context),
+              const SizedBox(height: AppTheme.spacing16),
+
+              // Role Switcher (only visible if user has multiple roles)
+              const RoleSwitcherWidget(),
               const SizedBox(height: AppTheme.spacing16),
 
               // Address section

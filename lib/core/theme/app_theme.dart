@@ -4,16 +4,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 class AppTheme {
-  static const Color backgroundColor = Color(0xFFF8FCF9);
-  static const Color primaryGreen = Color(0xFF13EC5B);
-  static const Color darkText = Color(0xFF0D1B12);
-  static const Color secondaryGreen = Color(0xFF4C9A66);
-  static const Color surfaceGreen = Color(0xFFE7F3EB);
-  static const Color borderGreen = Color(0xFFCFE7D7);
-  static const Color modalOverlay = Color(0x66141414);
+  static const Color backgroundColor = Color(0xFFFFFFFF);
+  static const Color primaryColor = Color(0xFF1F2937); // The new Black
+  static const Color darkText = Color(0xFF111827);
+  static const Color secondaryColor = Color(0xFF374151); // Dark Grey
+  static const Color surfaceColor = Color(0xFFF3F4F6); // Light Grey
+  static const Color borderColor = Color(0xFFE5E7EB); // Light Border
+  static const Color modalOverlay = Color(0x66000000);
 
-  static const Color surfaceColor = Color(0x1AFFFFFF);
-  static const Color surfaceColorDark = Color(0x0D000000);
+  static const Color surfaceOverlay = Color(0x1AFFFFFF);
+  static const Color surfaceOverlayDark = Color(0x0D000000);
+
+  // Aliases to maintain backward compatibility during refactor, but mapped to new colors
+  static const Color primaryGreen = primaryColor;
+  static const Color secondaryGreen = secondaryColor;
+  static const Color surfaceGreen = surfaceColor;
+  static const Color borderGreen = borderColor;
 
   // Glassmorphism tokens
   static const Color glassWhite = Color(0xCCFFFFFF);
@@ -336,7 +342,7 @@ class GlassmorphismTokens extends ThemeExtension<GlassmorphismTokens> {
     border: Color(0x4DFFFFFF),
     shadow: [
       BoxShadow(
-        color: Color(0x3313EC5B),
+        color: Color(0x1A000000), // Black shadow, low opacity
         blurRadius: 24,
         offset: Offset(0, 12),
       ),
@@ -346,11 +352,11 @@ class GlassmorphismTokens extends ThemeExtension<GlassmorphismTokens> {
   );
 
   static const GlassmorphismTokens dark = GlassmorphismTokens(
-    background: Color(0x1A0B140E),
-    border: Color(0x3329402F),
+    background: Color(0xCC1F2937), // Dark background
+    border: Color(0x33FFFFFF),
     shadow: [
       BoxShadow(
-        color: Color(0x33000000),
+        color: Color(0x66000000),
         blurRadius: 20,
         offset: Offset(0, 10),
       ),

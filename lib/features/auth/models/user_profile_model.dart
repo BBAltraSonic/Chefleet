@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import '../../../core/models/user_role.dart';
 
 class UserProfile extends Equatable {
   const UserProfile({
@@ -7,6 +8,9 @@ class UserProfile extends Equatable {
     this.avatarUrl,
     this.address,
     this.notificationPreferences = const NotificationPreferences(),
+    this.availableRoles = const {UserRole.customer},
+    this.activeRole = UserRole.customer,
+    this.vendorProfileId,
     this.createdAt,
     this.updatedAt,
   });
@@ -15,9 +19,21 @@ class UserProfile extends Equatable {
     id: '',
     name: '',
     notificationPreferences: NotificationPreferences(),
+    availableRoles: {UserRole.customer},
+    activeRole: UserRole.customer,
   );
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
+    // Parse available roles from array of strings
+    final availableRolesList = json['available_roles'] as List<dynamic>?;
+    final availableRoles = availableRolesList != null
+        ? (availableRolesList.cast<String>()).toUserRoles()
+        : {UserRole.customer};
+
+    // Parse active role from string
+    final activeRoleString = json['active_role'] as String?;
+    final activeRole = UserRole.tryFromString(activeRoleString) ?? UserRole.customer;
+
     return UserProfile(
       id: json['id'] as String,
       name: json['name'] as String,
@@ -28,6 +44,9 @@ class UserProfile extends Equatable {
       notificationPreferences: json['notification_preferences'] != null
           ? NotificationPreferences.fromJson(json['notification_preferences'] as Map<String, dynamic>)
           : const NotificationPreferences(),
+      availableRoles: availableRoles,
+      activeRole: activeRole,
+      vendorProfileId: json['vendor_profile_id'] as String?,
       createdAt: DateTime.tryParse(json['created_at'] as String? ?? ''),
       updatedAt: DateTime.tryParse(json['updated_at'] as String? ?? ''),
     );
@@ -38,6 +57,12 @@ class UserProfile extends Equatable {
   final String? avatarUrl;
   final UserAddress? address;
   final NotificationPreferences notificationPreferences;
+  /// Set of roles this user has access to (e.g., {customer, vendor})
+  final Set<UserRole> availableRoles;
+  /// Currently active role determining which app experience is shown
+  final UserRole activeRole;
+  /// ID of the vendor profile if user has vendor role
+  final String? vendorProfileId;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -48,6 +73,9 @@ class UserProfile extends Equatable {
       'avatar_url': avatarUrl,
       'address': address?.toJson(),
       'notification_preferences': notificationPreferences.toJson(),
+      'available_roles': availableRoles.toStringList(),
+      'active_role': activeRole.value,
+      'vendor_profile_id': vendorProfileId,
       'created_at': createdAt?.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
     };
@@ -59,6 +87,9 @@ class UserProfile extends Equatable {
     String? avatarUrl,
     UserAddress? address,
     NotificationPreferences? notificationPreferences,
+    Set<UserRole>? availableRoles,
+    UserRole? activeRole,
+    String? vendorProfileId,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -68,6 +99,9 @@ class UserProfile extends Equatable {
       avatarUrl: avatarUrl ?? this.avatarUrl,
       address: address ?? this.address,
       notificationPreferences: notificationPreferences ?? this.notificationPreferences,
+      availableRoles: availableRoles ?? this.availableRoles,
+      activeRole: activeRole ?? this.activeRole,
+      vendorProfileId: vendorProfileId ?? this.vendorProfileId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -76,6 +110,21 @@ class UserProfile extends Equatable {
   bool get isEmpty => id.isEmpty && name.isEmpty && avatarUrl == null;
   bool get isNotEmpty => !isEmpty;
 
+  /// Checks if user has customer role available
+  bool get hasCustomerRole => availableRoles.contains(UserRole.customer);
+
+  /// Checks if user has vendor role available
+  bool get hasVendorRole => availableRoles.contains(UserRole.vendor);
+
+  /// Checks if user has multiple roles available
+  bool get hasMultipleRoles => availableRoles.length > 1;
+
+  /// Checks if currently in customer mode
+  bool get isCustomerMode => activeRole == UserRole.customer;
+
+  /// Checks if currently in vendor mode
+  bool get isVendorMode => activeRole == UserRole.vendor;
+
   @override
   List<Object?> get props => [
         id,
@@ -83,6 +132,9 @@ class UserProfile extends Equatable {
         avatarUrl,
         address,
         notificationPreferences,
+        availableRoles,
+        activeRole,
+        vendorProfileId,
         createdAt,
         updatedAt,
       ];

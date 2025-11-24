@@ -73,6 +73,13 @@ For detailed setup instructions, see [docs/ENVIRONMENT_SETUP.md](docs/ENVIRONMEN
 - **Customer Communication** - Chat with customers in real-time
 - **Business Analytics** - Track revenue and performance
 
+### Role Switching
+- **Dual Roles** - Users can be both customers and vendors
+- **Seamless Switching** - Switch between roles with one tap
+- **Isolated Experiences** - Separate navigation and state for each role
+- **Persistent State** - Active role survives app restarts
+- **Real-time Sync** - Role changes sync across devices
+
 ## 🛠️ Tech Stack
 
 ### Frontend
@@ -211,6 +218,12 @@ flutter build ios --release
 - [Environment Setup](docs/ENVIRONMENT_SETUP.md)
 - [Local Development](LOCAL_DEVELOPMENT.md)
 
+### Role Switching
+- [Role Switching Guide](docs/ROLE_SWITCHING_GUIDE.md) - Complete guide to role switching
+- [Developer Guide](docs/ROLE_SWITCHING_DEVELOPER_GUIDE.md) - Technical implementation details
+- [Quick Start](docs/ROLE_SWITCHING_QUICK_START.md) - Get started quickly
+- [Quick Reference](docs/ROLE_SWITCHING_QUICK_REFERENCE.md) - API reference
+
 ### Phase Completion Summaries
 - [Phase 5: Routing & Navigation](PHASE_5_COMPLETION_SUMMARY.md)
 - [Phase 7: Testing & Quality](PHASE_7_COMPLETION_SUMMARY.md)
@@ -233,26 +246,30 @@ flutter build ios --release
 ```
 lib/
 ├── core/
-│   ├── blocs/          # Global BLoCs (auth, theme)
+│   ├── blocs/          # Global BLoCs (auth, theme, role)
 │   ├── exceptions/     # Custom exceptions
-│   ├── models/         # Data models
+│   ├── models/         # Data models (user_role, user_profile)
 │   ├── router/         # go_router configuration
-│   ├── services/       # API services
+│   ├── routes/         # Route definitions and guards
+│   ├── services/       # API services (role, storage, sync)
 │   ├── theme/          # App theme and design tokens
-│   └── utils/          # Utilities and helpers
+│   ├── utils/          # Utilities and helpers
+│   ├── widgets/        # Core widgets (role_shell_switcher)
+│   └── app_root.dart   # App root with role management
 ├── features/
 │   ├── auth/           # Authentication screens and logic
 │   ├── chat/           # In-app messaging
+│   ├── customer/       # Customer-specific features and shell
 │   ├── dish/           # Dish browsing and detail
 │   ├── feed/           # Feed view
 │   ├── map/            # Map view
 │   ├── order/          # Order management
-│   ├── profile/        # User profile
+│   ├── profile/        # User profile (with role switcher)
 │   ├── settings/       # App settings
-│   └── vendor/         # Vendor-specific features
+│   └── vendor/         # Vendor-specific features and shell
 ├── shared/
 │   ├── blocs/          # Shared BLoCs
-│   └── widgets/        # Reusable widgets
+│   └── widgets/        # Reusable widgets (role_indicator)
 └── main.dart           # Application entry point
 ```
 

@@ -287,17 +287,24 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
         }
       }
 
-      // Get location in background, don't block on it
-      _getCurrentLocation().then((position) {
+      // Get location before loading data to ensure we have position or bounds
+      try {
+        debugPrint('🔍 MapFeedBloc: Fetching current location...');
+        final position = await _getCurrentLocation();
         if (position != null) {
-          add(MapLocationChanged(position));
+          debugPrint('✅ MapFeedBloc: Location obtained: ${position.latitude}, ${position.longitude}');
+          emit(state.copyWith(currentPosition: position));
+        } else {
+          debugPrint('⚠️ MapFeedBloc: Location is null, will load all vendors');
         }
-      }).catchError((e) {
+      } catch (e) {
         // Silently fail location, app can work without it
-        debugPrint('Location error: $e');
-      });
+        debugPrint('❌ MapFeedBloc: Location error: $e');
+      }
 
+      debugPrint('📥 MapFeedBloc: Loading vendors and dishes...');
       await _loadVendorsAndDishes(emit);
+      debugPrint('✅ MapFeedBloc: Loaded ${state.dishes.length} dishes, ${state.vendors.length} vendors');
 
       emit(state.copyWith(
         isLoading: false,
@@ -547,23 +554,32 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
 
   Future<void> _loadVendorsAndDishes(Emitter<MapFeedState> emit) async {
     final bounds = state.mapBounds;
-    if (bounds == null && state.currentPosition == null) return;
+    final hasLocationContext = bounds != null || state.currentPosition != null;
+    
+    debugPrint('📍 MapFeedBloc: hasLocationContext=$hasLocationContext, bounds=$bounds, position=${state.currentPosition}');
+    
+    // If no location context, we'll load all vendors (fallback for feed screen)
+    // The map screen will have bounds, feed screen should have position, 
+    // but if neither is available, we load without filtering
 
     try {
+      debugPrint('🔄 MapFeedBloc: Fetching vendors from Supabase...');
       final vendorsResponse = await Supabase.instance.client
           .from('vendors')
           .select('*')
           .eq('is_active', true);
 
+      debugPrint('📦 MapFeedBloc: Received ${vendorsResponse.length} vendors from database');
+
       final vendors = vendorsResponse
           .map((json) => Vendor.fromJson(json))
           .where((vendor) {
-            if (bounds != null) {
-              return _isPointInBounds(
-                LatLng(vendor.latitude, vendor.longitude),
-                bounds,
-              );
-            } else if (state.currentPosition != null) {
+            // If we have no location context, include all vendors
+            if (!hasLocationContext) return true;
+            
+            // Prioritize position-based filtering over bounds
+            // This ensures location-based filtering works correctly even with cached bounds
+            if (state.currentPosition != null) {
               return _isWithinRadius(
                 vendor.latitude,
                 vendor.longitude,
@@ -571,14 +587,22 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
                 state.currentPosition!.longitude,
                 _searchRadiusKm,
               );
+            } else if (bounds != null) {
+              return _isPointInBounds(
+                LatLng(vendor.latitude, vendor.longitude),
+                bounds,
+              );
             }
             return false;
           }).toList();
+
+      debugPrint('✅ MapFeedBloc: Filtered to ${vendors.length} vendors');
 
       // Load dishes from these vendors
       if (vendors.isNotEmpty) {
         final vendorIds = vendors.map((v) => v.id).toList();
 
+        debugPrint('🔄 MapFeedBloc: Fetching dishes from ${vendors.length} vendors...');
         final dishesResponse = await Supabase.instance.client
             .from('dishes')
             .select('*')
@@ -587,11 +611,14 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
             .order('created_at', ascending: false)
             .range(0, _pageSize - 1);
 
+        debugPrint('📦 MapFeedBloc: Received ${dishesResponse.length} dishes from database');
+
         final dishes = dishesResponse
             .map((json) => Dish.fromJson(json))
             .toList();
         
         final hasMoreData = dishes.length >= _pageSize;
+        debugPrint('💾 MapFeedBloc: Parsed ${dishes.length} dishes, hasMore=$hasMoreData');
 
         await _cacheService.cacheDishes(dishes);
         await _cacheService.cacheVendors(vendors);
@@ -629,6 +656,7 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
           _updateClustering(emit);
         }
       } else {
+        debugPrint('⚠️ MapFeedBloc: No vendors found, emitting empty state');
         emit(state.copyWith(
           vendors: [],
           dishes: [],
@@ -638,6 +666,7 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
         ));
       }
     } catch (e) {
+      debugPrint('❌ MapFeedBloc: Error in _loadVendorsAndDishes: $e');
       // Check if it's a network error
       final isNetworkError = e.toString().contains('SocketException') ||
           e.toString().contains('NetworkException') ||

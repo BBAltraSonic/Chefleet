@@ -5,8 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../../../core/theme/app_theme.dart';
-import '../../../shared/widgets/glass_container.dart';
-import '../../../shared/widgets/smart_cart_fab.dart';
 import '../../cart/cart.dart';
 import '../../feed/models/vendor_model.dart';
 import '../../feed/widgets/dish_card.dart';
@@ -50,7 +48,7 @@ class _MapScreenState extends State<MapScreen> {
                   Container(
                     color: AppTheme.backgroundColor,
                     child: const Center(
-                      child: CircularProgressIndicator(color: AppTheme.primaryGreen),
+                      child: CircularProgressIndicator(color: AppTheme.primaryColor),
                     ),
                   ),
 
@@ -73,24 +71,6 @@ class _MapScreenState extends State<MapScreen> {
                           .length,
                     ),
                   ),
-
-                // 6. Smart Cart FAB
-                Positioned(
-                  bottom: 24,
-                  right: 24,
-                  child: BlocBuilder<CartBloc, CartState>(
-                    builder: (context, cartState) {
-                      return SmartCartFAB(
-                        itemCount: cartState.totalItems,
-                        total: cartState.total,
-                        onTap: () {
-                          // TODO: Navigate to cart screen or show cart sheet
-                          context.push('/cart');
-                        },
-                      );
-                    },
-                  ),
-                ),
               ],
             ),
           );
@@ -140,27 +120,38 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   Widget _buildSearchBar(BuildContext context) {
-    final glassTokens = AppTheme.glassTokens(context);
-    
     return Positioned(
-      top: MediaQuery.of(context).padding.top + 16,
+      top: MediaQuery.of(context).padding.top + 12,
       left: 16,
       right: 16,
-      child: GlassContainer(
-        blur: glassTokens.blurSigma,
-        opacity: 0.8,
-        borderRadius: glassTokens.borderRadius,
-        color: glassTokens.background,
-        border: Border.all(
-          color: glassTokens.border,
-          width: 1,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.96),
+          borderRadius: BorderRadius.circular(30),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
+              spreadRadius: 2,
+            ),
+          ],
         ),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
           child: Row(
             children: [
-              const Icon(Icons.search, color: AppTheme.secondaryGreen),
-              const SizedBox(width: 12),
+              // Search Icon
+              const Padding(
+                padding: EdgeInsets.only(left: 12, right: 8),
+                child: Icon(
+                  Icons.search_rounded,
+                  color: Color(0xFF6B7280), // Grey 500
+                  size: 24,
+                ),
+              ),
+              
+              // Text Field
               Expanded(
                 child: TextField(
                   onChanged: (value) {
@@ -168,58 +159,81 @@ class _MapScreenState extends State<MapScreen> {
                   },
                   decoration: InputDecoration(
                     hintText: 'Search dishes, cuisines...',
-                    hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppTheme.darkText.withOpacity(0.5),
-                        ),
+                    hintStyle: TextStyle(
+                      color: Colors.grey[400],
+                      fontSize: 15,
+                      fontWeight: FontWeight.w400,
+                    ),
                     border: InputBorder.none,
                     enabledBorder: InputBorder.none,
                     focusedBorder: InputBorder.none,
                     contentPadding: EdgeInsets.zero,
                     isDense: true,
                   ),
-                  style: Theme.of(context).textTheme.bodyMedium,
-                  cursorColor: AppTheme.primaryGreen,
+                  style: const TextStyle(
+                    color: Color(0xFF1F2937), // Grey 800
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  cursorColor: AppTheme.primaryColor,
                 ),
               ),
-              InkWell(
-                onTap: () {
-                  // TODO: Implement filter
-                },
-                child: Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: AppTheme.surfaceGreen,
-                    borderRadius: BorderRadius.circular(8),
+
+              // Filter Button
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () {
+                    // TODO: Implement filter
+                  },
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    child: Icon(
+                      Icons.tune_rounded,
+                      size: 20,
+                      color: Colors.grey[700],
+                    ),
                   ),
-                  child: const Icon(Icons.tune, size: 20, color: AppTheme.darkText),
                 ),
               ),
-              const SizedBox(width: 8),
-              InkWell(
-                onTap: () {
-                  context.push('/nearby');
-                },
-                child: Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryGreen,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(Icons.list, size: 20, color: AppTheme.darkText),
-                ),
+
+              // Vertical Divider
+              Container(
+                height: 24,
+                width: 1,
+                color: Colors.grey[200],
+                margin: const EdgeInsets.symmetric(horizontal: 4),
               ),
-              const SizedBox(width: 8),
-              InkWell(
-                onTap: () {
-                  context.go('/profile');
-                },
-                child: Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: AppTheme.surfaceGreen,
-                    borderRadius: BorderRadius.circular(8),
+
+              // Profile Avatar Button
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () {
+                    context.go('/profile');
+                  },
+                  borderRadius: BorderRadius.circular(24),
+                  child: Padding(
+                    padding: const EdgeInsets.all(4.0),
+                    child: Container(
+                      height: 36,
+                      width: 36,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppTheme.primaryColor.withOpacity(0.1),
+                        border: Border.all(
+                          color: AppTheme.primaryColor.withOpacity(0.2),
+                          width: 1,
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.person_rounded,
+                        size: 20,
+                        color: AppTheme.primaryColor,
+                      ),
+                    ),
                   ),
-                  child: const Icon(Icons.person_outline, size: 20, color: AppTheme.darkText),
                 ),
               ),
             ],
@@ -267,7 +281,7 @@ class _MapScreenState extends State<MapScreen> {
                 ),
               ),
               
-              // Content with new Savor AI-style components
+              // Content with personalized header and category filters
               Expanded(
                 child: CustomScrollView(
                   controller: scrollController,
@@ -280,7 +294,7 @@ class _MapScreenState extends State<MapScreen> {
                     // 2. Category Filter Bar
                     SliverToBoxAdapter(
                       child: CategoryFilterBar(
-                        selectedCategory: state.selectedCategory ?? 'All',
+                        selectedCategory: state.selectedCategory,
                         onCategorySelected: (category) {
                           context.read<MapFeedBloc>().add(
                             MapCategorySelected(category),
@@ -289,54 +303,22 @@ class _MapScreenState extends State<MapScreen> {
                       ),
                     ),
 
-                    // 3. Section Title with "See All" button
+                    // 3. Section Title
                     SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
                       sliver: SliverToBoxAdapter(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              (state.searchQuery?.isEmpty ?? true)
-                                  ? 'Recommended for you'
-                                  : 'Search Results',
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black87,
-                              ),
-                            ),
-                            if (!state.isLoading)
-                              GestureDetector(
-                                onTap: () {
-                                  context.push('/nearby');
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 6,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: AppTheme.primaryGreen.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: const Text(
-                                    'SEE ALL',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppTheme.primaryGreen,
-                                      letterSpacing: 0.5,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                          ],
+                        child: Text(
+                          'Recommended for you',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
                         ),
                       ),
                     ),
 
-                    // 4. Dishes Grid
+                    // Dishes list - full width cards
                     if (state.dishes.isEmpty && !state.isLoading)
                       SliverFillRemaining(
                         child: Center(
@@ -345,15 +327,22 @@ class _MapScreenState extends State<MapScreen> {
                             children: [
                               Icon(
                                 Icons.restaurant_menu,
-                                size: 48,
-                                color: Colors.grey[300],
+                                size: 64,
+                                color: AppTheme.primaryColor.withOpacity(0.3),
                               ),
                               const SizedBox(height: 16),
                               Text(
-                                'No dishes found',
-                                style: TextStyle(
+                                'No dishes found nearby',
+                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  color: Colors.black87,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Try adjusting your location or check back later',
+                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                   color: Colors.grey[600],
-                                  fontSize: 14,
                                 ),
                               ),
                             ],
@@ -362,14 +351,8 @@ class _MapScreenState extends State<MapScreen> {
                       )
                     else
                       SliverPadding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        sliver: SliverGrid(
-                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: _getGridColumns(context),
-                            mainAxisSpacing: 16,
-                            crossAxisSpacing: 16,
-                            childAspectRatio: 0.75,
-                          ),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        sliver: SliverList(
                           delegate: SliverChildBuilderDelegate(
                             (context, index) {
                               if (index >= state.dishes.length) return null;
@@ -391,28 +374,31 @@ class _MapScreenState extends State<MapScreen> {
                                 );
                               }
 
-                              return DishCard(
-                                dish: dish,
-                                vendorName: vendor.displayName,
-                                distance: distance,
-                                onTap: () {
-                                  context.push('/dish/${dish.id}');
-                                },
-                                onAddToCart: () {
-                                  context.read<CartBloc>().add(
-                                    AddToCart(dish, quantity: 1),
-                                  );
-                                  
-                                  // Show feedback
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text('${dish.name} added to cart'),
-                                      duration: const Duration(seconds: 2),
-                                      behavior: SnackBarBehavior.floating,
-                                      backgroundColor: AppTheme.primaryGreen,
-                                    ),
-                                  );
-                                },
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 16),
+                                child: DishCard(
+                                  dish: dish,
+                                  vendorName: vendor.displayName,
+                                  distance: distance,
+                                  onTap: () {
+                                    context.push('/dish/${dish.id}');
+                                  },
+                                  onAddToCart: () {
+                                    context.read<CartBloc>().add(
+                                      AddToCart(dish, quantity: 1),
+                                    );
+                                    
+                                    // Show feedback
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('${dish.name} added to cart'),
+                                        duration: const Duration(seconds: 2),
+                                        behavior: SnackBarBehavior.floating,
+                                        backgroundColor: AppTheme.primaryColor,
+                                      ),
+                                    );
+                                  },
+                                ),
                               );
                             },
                             childCount: state.dishes.length,
@@ -427,7 +413,7 @@ class _MapScreenState extends State<MapScreen> {
                           padding: EdgeInsets.all(16.0),
                           child: Center(
                             child: CircularProgressIndicator(
-                              color: AppTheme.primaryGreen,
+                              color: AppTheme.primaryColor,
                             ),
                           ),
                         ),
@@ -445,14 +431,6 @@ class _MapScreenState extends State<MapScreen> {
         );
       },
     );
-  }
-
-  // Helper to determine grid columns based on screen width
-  int _getGridColumns(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
-    if (width < 600) return 2;  // Mobile: 2 columns
-    if (width < 900) return 3;  // Tablet: 3 columns
-    return 4;                   // Desktop: 4 columns
   }
 
   // Helper for distance calculation

@@ -354,7 +354,7 @@ class _FavouritesScreenState extends State<FavouritesScreen> {
                             decoration: BoxDecoration(
                               color: isAvailable
                                   ? AppTheme.primaryGreen
-                                  : AppTheme.surfaceColorDark,
+                                  : AppTheme.surfaceOverlayDark,
                               borderRadius: BorderRadius.circular(
                                 AppTheme.radiusSmall,
                               ),

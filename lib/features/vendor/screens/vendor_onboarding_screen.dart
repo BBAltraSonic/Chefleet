@@ -6,7 +6,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../blocs/vendor_onboarding_bloc.dart';
 import '../models/vendor_model.dart';
-import '../../../core/theme/app_theme.dart';
+import '../../../core/blocs/role_bloc.dart';
+import '../../../core/blocs/role_event.dart';
 
 class VendorOnboardingScreen extends StatefulWidget {
   const VendorOnboardingScreen({super.key});
@@ -743,6 +744,17 @@ class _VendorOnboardingScreenState extends State<VendorOnboardingScreen> {
   }
 
   void _showSuccessDialog() {
+    // Grant vendor role when onboarding is successful
+    final vendorId = _bloc.state.vendor?.id;
+    if (vendorId != null) {
+      context.read<RoleBloc>().add(
+        GrantVendorRole(
+          vendorProfileId: vendorId,
+          switchToVendor: true,
+        ),
+      );
+    }
+
     showDialog(
       context: context,
       barrierDismissible: false,
