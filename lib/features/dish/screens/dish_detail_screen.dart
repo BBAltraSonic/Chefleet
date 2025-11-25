@@ -112,6 +112,9 @@ class _DishDetailScreenState extends State<DishDetailScreen> {
         quantity: 1,
         specialInstructions: null,
       );
+      
+      // Set default pickup time to first slot (30 minutes from now)
+      _orderBloc.setPickupTime(DateTime.now().add(const Duration(minutes: 30)));
     } catch (e) {
       setState(() {
         _isLoading = false;
@@ -587,6 +590,21 @@ class _DishDetailScreenState extends State<DishDetailScreen> {
       'Today, 12:30 PM - 1:00 PM',
       'Today, 1:00 PM - 1:30 PM',
     ];
+    
+    // Determine which slot is selected based on pickup time
+    int selectedIndex = 0; // Default to first slot
+    if (orderState.pickupTime != null) {
+      final now = DateTime.now();
+      final minutesDiff = orderState.pickupTime!.difference(now).inMinutes;
+      // Each slot is 30 minutes apart, starting at 30 minutes from now
+      if (minutesDiff >= 25 && minutesDiff < 45) {
+        selectedIndex = 0; // 30 min slot
+      } else if (minutesDiff >= 45 && minutesDiff < 75) {
+        selectedIndex = 1; // 60 min slot
+      } else if (minutesDiff >= 75) {
+        selectedIndex = 2; // 90 min slot
+      }
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -602,7 +620,7 @@ class _DishDetailScreenState extends State<DishDetailScreen> {
         ...pickupSlots.asMap().entries.map((entry) {
           final index = entry.key;
           final slot = entry.value;
-          final isSelected = orderState.pickupTime?.toString().contains(slot.split(' ').first) ?? (index == 0);
+          final isSelected = index == selectedIndex;
 
           return Padding(
             padding: const EdgeInsets.only(bottom: 12),
@@ -814,8 +832,8 @@ class _DishDetailScreenState extends State<DishDetailScreen> {
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.of(context).pop();
-              Navigator.pop(context); // Go back to map
+              Navigator.of(context).pop(); // Close dialog
+              // Don't pop again - tab navigation handles returning to home
             },
             child: const Text('Done'),
           ),

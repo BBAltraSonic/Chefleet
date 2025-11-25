@@ -98,6 +98,29 @@ Deno.serve(async (req) => {
       throw new Error('Order must contain at least one item')
     }
 
+    // Validate pickup time
+    const pickupDate = new Date(pickup_time)
+    const now = new Date()
+    const minPickupTime = new Date(now.getTime() + 15 * 60000) // 15 min
+
+    if (isNaN(pickupDate.getTime())) {
+      throw new Error('Invalid pickup_time format. Use ISO 8601.')
+    }
+
+    if (pickupDate < minPickupTime) {
+      throw new Error('Pickup time must be at least 15 minutes in the future')
+    }
+
+    // Validate item quantities
+    for (const item of items) {
+      if (!item.quantity || item.quantity <= 0) {
+        throw new Error(`Invalid quantity for dish ${item.dish_id}`)
+      }
+      if (item.quantity > 99) {
+        throw new Error(`Quantity exceeds maximum (99) for dish ${item.dish_id}`)
+      }
+    }
+
     // Check for duplicate order using idempotency key
     const { data: existingOrder } = await supabase
       .from('orders')
@@ -107,7 +130,11 @@ Deno.serve(async (req) => {
 
     if (existingOrder) {
       return new Response(
-        JSON.stringify({ order: existingOrder }),
+        JSON.stringify({
+          success: true,
+          message: 'Order already exists',
+          order: existingOrder
+        }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 200
@@ -176,25 +203,34 @@ Deno.serve(async (req) => {
       tip_cents
 
     // Create order
+    const orderInsert: any = {
+      vendor_id,
+      status: 'pending',
+      subtotal_cents,
+      tax_cents,
+      delivery_fee_cents,
+      service_fee_cents,
+      tip_cents,
+      total_amount: total_amount_cents / 100.0,
+      estimated_fulfillment_time: pickup_time,
+      pickup_address: delivery_address?.street || null,
+      special_instructions: special_instructions || null,
+      pickup_code,
+      idempotency_key,
+      created_at: new Date().toISOString()
+    }
+
+    if (guest_user_id) {
+      orderInsert.guest_user_id = guest_user_id
+      orderInsert.buyer_id = null
+    } else {
+      orderInsert.buyer_id = userId
+      orderInsert.guest_user_id = null
+    }
+
     const { data: order, error: orderError } = await supabase
       .from('orders')
-      .insert({
-        buyer_id: userId,
-        vendor_id,
-        status: 'pending',
-        subtotal_cents,
-        tax_cents,
-        delivery_fee_cents,
-        service_fee_cents,
-        tip_cents,
-        total_amount: total_amount_cents / 100.0,
-        estimated_fulfillment_time: pickup_time,
-        pickup_address: delivery_address?.street || null,
-        special_instructions: special_instructions || null,
-        pickup_code,
-        idempotency_key,
-        created_at: new Date().toISOString()
-      })
+      .insert(orderInsert)
       .select()
       .single()
 
@@ -207,8 +243,8 @@ Deno.serve(async (req) => {
       order_id: order.id,
       dish_id: item.dish_id,
       quantity: item.quantity,
-      price_cents: item.price_cents,
-      subtotal_cents: item.subtotal_cents,
+      unit_price: item.price_cents / 100.0,
+      dish_price_cents: item.price_cents,
       special_instructions: item.special_instructions
     }))
 
@@ -259,6 +295,8 @@ Deno.serve(async (req) => {
 
     return new Response(
       JSON.stringify({
+        success: true,
+        message: 'Order created successfully',
         order: {
           ...order,
           items: orderItems,
@@ -280,7 +318,9 @@ Deno.serve(async (req) => {
 
     return new Response(
       JSON.stringify({
-        error: error.message || 'Internal server error'
+        success: false,
+        error: (error as Error).message || 'Internal server error',
+        error_code: 'ORDER_CREATION_FAILED'
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
