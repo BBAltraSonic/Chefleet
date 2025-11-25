@@ -13,6 +13,7 @@ class CustomerRoutes {
   static const String map = '/customer/map';
   static const String dish = '/customer/dish';
   static const String cart = '/customer/cart';
+  static const String checkout = '/customer/checkout';
   static const String orders = '/customer/orders';
   static const String chat = '/customer/chat';
   static const String profile = '/customer/profile';

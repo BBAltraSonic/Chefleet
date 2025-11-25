@@ -53,6 +53,16 @@ class UpdateSpecialInstructions extends CartEvent {
   List<Object> get props => [dishId, instructions];
 }
 
+/// Set pickup time for the entire cart
+class SetPickupTime extends CartEvent {
+  const SetPickupTime(this.pickupTime);
+
+  final DateTime pickupTime;
+
+  @override
+  List<Object> get props => [pickupTime];
+}
+
 /// Clear all items from the cart
 class ClearCart extends CartEvent {
   const ClearCart();

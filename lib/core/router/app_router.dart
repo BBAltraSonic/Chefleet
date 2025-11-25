@@ -11,9 +11,9 @@ import '../../features/auth/screens/profile_management_screen.dart';
 
 // Customer Screens
 import '../../features/map/screens/map_screen.dart';
-import '../../features/dish/screens/dish_detail_screen.dart';
 import '../../features/order/screens/orders_screen.dart';
 import '../../features/order/screens/order_confirmation_screen.dart';
+import '../../features/order/screens/checkout_screen.dart';
 import '../../features/chat/screens/chat_detail_screen.dart';
 import '../../features/chat/screens/chat_list_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
@@ -137,13 +137,10 @@ class AppRouter {
               ),
             ),
             
-            // Dish Detail
+            // Checkout
             GoRoute(
-              path: '${CustomerRoutes.dish}/:dishId',
-              builder: (context, state) {
-                final dishId = state.pathParameters['dishId']!;
-                return DishDetailScreen(dishId: dishId);
-              },
+              path: CustomerRoutes.checkout,
+              builder: (context, state) => const CheckoutScreen(),
             ),
             
             // Orders List
@@ -382,7 +379,9 @@ class AppRouter {
     if (isGuest) {
       // Guests can only access customer map and dish details
       if (currentPath.startsWith(CustomerRoutes.map) || 
-          currentPath.startsWith(CustomerRoutes.dish)) {
+          currentPath.startsWith(CustomerRoutes.dish) ||
+          currentPath.startsWith(CustomerRoutes.checkout) ||
+          currentPath.startsWith(CustomerRoutes.orders)) {
         return null;
       }
       // Redirect to auth for registration prompt

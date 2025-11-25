@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../auth/blocs/auth_bloc.dart';
+import '../blocs/active_orders_bloc.dart';
 import '../../auth/utils/conversion_prompt_helper.dart';
 import '../../../shared/widgets/glass_container.dart';
 import '../../../core/theme/app_theme.dart' show AppTheme;
@@ -35,31 +38,54 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
   Future<void> _loadOrderDetails() async {
     try {
       final supabase = Supabase.instance.client;
+      final authState = context.read<AuthBloc>().state;
 
-      final response = await supabase
-          .from('orders')
-          .select('''
-            *,
-            vendors!inner(
-              business_name,
-              address,
-              phone
-            ),
-            order_items(
+      if (authState.isGuest && authState.guestId != null) {
+        // Guest flow: Use RPC
+        final response = await supabase.rpc(
+          'get_guest_order',
+          params: {
+            'p_order_id': widget.orderId,
+            'p_guest_id': authState.guestId!,
+          },
+        );
+        
+        // Check if response is empty (null or empty map)
+        if (response == null) {
+           throw Exception('Order not found');
+        }
+
+        setState(() {
+          _orderDetails = response as Map<String, dynamic>;
+          _isLoading = false;
+        });
+      } else {
+        // Authenticated flow: Use standard select
+        final response = await supabase
+            .from('orders')
+            .select('''
               *,
-              dishes(
-                name,
-                price
+              vendors!inner(
+                business_name,
+                address,
+                phone
+              ),
+              order_items(
+                *,
+                dishes(
+                  name,
+                  price
+                )
               )
-            )
-          ''')
-          .eq('id', widget.orderId)
-          .single();
+            ''')
+            .eq('id', widget.orderId)
+            .single();
 
-      setState(() {
-        _orderDetails = response;
-        _isLoading = false;
-      });
+        setState(() {
+          _orderDetails = response;
+          _isLoading = false;
+        });
+      }
 
       // Show conversion prompt for guest users after first order
       if (mounted) {
@@ -74,6 +100,8 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
   }
 
   void _navigateToHome() {
+    // Refresh active orders to ensure FAB is updated
+    context.read<ActiveOrdersBloc>().loadActiveOrders();
     context.go(CustomerRoutes.map);
   }
 
@@ -268,42 +296,27 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
           const SizedBox(height: 24),
 
           // Actions
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: _contactVendor,
-                  icon: const Icon(Icons.chat_bubble_outline),
-                  label: const Text('Chat'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.surfaceGreen,
-                    foregroundColor: AppTheme.darkText,
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                    ),
-                  ),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _navigateToHome,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryGreen,
+                foregroundColor: AppTheme.darkText,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
                 ),
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: _trackOrder,
-                  icon: const Icon(Icons.map_outlined),
-                  label: const Text('View Route'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryGreen,
-                    foregroundColor: AppTheme.darkText,
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                    ),
-                  ),
+              child: const Text(
+                'Done',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
                 ),
               ),
-            ],
+            ),
           ),
           const SizedBox(height: 40),
         ],
@@ -613,48 +626,6 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
     );
   }
 
-  Widget _buildActionButtons() {
-    return Column(
-      children: [
-        // Track Order Button
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton.icon(
-            onPressed: _trackOrder,
-            icon: const Icon(Icons.location_on),
-            label: const Text('Track Order'),
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              foregroundColor: Colors.white,
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-
-        // Contact Vendor Button
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton.icon(
-            onPressed: _contactVendor,
-            icon: const Icon(Icons.chat),
-            label: const Text('Contact Vendor'),
-          ),
-        ),
-        const SizedBox(height: 12),
-
-        // Back to Home Button
-        SizedBox(
-          width: double.infinity,
-          child: TextButton(
-            onPressed: _navigateToHome,
-            child: const Text('Back to Home'),
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildPickupCodeSection(String code) {
     return GlassContainer(
       color: AppTheme.primaryGreen.withOpacity(0.1),
@@ -763,19 +734,5 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
       default:
         return Colors.grey;
     }
-  }
-
-  void _trackOrder() {
-    // Navigate to order tracking screen (route overlay)
-    // TODO: Implement route overlay when ready
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Route tracking coming soon')),
-    );
-  }
-
-  void _contactVendor() {
-    // Navigate to chat screen with vendor
-    final status = _orderDetails!['status'] as String? ?? 'pending';
-    context.push('${CustomerRoutes.chat}/${widget.orderId}?orderStatus=$status');
   }
 }

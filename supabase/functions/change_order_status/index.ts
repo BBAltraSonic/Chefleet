@@ -203,6 +203,8 @@ Deno.serve(async (req) => {
 
     return new Response(
       JSON.stringify({
+        success: true,
+        message: `Order status changed to ${new_status}`,
         order: updatedOrder,
         status_message: statusMessage,
         buyer,
@@ -219,7 +221,9 @@ Deno.serve(async (req) => {
 
     return new Response(
       JSON.stringify({
-        error: error.message || 'Internal server error'
+        success: false,
+        error: error.message || 'Internal server error',
+        error_code: 'STATUS_UPDATE_FAILED'
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

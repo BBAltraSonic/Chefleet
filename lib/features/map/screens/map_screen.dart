@@ -6,13 +6,18 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/routes/app_routes.dart';
-import '../../cart/cart.dart';
+import '../../../shared/widgets/glass_container.dart';
+import '../utils/map_styles.dart';
 import '../../feed/models/vendor_model.dart';
 import '../../feed/widgets/dish_card.dart';
 import '../../feed/widgets/vendor_mini_card.dart';
+import '../../dish/widgets/dish_modal.dart';
 import '../blocs/map_feed_bloc.dart';
 import '../widgets/category_filter_bar.dart';
 import '../widgets/personalized_header.dart';
+import '../../cart/blocs/cart_bloc.dart';
+import '../../cart/blocs/cart_state.dart';
+import '../../cart/blocs/cart_event.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -24,6 +29,19 @@ class MapScreen extends StatefulWidget {
 class _MapScreenState extends State<MapScreen> {
   GoogleMapController? _mapController;
   final DraggableScrollableController _sheetController = DraggableScrollableController();
+  bool _showSearchAreaButton = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _updateMapStyle();
+  }
+
+  void _updateMapStyle() {
+    if (_mapController == null) return;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    _mapController!.setMapStyle(isDark ? MapStyles.dark : MapStyles.light);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,13 +56,80 @@ class _MapScreenState extends State<MapScreen> {
                 // 1. Map Layer
                 _buildMapLayer(context, state),
 
-                // 2. Top Search Bar
+                // 2. Search Area Button (appears when moved)
+                if (_showSearchAreaButton)
+                  Positioned(
+                    top: 120,
+                    left: 0,
+                    right: 0,
+                    child: Center(
+                      child: GestureDetector(
+                        onTap: () async {
+                          if (_mapController != null) {
+                            final bounds = await _mapController!.getVisibleRegion();
+                            if (mounted) {
+                              context.read<MapFeedBloc>().add(MapBoundsChanged(bounds));
+                              setState(() {
+                                _showSearchAreaButton = false;
+                              });
+                            }
+                          }
+                        },
+                        child: GlassContainer(
+                          borderRadius: 20,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          color: AppTheme.primaryColor.withOpacity(0.8),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: const [
+                              Icon(Icons.refresh, size: 16, color: Colors.white),
+                              SizedBox(width: 8),
+                              Text(
+                                'Search this area',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                // 3. Top Search Bar
                 _buildSearchBar(context),
 
-                // 3. Draggable Feed Sheet
+                // 4. Draggable Feed Sheet
                 _buildFeedSheet(context, state),
                 
-                // 4. Loading Overlay (if initial load)
+                // 5. Location Button
+                Positioned(
+                  right: 16,
+                  bottom: MediaQuery.of(context).size.height * 0.4 + 20,
+                  child: FloatingActionButton(
+                    mini: true,
+                    backgroundColor: Theme.of(context).cardTheme.color,
+                    child: const Icon(Icons.my_location),
+                    onPressed: () {
+                      // TODO: Implement location service check
+                      if (state.currentPosition != null && _mapController != null) {
+                        _mapController!.animateCamera(
+                          CameraUpdate.newLatLng(
+                            LatLng(
+                              state.currentPosition!.latitude,
+                              state.currentPosition!.longitude,
+                            ),
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                ),
+
+                // 6. Loading Overlay (if initial load)
                 if (state.isLoading && state.dishes.isEmpty)
                   Container(
                     color: AppTheme.backgroundColor,
@@ -93,10 +178,15 @@ class _MapScreenState extends State<MapScreen> {
       ),
       onMapCreated: (controller) {
         _mapController = controller;
-        // Set map style here if needed
+        _updateMapStyle();
       },
       onCameraMove: (position) {
         context.read<MapFeedBloc>().add(MapZoomChanged(position.zoom));
+        if (!_showSearchAreaButton) {
+          setState(() {
+            _showSearchAreaButton = true;
+          });
+        }
       },
       onCameraIdle: () async {
         if (_mapController != null && mounted) {
@@ -125,122 +215,344 @@ class _MapScreenState extends State<MapScreen> {
       top: MediaQuery.of(context).padding.top + 12,
       left: 16,
       right: 16,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.96),
-          borderRadius: BorderRadius.circular(30),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 16,
-              offset: const Offset(0, 4),
-              spreadRadius: 2,
+      child: GlassContainer(
+        height: 56,
+        blur: 18,
+        opacity: 0.8,
+        color: Theme.of(context).scaffoldBackgroundColor.withOpacity(0.7),
+        borderRadius: 30,
+        child: Row(
+          children: [
+            // Search Icon
+            const Padding(
+              padding: EdgeInsets.only(left: 16, right: 12),
+              child: Icon(
+                Icons.search_rounded,
+                color: Color(0xFF6B7280), // Grey 500
+                size: 24,
+              ),
             ),
+            
+            // Text Field
+            Expanded(
+              child: TextField(
+                onChanged: (value) {
+                  context.read<MapFeedBloc>().add(MapSearchQueryChanged(value));
+                },
+                decoration: InputDecoration(
+                  hintText: 'Search dishes, cuisines...',
+                  hintStyle: TextStyle(
+                    color: Theme.of(context).hintColor,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w400,
+                  ),
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  contentPadding: EdgeInsets.zero,
+                  isDense: true,
+                  filled: false,
+                ),
+                style: TextStyle(
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                ),
+                cursorColor: AppTheme.primaryColor,
+              ),
+            ),
+
+            // Filter Button
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () {
+                  // TODO: Implement filter
+                },
+                borderRadius: BorderRadius.circular(20),
+                child: Container(
+                  padding: const EdgeInsets.all(10),
+                  child: Icon(
+                    Icons.tune_rounded,
+                    size: 20,
+                    color: Theme.of(context).iconTheme.color,
+                  ),
+                ),
+              ),
+            ),
+
+            // Vertical Divider
+            Container(
+              height: 24,
+              width: 1,
+              color: Theme.of(context).dividerColor,
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+            ),
+
+            // Cart Button
+            BlocBuilder<CartBloc, CartState>(
+              builder: (context, cartState) {
+                return Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () => _showCartBottomSheet(context),
+                    borderRadius: BorderRadius.circular(24),
+                    child: Padding(
+                      padding: const EdgeInsets.all(4.0),
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Container(
+                            height: 36,
+                            width: 36,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: AppTheme.primaryColor.withOpacity(0.1),
+                              border: Border.all(
+                                color: AppTheme.primaryColor.withOpacity(0.2),
+                                width: 1,
+                              ),
+                            ),
+                            child: const Icon(
+                              Icons.shopping_cart_outlined,
+                              size: 20,
+                              color: AppTheme.primaryColor,
+                            ),
+                          ),
+                          if (cartState.totalItems > 0)
+                            Positioned(
+                              top: -4,
+                              right: -4,
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: Colors.red,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.white, width: 1.5),
+                                ),
+                                constraints: const BoxConstraints(
+                                  minWidth: 16,
+                                  minHeight: 16,
+                                ),
+                                child: Text(
+                                  '${cartState.totalItems}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    height: 1.0,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(width: 4),
+
+            // Profile Avatar Button
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () {
+                  context.go(CustomerRoutes.profile);
+                },
+                borderRadius: BorderRadius.circular(24),
+                child: Padding(
+                  padding: const EdgeInsets.all(4.0),
+                  child: Container(
+                    height: 36,
+                    width: 36,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.grey[200],
+                      border: Border.all(
+                        color: Colors.grey[300]!,
+                        width: 1,
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.person_rounded,
+                      size: 20,
+                      color: Colors.grey,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 4),
           ],
         ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-          child: Row(
-            children: [
-              // Search Icon
-              const Padding(
-                padding: EdgeInsets.only(left: 12, right: 8),
-                child: Icon(
-                  Icons.search_rounded,
-                  color: Color(0xFF6B7280), // Grey 500
-                  size: 24,
-                ),
-              ),
-              
-              // Text Field
-              Expanded(
-                child: TextField(
-                  onChanged: (value) {
-                    context.read<MapFeedBloc>().add(MapSearchQueryChanged(value));
-                  },
-                  decoration: InputDecoration(
-                    hintText: 'Search dishes, cuisines...',
-                    hintStyle: TextStyle(
-                      color: Colors.grey[400],
-                      fontSize: 15,
-                      fontWeight: FontWeight.w400,
-                    ),
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    contentPadding: EdgeInsets.zero,
-                    isDense: true,
-                  ),
-                  style: const TextStyle(
-                    color: Color(0xFF1F2937), // Grey 800
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  cursorColor: AppTheme.primaryColor,
-                ),
-              ),
-
-              // Filter Button
-              Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () {
-                    // TODO: Implement filter
-                  },
-                  borderRadius: BorderRadius.circular(20),
-                  child: Container(
-                    padding: const EdgeInsets.all(10),
-                    child: Icon(
-                      Icons.tune_rounded,
-                      size: 20,
-                      color: Colors.grey[700],
-                    ),
-                  ),
-                ),
-              ),
-
-              // Vertical Divider
-              Container(
-                height: 24,
-                width: 1,
-                color: Colors.grey[200],
-                margin: const EdgeInsets.symmetric(horizontal: 4),
-              ),
-
-              // Profile Avatar Button
-              Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () {
-                    context.go(CustomerRoutes.profile);
-                  },
-                  borderRadius: BorderRadius.circular(24),
-                  child: Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: Container(
-                      height: 36,
-                      width: 36,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: AppTheme.primaryColor.withOpacity(0.1),
-                        border: Border.all(
-                          color: AppTheme.primaryColor.withOpacity(0.2),
-                          width: 1,
-                        ),
-                      ),
-                      child: const Icon(
-                        Icons.person_rounded,
-                        size: 20,
-                        color: AppTheme.primaryColor,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
+    );
+  }
+
+  void _showCartBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return BlocProvider.value(
+          value: context.read<CartBloc>(),
+          child: DraggableScrollableSheet(
+            initialChildSize: 0.7,
+            minChildSize: 0.5,
+            maxChildSize: 0.9,
+            builder: (context, scrollController) {
+              return Container(
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                ),
+                child: Column(
+                  children: [
+                    // Handle
+                    Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    // Title
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 8),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Your Cart',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close),
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Divider(height: 1),
+                    // Cart items
+                    Expanded(
+                      child: BlocBuilder<CartBloc, CartState>(
+                        builder: (context, cartState) {
+                          if (cartState.items.isEmpty) {
+                            return const Center(
+                              child: Text('Your cart is empty'),
+                            );
+                          }
+                          return ListView.builder(
+                            controller: scrollController,
+                            padding: const EdgeInsets.all(20),
+                            itemCount: cartState.items.length,
+                            itemBuilder: (context, index) {
+                              final item = cartState.items[index];
+                              return Card(
+                                margin: const EdgeInsets.only(bottom: 12),
+                                child: ListTile(
+                                  title: Text(item.dish.displayName),
+                                  subtitle: Text(
+                                      '\$${item.dish.price.toStringAsFixed(2)} × ${item.quantity}'),
+                                  trailing: IconButton(
+                                    icon:
+                                        const Icon(Icons.remove_circle_outline),
+                                    onPressed: () {
+                                      context
+                                          .read<CartBloc>()
+                                          .add(RemoveFromCart(item.dish.id));
+                                    },
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                    // Total and checkout
+                    BlocBuilder<CartBloc, CartState>(
+                      builder: (context, cartState) {
+                        return Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[50],
+                            border: Border(
+                                top: BorderSide(color: Colors.grey[300]!)),
+                          ),
+                          child: Column(
+                            children: [
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text(
+                                    'Total',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  Text(
+                                    '\$${cartState.total.toStringAsFixed(2)}',
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppTheme.primaryGreen,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                    context.push(CustomerRoutes.checkout);
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppTheme.primaryGreen,
+                                    foregroundColor: AppTheme.darkText,
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 16),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    'Checkout',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+      },
     );
   }
 
@@ -382,20 +694,13 @@ class _MapScreenState extends State<MapScreen> {
                                   vendorName: vendor.displayName,
                                   distance: distance,
                                   onTap: () {
-                                    context.push(CustomerRoutes.dishDetail(dish.id));
-                                  },
-                                  onAddToCart: () {
-                                    context.read<CartBloc>().add(
-                                      AddToCart(dish, quantity: 1),
-                                    );
-                                    
-                                    // Show feedback
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text('${dish.name} added to cart'),
-                                        duration: const Duration(seconds: 2),
-                                        behavior: SnackBarBehavior.floating,
-                                        backgroundColor: AppTheme.primaryColor,
+                                    showModalBottomSheet(
+                                      context: context,
+                                      isScrollControlled: true,
+                                      backgroundColor: Colors.transparent,
+                                      builder: (context) => DishModal(
+                                        dish: dish,
+                                        vendor: vendor,
                                       ),
                                     );
                                   },

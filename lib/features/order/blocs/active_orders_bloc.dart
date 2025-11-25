@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -10,6 +11,7 @@ class ActiveOrdersBloc extends Bloc<ActiveOrdersEvent, ActiveOrdersState> {
   final SupabaseClient _supabaseClient;
   final AuthBloc _authBloc;
   RealtimeChannel? _ordersChannel;
+  StreamSubscription? _authSubscription;
 
   ActiveOrdersBloc({
     required SupabaseClient supabaseClient,
@@ -21,11 +23,24 @@ class ActiveOrdersBloc extends Bloc<ActiveOrdersEvent, ActiveOrdersState> {
     on<SubscribeToOrderUpdates>(_onSubscribeToOrderUpdates);
     on<UnsubscribeFromOrderUpdates>(_onUnsubscribeFromOrderUpdates);
     on<RefreshActiveOrders>(_onRefreshActiveOrders);
+
+    // Listen to auth state changes to load orders when auth is ready
+    _authSubscription = _authBloc.stream
+        .distinct((prev, next) =>
+            prev.user?.id == next.user?.id &&
+            prev.guestId == next.guestId &&
+            prev.mode == next.mode)
+        .listen((authState) {
+      if (authState.isAuthenticated || authState.isGuest) {
+        add(LoadActiveOrders());
+      }
+    });
   }
 
   @override
   Future<void> close() {
     _ordersChannel?.unsubscribe();
+    _authSubscription?.cancel();
     return super.close();
   }
 
@@ -48,38 +63,24 @@ class ActiveOrdersBloc extends Bloc<ActiveOrdersEvent, ActiveOrdersState> {
         return;
       }
 
-      // Build query based on auth mode
-      var query = _supabaseClient
-          .from('orders')
-          .select('''
-            *,
-            vendors!inner(
-              id,
-              business_name,
-              address
-            ),
-            items:order_items(
-              *,
-              dishes(
-                id,
-                name,
-                description,
-                price
-              )
-            )
-          ''');
+      // Call RPC to get full order tree as JSON
+      // This bypasses RLS complexity for guests and joins
+      final response = await _supabaseClient.rpc(
+        'get_active_orders_json',
+        params: {
+          'p_guest_id': authState.isGuest ? authState.guestId : null,
+        },
+      );
 
-      // Filter by user type
-      if (authState.isGuest && authState.guestId != null) {
-        query = query.eq('guest_user_id', authState.guestId!);
-      } else if (currentUser != null) {
-        query = query.eq('buyer_id', currentUser.id);
+      // Ensure response is a list
+      if (response == null) {
+        emit(state.copyWith(
+          isLoading: false,
+          orders: [],
+          fabState: FabState.hidden,
+        ));
+        return;
       }
-
-      // Apply status and ordering filters
-      final response = await query
-          .filter('status', 'in', '(pending,accepted,preparing,ready)')
-          .order('created_at', ascending: false);
 
       final orders = List<Map<String, dynamic>>.from(response);
 
@@ -127,11 +128,11 @@ class ActiveOrdersBloc extends Bloc<ActiveOrdersEvent, ActiveOrdersState> {
             bool isMyOrder = false;
             
             if (authState.isGuest && authState.guestId != null) {
-              isMyOrder = (payload.newRecord?['guest_user_id'] == authState.guestId) ||
-                  (payload.oldRecord?['guest_user_id'] == authState.guestId);
+              isMyOrder = (payload.newRecord['guest_user_id'] == authState.guestId) ||
+                  (payload.oldRecord['guest_user_id'] == authState.guestId);
             } else if (currentUser != null) {
-              isMyOrder = (payload.newRecord?['buyer_id'] == currentUser.id) ||
-                  (payload.oldRecord?['buyer_id'] == currentUser.id);
+              isMyOrder = (payload.newRecord['buyer_id'] == currentUser.id) ||
+                  (payload.oldRecord['buyer_id'] == currentUser.id);
             }
             
             if (isMyOrder) {

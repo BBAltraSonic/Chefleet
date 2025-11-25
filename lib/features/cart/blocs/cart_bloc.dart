@@ -13,6 +13,7 @@ class CartBloc extends Bloc<CartEvent, CartState> {
     on<RemoveFromCart>(_onRemoveFromCart);
     on<UpdateQuantity>(_onUpdateQuantity);
     on<UpdateSpecialInstructions>(_onUpdateSpecialInstructions);
+    on<SetPickupTime>(_onSetPickupTime);
     on<ClearCart>(_onClearCart);
     on<LoadCart>(_onLoadCart);
     on<SaveCart>(_onSaveCart);
@@ -23,6 +24,16 @@ class CartBloc extends Bloc<CartEvent, CartState> {
   /// Add item to cart or update quantity if already exists
   Future<void> _onAddToCart(AddToCart event, Emitter<CartState> emit) async {
     try {
+      if (state.items.isNotEmpty) {
+        final currentVendorId = state.items.first.dish.vendorId;
+        if (currentVendorId != event.dish.vendorId) {
+          emit(state.copyWith(
+            error: 'You can only order from one vendor at a time. Please clear your cart first.',
+          ));
+          return;
+        }
+      }
+
       final existingIndex = state.items.indexWhere(
         (item) => item.dish.id == event.dish.id,
       );
@@ -118,6 +129,14 @@ class CartBloc extends Bloc<CartEvent, CartState> {
         error: 'Failed to update instructions: ${e.toString()}',
       ));
     }
+  }
+
+  /// Set pickup time for the cart
+  Future<void> _onSetPickupTime(
+    SetPickupTime event,
+    Emitter<CartState> emit,
+  ) async {
+    emit(state.copyWith(pickupTime: event.pickupTime));
   }
 
   /// Clear all items from cart

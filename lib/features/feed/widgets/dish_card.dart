@@ -11,7 +11,6 @@ class DishCard extends StatelessWidget {
     this.onFavorite,
     this.isFavorite = false,
     this.distance,
-    this.onAddToCart,
   });
 
   final Dish dish;
@@ -20,7 +19,6 @@ class DishCard extends StatelessWidget {
   final VoidCallback? onFavorite;
   final bool isFavorite;
   final double? distance;
-  final VoidCallback? onAddToCart;
 
   @override
   Widget build(BuildContext context) {
@@ -203,41 +201,6 @@ class DishCard extends StatelessWidget {
                             ],
                           ),
                         ),
-                        
-                        const SizedBox(width: 12),
-
-                        // Add to cart button
-                        if (onAddToCart != null && dish.available)
-                          Material(
-                            color: AppTheme.primaryColor,
-                            borderRadius: BorderRadius.circular(14),
-                            child: InkWell(
-                              onTap: onAddToCart,
-                              borderRadius: BorderRadius.circular(14),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                                child: const Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      Icons.add_rounded,
-                                      size: 18,
-                                      color: Colors.white,
-                                    ),
-                                    SizedBox(width: 4),
-                                    Text(
-                                      'Add',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 13,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
                       ],
                     ),
                   ],

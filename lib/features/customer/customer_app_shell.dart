@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/models/user_role.dart';
 import '../../core/theme/app_theme.dart';
-import '../map/screens/map_screen.dart';
+import '../../core/routes/app_routes.dart';
 import '../order/widgets/active_order_modal.dart';
 import '../order/blocs/active_orders_bloc.dart';
 import '../cart/cart.dart';
@@ -78,83 +79,160 @@ class __CustomerFloatingActionButtonState
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<CartBloc, CartState>(
-      builder: (context, cartState) {
-        final hasItems = cartState.totalItems > 0;
+    return BlocBuilder<ActiveOrdersBloc, ActiveOrdersState>(
+      builder: (context, activeOrdersState) {
+        final activeOrders = activeOrdersState.orders;
+        final hasActiveOrders = activeOrders.isNotEmpty;
+
+        // Hide FAB if no active orders
+        if (!hasActiveOrders) {
+          return const SizedBox.shrink();
+        }
+
+        // Determine FAB mode (Only Active Order Mode)
+        final isOrderMode = true;
+        
+        // Calculate progress and status for active order mode
+        double progress = 0.0;
+        IconData icon = Icons.receipt_long_rounded;
+        Color color = AppTheme.primaryColor;
+        String? status;
+
+        if (isOrderMode) {
+          // Get the most relevant order (e.g., the first one or the one needing attention)
+          // For now, we take the first one.
+          final order = activeOrders.first;
+          status = order['status'] as String? ?? 'pending';
+
+          switch (status) {
+            case 'pending':
+              progress = 0.1;
+              icon = Icons.hourglass_top_rounded;
+              color = Colors.orange;
+              break;
+            case 'accepted':
+              progress = 0.3;
+              icon = Icons.store_rounded; // Vendor checked/accepted
+              color = Colors.blue;
+              break;
+            case 'preparing':
+              progress = 0.6;
+              icon = Icons.soup_kitchen_rounded; // Food preparation
+              color = Colors.orangeAccent; // Hot/Cooking color
+              break;
+            case 'ready':
+              progress = 1.0;
+              icon = Icons.shopping_bag_rounded;
+              color = Colors.green;
+              break;
+            default:
+              progress = 0.0;
+              icon = Icons.receipt_long_rounded;
+              color = AppTheme.primaryColor;
+          }
+        }
 
         return AnimatedBuilder(
           animation: _pulseAnimation,
           builder: (context, child) {
             return Transform.scale(
-              scale: _pulseAnimation.value,
+              scale: isOrderMode && status == 'ready' ? _pulseAnimation.value : 1.0,
               child: Container(
                 width: 60,
                 height: 60,
                 margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryColor, // Use theme primary color (Black)
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.25),
-                      blurRadius: 16,
-                      offset: const Offset(0, 8),
-                      spreadRadius: 2,
-                    ),
-                  ],
-                ),
                 child: Stack(
                   clipBehavior: Clip.none,
+                  alignment: Alignment.center,
                   children: [
-                    Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: () => _handleTap(context, hasItems),
-                        borderRadius: BorderRadius.circular(30),
-                        child: Center(
-                          child: Icon(
-                            hasItems
-                                ? Icons.shopping_cart_rounded
-                                : Icons.shopping_bag_outlined,
-                            size: 26,
-                            color: Colors.white,
+                    // Progress Indicator
+                    SizedBox(
+                      width: 60,
+                      height: 60,
+                      child: CircularProgressIndicator(
+                        value: progress,
+                        strokeWidth: 4,
+                        backgroundColor: Colors.grey[300],
+                        valueColor: AlwaysStoppedAnimation<Color>(color),
+                      ),
+                    ),
+                    
+                    // Main Button
+                    Container(
+                      width: 50, // Slightly smaller to fit inside progress
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: color,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: color.withOpacity(0.25),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () => _handleTap(context),
+                          borderRadius: BorderRadius.circular(25),
+                          child: Center(
+                            child: Icon(
+                              icon,
+                              size: 24,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                       ),
                     ),
-                    // Badge for cart item count
-                    if (hasItems)
+                    
+                    // Vendor Check Badge (If accepted/preparing/ready)
+                    if (status == 'accepted' || status == 'preparing' || status == 'ready')
                       Positioned(
-                        top: -4,
-                        right: -4,
+                        bottom: 0,
+                        right: 0,
                         child: Container(
-                          padding: const EdgeInsets.all(6),
+                          padding: const EdgeInsets.all(2),
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.check_circle,
+                            size: 16,
+                            color: Colors.green,
+                          ),
+                        ),
+                      ),
+
+                    // Count Badge (Multiple Orders)
+                    if (activeOrders.length > 1)
+                      Positioned(
+                        top: -2,
+                        right: -2,
+                        child: Container(
+                          padding: const EdgeInsets.all(5),
                           decoration: BoxDecoration(
-                            color: Colors.red, // Standard notification red
+                            color: Colors.red,
                             shape: BoxShape.circle,
                             border: Border.all(
                               color: Colors.white,
                               width: 2,
                             ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.15),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
                           ),
                           constraints: const BoxConstraints(
-                            minWidth: 24,
-                            minHeight: 24,
+                            minWidth: 20,
+                            minHeight: 20,
                           ),
                           child: Center(
                             child: Text(
-                              '${cartState.totalItems}',
+                              '${activeOrders.length}',
                               style: const TextStyle(
                                 color: Colors.white,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w800,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
                                 height: 1.0,
                               ),
                               textAlign: TextAlign.center,
@@ -172,187 +250,18 @@ class __CustomerFloatingActionButtonState
     );
   }
 
-  void _handleTap(BuildContext context, bool hasCartItems) {
-    if (hasCartItems) {
-      // Show cart bottom sheet
-      _showCartBottomSheet(context);
-    } else {
-      // Show active orders modal
-      showModalBottomSheet(
-        context: context,
-        backgroundColor: Colors.transparent,
-        isScrollControlled: true,
-        isDismissible: true,
-        enableDrag: true,
-        builder: (context) {
-          return BlocProvider.value(
-            value: context.read<ActiveOrdersBloc>(),
-            child: const ActiveOrderModal(),
-          );
-        },
-      );
-    }
-  }
-
-  void _showCartBottomSheet(BuildContext context) {
+  void _handleTap(BuildContext context) {
+    // Show active orders modal
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
+      isDismissible: true,
+      enableDrag: true,
       builder: (context) {
         return BlocProvider.value(
-          value: context.read<CartBloc>(),
-          child: DraggableScrollableSheet(
-            initialChildSize: 0.7,
-            minChildSize: 0.5,
-            maxChildSize: 0.9,
-            builder: (context, scrollController) {
-              return Container(
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-                ),
-                child: Column(
-                  children: [
-                    // Handle
-                    Container(
-                      width: 40,
-                      height: 4,
-                      margin: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[300],
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                    // Title
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 8),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Your Cart',
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
-                            ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.close),
-                            onPressed: () => Navigator.pop(context),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Divider(height: 1),
-                    // Cart items
-                    Expanded(
-                      child: BlocBuilder<CartBloc, CartState>(
-                        builder: (context, cartState) {
-                          if (cartState.items.isEmpty) {
-                            return const Center(
-                              child: Text('Your cart is empty'),
-                            );
-                          }
-                          return ListView.builder(
-                            controller: scrollController,
-                            padding: const EdgeInsets.all(20),
-                            itemCount: cartState.items.length,
-                            itemBuilder: (context, index) {
-                              final item = cartState.items[index];
-                              return Card(
-                                margin: const EdgeInsets.only(bottom: 12),
-                                child: ListTile(
-                                  title: Text(item.dish.displayName),
-                                  subtitle: Text(
-                                      '\$${item.dish.price.toStringAsFixed(2)} × ${item.quantity}'),
-                                  trailing: IconButton(
-                                    icon:
-                                        const Icon(Icons.remove_circle_outline),
-                                    onPressed: () {
-                                      context
-                                          .read<CartBloc>()
-                                          .add(RemoveFromCart(item.dish.id));
-                                    },
-                                  ),
-                                ),
-                              );
-                            },
-                          );
-                        },
-                      ),
-                    ),
-                    // Total and checkout
-                    BlocBuilder<CartBloc, CartState>(
-                      builder: (context, cartState) {
-                        return Container(
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[50],
-                            border: Border(
-                                top: BorderSide(color: Colors.grey[300]!)),
-                          ),
-                          child: Column(
-                            children: [
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  const Text(
-                                    'Total',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  Text(
-                                    '\$${cartState.total.toStringAsFixed(2)}',
-                                    style: const TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppTheme.primaryGreen,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 16),
-                              SizedBox(
-                                width: double.infinity,
-                                child: ElevatedButton(
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                    // TODO: Navigate to checkout
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppTheme.primaryGreen,
-                                    foregroundColor: AppTheme.darkText,
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 16),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                  ),
-                                  child: const Text(
-                                    'Checkout',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
+          value: context.read<ActiveOrdersBloc>(),
+          child: const ActiveOrderModal(),
         );
       },
     );

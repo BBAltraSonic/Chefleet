@@ -7,11 +7,13 @@ class CartState extends Equatable {
     this.items = const [],
     this.isLoading = false,
     this.error,
+    this.pickupTime,
   });
 
   final List<CartItem> items;
   final bool isLoading;
   final String? error;
+  final DateTime? pickupTime;
 
   /// Total number of items in cart (sum of all quantities)
   int get totalItems => items.fold(0, (sum, item) => sum + item.quantity);
@@ -70,14 +72,16 @@ class CartState extends Equatable {
     List<CartItem>? items,
     bool? isLoading,
     String? error,
+    DateTime? pickupTime,
   }) {
     return CartState(
       items: items ?? this.items,
       isLoading: isLoading ?? this.isLoading,
       error: error,
+      pickupTime: pickupTime ?? this.pickupTime,
     );
   }
 
   @override
-  List<Object?> get props => [items, isLoading, error];
+  List<Object?> get props => [items, isLoading, error, pickupTime];
 }
