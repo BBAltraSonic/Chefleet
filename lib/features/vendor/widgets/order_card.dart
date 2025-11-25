@@ -27,6 +27,8 @@ class OrderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final status = order['status'] as String? ?? 'pending';
     final totalAmount = (order['total_amount'] as num?)?.toDouble() ?? 0.0;
     final createdAt = DateTime.parse(order['created_at'] as String);
@@ -39,11 +41,11 @@ class OrderCard extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: theme.cardTheme.color ?? colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withOpacity(theme.brightness == Brightness.dark ? 0.3 : 0.1),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -61,28 +63,28 @@ class OrderCard extends StatelessWidget {
                     children: [
                       Text(
                         'Order #${order['id'].toString().substring(0, 8).toUpperCase()}',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         buyer['full_name'] as String? ?? 'Customer',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey[600],
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
                         ),
                       ),
                       if (buyer['phone'] != null)
                         Text(
                           buyer['phone'] as String? ?? '',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.grey[500],
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
                           ),
                         ),
                     ],
                   ),
                 ),
-                _buildStatusBadge(status),
+                _buildStatusBadge(context, status),
               ],
             ),
             const SizedBox(height: 12),
@@ -96,23 +98,23 @@ class OrderCard extends StatelessWidget {
                   children: [
                     Text(
                       'Total',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.grey[600],
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
                       ),
                     ),
                     Text(
                       '\$${totalAmount.toStringAsFixed(2)}',
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      style: theme.textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.w600,
-                        color: Theme.of(context).colorScheme.primary,
+                        color: colorScheme.primary,
                       ),
                     ),
                   ],
                 ),
                 Text(
                   DateFormat('MMM dd, h:mm a').format(createdAt),
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.grey[500],
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -125,6 +127,9 @@ class OrderCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Colors.orange.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: Colors.orange.withOpacity(0.3),
+                  ),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -138,7 +143,7 @@ class OrderCard extends StatelessWidget {
                     Expanded(
                       child: Text(
                         order['special_instructions'] as String,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        style: theme.textTheme.bodySmall?.copyWith(
                           color: Colors.orange[700],
                         ),
                       ),
@@ -156,13 +161,14 @@ class OrderCard extends StatelessWidget {
   }
 
   Widget _buildOrderItems(BuildContext context, List<dynamic> items) {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Items (${items.length})',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: Colors.grey[600],
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -180,12 +186,12 @@ class OrderCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     '$quantity × ${dish['name'] as String? ?? 'Item'}',
-                    style: Theme.of(context).textTheme.bodySmall,
+                    style: theme.textTheme.bodySmall,
                   ),
                 ),
                 Text(
                   '\$${(quantity * unitPrice).toStringAsFixed(2)}',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  style: theme.textTheme.bodySmall?.copyWith(
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -197,45 +203,46 @@ class OrderCard extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusBadge(String status) {
+  Widget _buildStatusBadge(BuildContext context, String status) {
     Color backgroundColor;
     Color textColor;
     String displayText;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     switch (status) {
       case 'pending':
-        backgroundColor = Colors.orange.withOpacity(0.1);
-        textColor = Colors.orange;
+        backgroundColor = Colors.orange.withOpacity(isDark ? 0.2 : 0.1);
+        textColor = isDark ? Colors.orange[300]! : Colors.orange;
         displayText = 'Pending';
         break;
       case 'accepted':
-        backgroundColor = Colors.blue.withOpacity(0.1);
-        textColor = Colors.blue;
+        backgroundColor = Colors.blue.withOpacity(isDark ? 0.2 : 0.1);
+        textColor = isDark ? Colors.blue[300]! : Colors.blue;
         displayText = 'Accepted';
         break;
       case 'preparing':
-        backgroundColor = Colors.purple.withOpacity(0.1);
-        textColor = Colors.purple;
+        backgroundColor = Colors.purple.withOpacity(isDark ? 0.2 : 0.1);
+        textColor = isDark ? Colors.purple[300]! : Colors.purple;
         displayText = 'Preparing';
         break;
       case 'ready':
-        backgroundColor = Colors.green.withOpacity(0.1);
-        textColor = Colors.green;
+        backgroundColor = Colors.green.withOpacity(isDark ? 0.2 : 0.1);
+        textColor = isDark ? Colors.green[300]! : Colors.green;
         displayText = 'Ready for pickup';
         break;
       case 'completed':
-        backgroundColor = Colors.grey.withOpacity(0.1);
-        textColor = Colors.grey;
+        backgroundColor = Colors.grey.withOpacity(isDark ? 0.2 : 0.1);
+        textColor = isDark ? Colors.grey[300]! : Colors.grey;
         displayText = 'Completed';
         break;
       case 'cancelled':
-        backgroundColor = Colors.red.withOpacity(0.1);
-        textColor = Colors.red;
+        backgroundColor = Colors.red.withOpacity(isDark ? 0.2 : 0.1);
+        textColor = isDark ? Colors.red[300]! : Colors.red;
         displayText = 'Cancelled';
         break;
       default:
-        backgroundColor = Colors.grey.withOpacity(0.1);
-        textColor = Colors.grey;
+        backgroundColor = Colors.grey.withOpacity(isDark ? 0.2 : 0.1);
+        textColor = isDark ? Colors.grey[300]! : Colors.grey;
         displayText = status;
     }
 
@@ -244,6 +251,10 @@ class OrderCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: textColor.withOpacity(0.3),
+          width: 1,
+        ),
       ),
       child: Text(
         displayText,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../map/blocs/map_feed_bloc.dart';
 import '../models/vendor_model.dart';
+import 'vendor_card_skeleton.dart';
 
 class VendorFeedWidget extends StatelessWidget {
   const VendorFeedWidget({super.key});
@@ -11,8 +12,11 @@ class VendorFeedWidget extends StatelessWidget {
     return BlocBuilder<MapFeedBloc, MapFeedState>(
       builder: (context, state) {
         if (state.isLoading) {
-          return const Center(
-            child: CircularProgressIndicator(),
+          return ListView.builder(
+            itemCount: 3, // Show 3 skeletons
+            itemBuilder: (context, index) {
+              return const VendorCardSkeleton();
+            },
           );
         }
 
@@ -21,7 +25,8 @@ class VendorFeedWidget extends StatelessWidget {
             child: Text(
               'Error loading vendors',
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Theme.of(context).colorScheme.error,
+                color: Theme.of(context).colorScheme.error,
+              ),
                   ),
             ),
           );

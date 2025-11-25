@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../blocs/vendor_chat_bloc.dart';
 import '../widgets/conversation_list_widget.dart';
+import '../widgets/conversation_skeleton_tile.dart';
 import '../widgets/chat_message_widget.dart';
 import '../widgets/quick_reply_widget.dart';
 import '../widgets/chat_input_widget.dart';

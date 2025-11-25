@@ -22,13 +22,16 @@ class DishCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardTheme.color ?? colorScheme.surface,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withOpacity(theme.brightness == Brightness.dark ? 0.3 : 0.06),
             blurRadius: 12,
             offset: const Offset(0, 4),
             spreadRadius: 0,
@@ -45,7 +48,7 @@ class DishCard extends StatelessWidget {
             children: [
               // Image section
               _buildImageSection(context),
-              
+
               // Content section
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
@@ -57,24 +60,23 @@ class DishCard extends StatelessWidget {
                       children: [
                         Container(
                           padding: const EdgeInsets.all(4),
-                          decoration: const BoxDecoration(
-                            color: AppTheme.surfaceColor,
+                          decoration: BoxDecoration(
+                            color: colorScheme.surfaceContainerHighest,
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.store_rounded,
                             size: 12,
-                            color: AppTheme.primaryColor,
+                            color: colorScheme.primary,
                           ),
                         ),
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
                             vendorName,
-                            style: TextStyle(
-                              fontSize: 13,
+                            style: theme.textTheme.labelMedium?.copyWith(
                               fontWeight: FontWeight.w600,
-                              color: Colors.grey[800],
+                              color: colorScheme.onSurfaceVariant,
                               letterSpacing: 0.1,
                             ),
                             maxLines: 1,
@@ -86,21 +88,20 @@ class DishCard extends StatelessWidget {
                           Icon(
                             Icons.location_on_rounded,
                             size: 12,
-                            color: Colors.grey[400],
+                            color: colorScheme.outline,
                           ),
                           const SizedBox(width: 2),
                           Text(
                             '${distance?.toStringAsFixed(1)} km',
-                            style: TextStyle(
-                              fontSize: 12,
+                            style: theme.textTheme.labelSmall?.copyWith(
                               fontWeight: FontWeight.w500,
-                              color: Colors.grey[500],
+                              color: colorScheme.outline,
                             ),
                           ),
                         ],
                       ],
                     ),
-                    
+
                     const SizedBox(height: 10),
 
                     // Dish name
@@ -111,10 +112,8 @@ class DishCard extends StatelessWidget {
                         Expanded(
                           child: Text(
                             dish.displayName,
-                            style: const TextStyle(
-                              fontSize: 18,
+                            style: theme.textTheme.titleLarge?.copyWith(
                               fontWeight: FontWeight.bold,
-                              color: Colors.black87,
                               height: 1.2,
                               letterSpacing: -0.3,
                             ),
@@ -128,34 +127,35 @@ class DishCard extends StatelessWidget {
                             child: Container(
                               padding: const EdgeInsets.all(6),
                               decoration: BoxDecoration(
-                                color: isFavorite ? Colors.red.withOpacity(0.1) : Colors.grey[100],
+                                color: isFavorite
+                                  ? Colors.red.withOpacity(0.1)
+                                  : colorScheme.surfaceContainerHighest,
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(
                                 isFavorite ? Icons.favorite : Icons.favorite_border_rounded,
-                                color: isFavorite ? Colors.red : Colors.grey[400],
+                                color: isFavorite ? Colors.red : colorScheme.onSurfaceVariant,
                                 size: 18,
                               ),
                             ),
                           ),
                       ],
                     ),
-                    
+
                     const SizedBox(height: 6),
 
                     // Description
                     if (dish.displayDescription.isNotEmpty)
                       Text(
                         dish.displayDescription,
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 13,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
                           height: 1.4,
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      
+
                     const SizedBox(height: 16),
 
                     // Bottom row: price and add button
@@ -164,21 +164,21 @@ class DishCard extends StatelessWidget {
                         // Price
                         Text(
                           dish.formattedPrice,
-                          style: const TextStyle(
-                            color: AppTheme.primaryColor,
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            color: colorScheme.primary,
                             fontWeight: FontWeight.w800,
                             fontSize: 20,
                             letterSpacing: -0.5,
                           ),
                         ),
-                        
+
                         const Spacer(),
-                        
+
                         // Prep Time Badge
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                           decoration: BoxDecoration(
-                            color: Colors.grey[100],
+                            color: colorScheme.surfaceContainerHighest,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Row(
@@ -187,15 +187,14 @@ class DishCard extends StatelessWidget {
                               Icon(
                                 Icons.access_time_rounded,
                                 size: 14,
-                                color: Colors.grey[600],
+                                color: colorScheme.onSurfaceVariant,
                               ),
                               const SizedBox(width: 4),
                               Text(
                                 dish.formattedPrepTime,
-                                style: TextStyle(
-                                  fontSize: 12,
+                                style: theme.textTheme.labelSmall?.copyWith(
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.grey[700],
+                                  color: colorScheme.onSurfaceVariant,
                                 ),
                               ),
                             ],
@@ -214,6 +213,8 @@ class DishCard extends StatelessWidget {
   }
 
   Widget _buildImageSection(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     return Stack(
       children: [
         Hero(
@@ -221,11 +222,11 @@ class DishCard extends StatelessWidget {
           child: Container(
             height: 180,
             width: double.infinity,
-            decoration: const BoxDecoration(
-              borderRadius: BorderRadius.vertical(
+            decoration: BoxDecoration(
+              borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(24),
               ),
-              color: AppTheme.surfaceColor,
+              color: colorScheme.surfaceContainerHighest,
             ),
             child: ClipRRect(
               borderRadius: const BorderRadius.vertical(

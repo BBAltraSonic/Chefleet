@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:ui';
 
 class GlassContainer extends StatelessWidget {
   const GlassContainer({
@@ -10,8 +9,8 @@ class GlassContainer extends StatelessWidget {
     this.margin,
     this.padding,
     this.borderRadius = 16,
-    this.blur = 10,
-    this.opacity = 0.1,
+    this.blur = 0, // Ignored: Glass effect removed
+    this.opacity = 1.0, // Ignored: Glass effect removed
     this.border,
     this.color,
   });
@@ -30,26 +29,41 @@ class GlassContainer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final containerColor = color ??
-        (isDark ? const Color(0x1AFFFFFF) : const Color(0x33000000));
+    
+    // Replaced Glass effect with a clean "Surface" style
+    // Light: Solid White with soft shadow
+    // Dark: Solid Dark Gray with soft shadow
+    final defaultColor = isDark 
+        ? const Color(0xFF1F2937) // Surface Dark (Gray 800)
+        : Colors.white;       // Surface Light
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(borderRadius),
-      child: Container(
-        width: width,
-        height: height,
-        margin: margin,
-        padding: padding,
-        decoration: BoxDecoration(
-          color: containerColor.withOpacity(opacity),
-          borderRadius: BorderRadius.circular(borderRadius),
-          border: border ?? Border.all(
-            color: Colors.white.withOpacity(0.2),
-            width: 1,
+    // Use provided color if available, otherwise default surface color
+    final effectiveColor = color ?? defaultColor;
+
+    return Container(
+      width: width,
+      height: height,
+      margin: margin,
+      decoration: BoxDecoration(
+        color: effectiveColor,
+        borderRadius: BorderRadius.circular(borderRadius),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+            spreadRadius: 0,
           ),
+        ],
+        border: border ?? Border.all(
+          color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05),
+          width: 1,
         ),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(borderRadius),
+        child: Padding(
+          padding: padding ?? EdgeInsets.zero,
           child: child,
         ),
       ),

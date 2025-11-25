@@ -143,6 +143,8 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
   }
 
   Widget _buildHistoryOrderCard(Map<String, dynamic> order) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final status = order['status'] as String? ?? 'pending';
     final totalAmount = (order['total_amount'] as num?)?.toDouble() ?? 0.0;
     final createdAt = DateTime.parse(order['created_at'] as String);
@@ -154,11 +156,11 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardTheme.color ?? colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withOpacity(theme.brightness == Brightness.dark ? 0.3 : 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -176,15 +178,15 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                     children: [
                       Text(
                         'Order #${order['id'].toString().substring(0, 8).toUpperCase()}',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         buyer['full_name'] as String? ?? 'Customer',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey[600],
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ],
@@ -204,15 +206,15 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                   children: [
                     Text(
                       'Total',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.grey[600],
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
                       ),
                     ),
                     Text(
                       '\$${totalAmount.toStringAsFixed(2)}',
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      style: theme.textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.w600,
-                        color: Theme.of(context).colorScheme.primary,
+                        color: colorScheme.primary,
                       ),
                     ),
                   ],
@@ -222,21 +224,21 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                   children: [
                     Text(
                       'Ordered',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.grey[600],
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
                       ),
                     ),
                     Text(
                       DateFormat('MMM dd, h:mm a').format(createdAt),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.grey[500],
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
                       ),
                     ),
                     if (status == 'completed' || status == 'cancelled') ...[
                       const SizedBox(height: 2),
                       Text(
                         '${status == 'completed' ? 'Completed' : 'Cancelled'}: ${DateFormat('MMM dd, h:mm a').format(updatedAt)}',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        style: theme.textTheme.bodySmall?.copyWith(
                           color: status == 'completed' ? Colors.green[600] : Colors.red[600],
                           fontWeight: FontWeight.w500,
                         ),
@@ -254,6 +256,9 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                 decoration: BoxDecoration(
                   color: Colors.orange.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: Colors.orange.withOpacity(0.3),
+                  ),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -267,7 +272,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                     Expanded(
                       child: Text(
                         order['special_instructions'] as String,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        style: theme.textTheme.bodySmall?.copyWith(
                           color: Colors.orange[700],
                         ),
                       ),
@@ -282,13 +287,14 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
   }
 
   Widget _buildOrderItems(List<dynamic> items) {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Items (${items.length})',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: Colors.grey[600],
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -306,12 +312,12 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                 Expanded(
                   child: Text(
                     '$quantity × ${dish['name'] as String? ?? 'Item'}',
-                    style: Theme.of(context).textTheme.bodySmall,
+                    style: theme.textTheme.bodySmall,
                   ),
                 ),
                 Text(
                   '\$${(quantity * unitPrice).toStringAsFixed(2)}',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  style: theme.textTheme.bodySmall?.copyWith(
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -327,21 +333,22 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
     Color backgroundColor;
     Color textColor;
     String displayText;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     switch (status) {
       case 'completed':
-        backgroundColor = Colors.green.withOpacity(0.1);
-        textColor = Colors.green;
+        backgroundColor = Colors.green.withOpacity(isDark ? 0.2 : 0.1);
+        textColor = isDark ? Colors.green[300]! : Colors.green;
         displayText = 'Completed';
         break;
       case 'cancelled':
-        backgroundColor = Colors.red.withOpacity(0.1);
-        textColor = Colors.red;
+        backgroundColor = Colors.red.withOpacity(isDark ? 0.2 : 0.1);
+        textColor = isDark ? Colors.red[300]! : Colors.red;
         displayText = 'Cancelled';
         break;
       default:
-        backgroundColor = Colors.grey.withOpacity(0.1);
-        textColor = Colors.grey;
+        backgroundColor = Colors.grey.withOpacity(isDark ? 0.2 : 0.1);
+        textColor = isDark ? Colors.grey[300]! : Colors.grey;
         displayText = status;
     }
 
@@ -350,6 +357,10 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: textColor.withOpacity(0.3),
+          width: 1,
+        ),
       ),
       child: Text(
         displayText,

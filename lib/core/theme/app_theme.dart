@@ -22,11 +22,11 @@ class AppTheme {
   static const Color borderGreen = borderColor;
 
   // Glassmorphism tokens
-  static const Color glassWhite = Color(0xCCFFFFFF);
-  static const Color glassWhiteBorder = Color(0x4DFFFFFF);
-  static const Color glassDarkBackground = Color(0x33131F16);
-  static const Color glassDarkBorder = Color(0x33304739);
-  static const double glassBlurSigma = 18.0;
+  static const Color glassWhite = Color(0xFFFFFFFF);
+  static const Color glassWhiteBorder = Color(0x1A000000);
+  static const Color glassDarkBackground = Color(0xFF1F2937);
+  static const Color glassDarkBorder = Color(0x1AFFFFFF);
+  static const double glassBlurSigma = 0.0;
 
   static const double spacing4 = 4.0;
   static const double spacing8 = 8.0;
@@ -140,7 +140,9 @@ class AppTheme {
     colorScheme: ColorScheme.fromSeed(
       seedColor: primaryGreen,
       primary: primaryGreen,
+      onPrimary: Colors.white,
       secondary: secondaryGreen,
+      onSecondary: Colors.white,
       tertiary: surfaceGreen,
       surface: surfaceGreen,
       background: backgroundColor,
@@ -169,7 +171,7 @@ class AppTheme {
     ),
     floatingActionButtonTheme: const FloatingActionButtonThemeData(
       backgroundColor: primaryGreen,
-      foregroundColor: darkText,
+      foregroundColor: Colors.white,
       elevation: 0,
       shape: CircleBorder(),
     ),
@@ -185,7 +187,7 @@ class AppTheme {
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         backgroundColor: primaryGreen,
-        foregroundColor: darkText,
+        foregroundColor: Colors.white,
         elevation: 0,
         minimumSize: const Size(84, 48),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -240,9 +242,14 @@ class AppTheme {
     colorScheme: ColorScheme.fromSeed(
       seedColor: primaryGreen,
       primary: primaryGreen,
-      secondary: secondaryGreen,
+      onPrimary: Colors.white,
+      secondary: const Color(0xFF9CA3AF), // Lighter Grey for visibility
+      onSecondary: darkText,
+      tertiary: const Color(0xFF374151),
       surface: const Color(0xFF1A2821),
+      onSurface: Colors.white,
       background: const Color(0xFF0D1B12),
+      onBackground: Colors.white,
       brightness: Brightness.dark,
     ),
     textTheme: _textTheme.apply(
@@ -266,12 +273,12 @@ class AppTheme {
       backgroundColor: Colors.transparent,
       elevation: 0,
       type: BottomNavigationBarType.fixed,
-      selectedItemColor: primaryGreen,
-      unselectedItemColor: secondaryGreen,
+      selectedItemColor: Colors.white,
+      unselectedItemColor: Color(0xFF9CA3AF),
     ),
     floatingActionButtonTheme: const FloatingActionButtonThemeData(
       backgroundColor: primaryGreen,
-      foregroundColor: darkText,
+      foregroundColor: Colors.white,
       elevation: 0,
       shape: CircleBorder(),
     ),
@@ -283,6 +290,55 @@ class AppTheme {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(radiusLarge),
       ),
+    ),
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: primaryGreen,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        minimumSize: const Size(84, 48),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(radiusSmall),
+        ),
+        textStyle: const TextStyle(
+          fontFamily: 'PlusJakartaSans',
+          fontSize: 16,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.015,
+        ),
+      ),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        foregroundColor: Colors.white,
+        side: const BorderSide(color: Color(0xFF374151), width: 1),
+        elevation: 0,
+        minimumSize: const Size(84, 48),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(radiusSmall),
+        ),
+      ),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: const Color(0xFF1F2937), // Dark Surface
+      hintStyle: const TextStyle(color: Color(0xFF9CA3AF)),
+      labelStyle: const TextStyle(color: Colors.white70),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(radiusSmall),
+        borderSide: const BorderSide(color: Color(0xFF374151), width: 1),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(radiusSmall),
+        borderSide: const BorderSide(color: Color(0xFF374151), width: 1),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(radiusSmall),
+        borderSide: const BorderSide(color: Colors.white, width: 1),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     ),
     extensions: const [GlassmorphismTokens.dark],
   );
@@ -338,30 +394,30 @@ class GlassmorphismTokens extends ThemeExtension<GlassmorphismTokens> {
   });
 
   static const GlassmorphismTokens light = GlassmorphismTokens(
-    background: Color(0xCCFFFFFF),
-    border: Color(0x4DFFFFFF),
+    background: Colors.white,
+    border: Color(0x0D000000),
     shadow: [
       BoxShadow(
-        color: Color(0x1A000000), // Black shadow, low opacity
-        blurRadius: 24,
-        offset: Offset(0, 12),
+        color: Color(0x0D000000), // Soft shadow
+        blurRadius: 12,
+        offset: Offset(0, 4),
       ),
     ],
-    blurSigma: 18,
+    blurSigma: 0,
     borderRadius: 24,
   );
 
   static const GlassmorphismTokens dark = GlassmorphismTokens(
-    background: Color(0xCC1F2937), // Dark background
-    border: Color(0x33FFFFFF),
+    background: Color(0xFF1F2937), // Dark background
+    border: Color(0x1AFFFFFF),
     shadow: [
       BoxShadow(
-        color: Color(0x66000000),
-        blurRadius: 20,
-        offset: Offset(0, 10),
+        color: Color(0x4D000000),
+        blurRadius: 12,
+        offset: Offset(0, 4),
       ),
     ],
-    blurSigma: 18,
+    blurSigma: 0,
     borderRadius: 24,
   );
 

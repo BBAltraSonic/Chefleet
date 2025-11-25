@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../blocs/active_orders_bloc.dart';
+import '../widgets/order_skeleton_item.dart';
 import '../../../core/routes/app_routes.dart';
 
 /// Screen displaying the user's active orders
@@ -23,7 +24,12 @@ class OrdersScreen extends StatelessWidget {
       body: BlocBuilder<ActiveOrdersBloc, ActiveOrdersState>(
         builder: (context, state) {
           if (state.isLoading) {
-            return const Center(child: CircularProgressIndicator());
+            return ListView.separated(
+              padding: const EdgeInsets.all(12),
+              itemCount: 5,
+              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              itemBuilder: (_, __) => const OrderSkeletonItem(),
+            );
           }
           
           if (state.errorMessage != null) {

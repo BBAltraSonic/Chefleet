@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../blocs/order_management_bloc.dart';
 import 'order_card.dart';
+import 'order_queue_skeleton.dart';
 
 class OrderQueueWidget extends StatelessWidget {
   final Function(String) onOrderSelected;
@@ -123,9 +124,7 @@ class OrderQueueWidget extends StatelessWidget {
           child: BlocBuilder<OrderManagementBloc, OrderManagementState>(
             builder: (context, state) {
               if (state.isLoading) {
-                return const Center(
-                  child: CircularProgressIndicator(),
-                );
+                return const OrderQueueSkeleton();
               }
 
               if (state.isError) {

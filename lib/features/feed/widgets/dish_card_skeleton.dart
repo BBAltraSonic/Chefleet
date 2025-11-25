@@ -1,56 +1,37 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../shared/widgets/skeleton.dart';
 
-class DishCardSkeleton extends StatefulWidget {
+class DishCardSkeleton extends StatelessWidget {
   const DishCardSkeleton({super.key});
 
   @override
-  State<DishCardSkeleton> createState() => _DishCardSkeletonState();
-}
-
-class _DishCardSkeletonState extends State<DishCardSkeleton>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _animation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1500),
-    )..repeat(reverse: true);
-    _animation = Tween<double>(begin: 0.3, end: 0.6).animate(_controller);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return FadeTransition(
-      opacity: _animation,
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final baseColor = isDark ? Colors.grey[850] : Colors.grey[200];
+    final highlightColor = isDark ? Colors.grey[800] : Colors.grey[100];
+
+    return Shimmer(
+      baseColor: baseColor,
+      highlightColor: highlightColor,
       child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
         decoration: BoxDecoration(
-          color: AppTheme.surfaceGreen,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-          border: Border.all(color: AppTheme.borderGreen.withOpacity(0.3)),
+          border: Border.all(
+            color: Theme.of(context).dividerColor.withOpacity(0.1),
+          ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Image placeholder
-            Container(
+            Skeleton(
               height: 160,
-              decoration: const BoxDecoration(
-                color: Colors.black12,
-                borderRadius: BorderRadius.vertical(
-                  top: Radius.circular(AppTheme.radiusLarge),
-                ),
+              width: double.infinity,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(AppTheme.radiusLarge),
               ),
             ),
             
@@ -61,45 +42,17 @@ class _DishCardSkeletonState extends State<DishCardSkeleton>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Vendor name placeholder
-                  Container(
-                    width: 120,
-                    height: 12,
-                    decoration: BoxDecoration(
-                      color: Colors.black12,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
+                  const Skeleton(width: 120, height: 12),
                   const SizedBox(height: 8),
 
                   // Dish name placeholder
-                  Container(
-                    width: 200,
-                    height: 20,
-                    decoration: BoxDecoration(
-                      color: Colors.black12,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
+                  const Skeleton(width: 200, height: 20),
                   const SizedBox(height: 8),
 
                   // Description lines
-                  Container(
-                    width: double.infinity,
-                    height: 12,
-                    decoration: BoxDecoration(
-                      color: Colors.black12,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
+                  const Skeleton(width: double.infinity, height: 12),
                   const SizedBox(height: 4),
-                  Container(
-                    width: 180,
-                    height: 12,
-                    decoration: BoxDecoration(
-                      color: Colors.black12,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
+                  const Skeleton(width: 180, height: 12),
                   const SizedBox(height: 16),
 
                   // Bottom row
@@ -107,34 +60,13 @@ class _DishCardSkeletonState extends State<DishCardSkeleton>
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       // Price
-                      Container(
-                        width: 60,
-                        height: 24,
-                        decoration: BoxDecoration(
-                          color: Colors.black12,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ),
+                      const Skeleton(width: 60, height: 24),
                       // Badges
                       Row(
                         children: [
-                          Container(
-                            width: 60,
-                            height: 24,
-                            decoration: BoxDecoration(
-                              color: Colors.black12,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                          ),
+                          const Skeleton(width: 60, height: 24),
                           const SizedBox(width: 8),
-                          Container(
-                            width: 60,
-                            height: 24,
-                            decoration: BoxDecoration(
-                              color: Colors.black12,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                          ),
+                          const Skeleton(width: 60, height: 24),
                         ],
                       ),
                     ],

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'glass_container.dart';
+import 'shimmer.dart';
 
 class LoadingStateWidget extends StatelessWidget {
   const LoadingStateWidget({
@@ -22,17 +23,12 @@ class LoadingStateWidget extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               if (showProgress) ...[
-                const CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
+                const CircularProgressIndicator(),
                 const SizedBox(height: 16),
               ],
               Text(
                 message,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                ),
+                style: Theme.of(context).textTheme.bodyLarge,
                 textAlign: TextAlign.center,
               ),
             ],
@@ -76,18 +72,15 @@ class ErrorStateWidget extends StatelessWidget {
               Text(
                 'Error',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: Colors.white,
                   fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.error,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
                 error,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 14,
-                ),
+                style: Theme.of(context).textTheme.bodyMedium,
               ),
               if (onRetry != null) ...[
                 const SizedBox(height: 16),
@@ -134,17 +127,14 @@ class EmptyStateWidget extends StatelessWidget {
                 Icon(
                   icon,
                   size: 48,
-                  color: Colors.grey[400],
+                  color: Theme.of(context).disabledColor,
                 ),
                 const SizedBox(height: 16),
               ],
               Text(
                 message,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 16,
-                ),
+                style: Theme.of(context).textTheme.bodyMedium,
               ),
               if (action != null) ...[
                 const SizedBox(height: 16),
@@ -221,13 +211,9 @@ class SkeletonLoader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 800),
-      curve: Curves.easeInOut,
-      decoration: BoxDecoration(
-        color: baseColor ?? Colors.grey[300],
-        borderRadius: BorderRadius.circular(4),
-      ),
+    return Shimmer(
+      baseColor: baseColor,
+      highlightColor: highlightColor,
       child: child,
     );
   }
@@ -253,26 +239,17 @@ class OrderLoadingWidget extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
+                const CircularProgressIndicator(),
                 const SizedBox(height: 16),
                 Text(
                   message,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
+                  style: Theme.of(context).textTheme.titleMedium,
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
-                const Text(
+                Text(
                   'Please wait...',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 12,
-                  ),
+                  style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
             ),
