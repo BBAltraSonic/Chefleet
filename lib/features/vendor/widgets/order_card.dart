@@ -31,7 +31,7 @@ class OrderCard extends StatelessWidget {
     final colorScheme = theme.colorScheme;
     final status = order['status'] as String? ?? 'pending';
     final totalAmount = (order['total_amount'] as num?)?.toDouble() ?? 0.0;
-    final createdAt = DateTime.parse(order['created_at'] as String);
+    final createdAt = DateTime.tryParse(order['created_at'] as String? ?? '') ?? DateTime.now();
     final buyer = order['buyer'] as Map<String, dynamic>? ?? {};
     final items = order['items'] as List<dynamic>? ?? [];
 
@@ -142,7 +142,7 @@ class OrderCard extends StatelessWidget {
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(
-                        order['special_instructions'] as String,
+                        order['special_instructions'] as String? ?? '',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: Colors.orange[700],
                         ),

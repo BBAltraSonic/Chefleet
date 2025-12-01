@@ -1,4 +1,4 @@
-﻿
+
 # Phase 1 — Architecture & Project Foundations
 
 Goal: create the project skeleton, infra accounts, shared conventions and the canonical Supabase schema + RLS + Edge function surface. (Outputs: infra projects, git repos, base schema/migrations, CI pipelines, environment config.)
@@ -7,13 +7,13 @@ Goal: create the project skeleton, infra accounts, shared conventions and the ca
 
 -   Sub-tasks
 
-    -   [ ] Create org accounts: Supabase (dev/staging/prod), Firebase (analytics + FCM), Google Cloud account (Maps billing & Routes API), Sentry, GitHub (or your Git provider), App Store & Play Console.
+    -   [x] Create org accounts: Supabase (dev/staging/prod), Firebase (analytics + FCM), Google Cloud account (Maps billing & Routes API), Sentry, GitHub (or your Git provider), App Store & Play Console.
 
-    -   [ ] Create Git repositories: `chefleet-app` (Flutter mono-repo), `chefleet-edge` (Edge functions), `chefleet-admin` (admin web), `chefleet-infra` (infra as code / migrations).
+    -   [x] Create Git repositories: `chefleet-app` (Flutter mono-repo), `chefleet-edge` (Edge functions), `chefleet-admin` (admin web), `chefleet-infra` (infra as code / migrations).
 
     -   [ ] Configure CI secrets/Env variables in CI and in Supabase Edge (API keys stored in secrets).
 
-    -   [ ] Add team access + role-based permissions.
+    -   [x] Add team access + role-based permissions.
 
 -   Owner: DevOps / Project Lead
 
@@ -24,13 +24,13 @@ Goal: create the project skeleton, infra accounts, shared conventions and the ca
 
 -   Sub-tasks
 
-    -   [ ] Define branch strategy, PR rules, commit formatting (conventional commits).
+    -   [x] Define branch strategy, PR rules, commit formatting (conventional commits).
 
-    -   [ ] Pre-commit hooks: dartfmt, eslint (Edge), SQL lint.
+    -   [x] Pre-commit hooks: dartfmt, eslint (Edge), SQL lint.
 
-    -   [ ] Local dev docs: how to run Flutter app, how to run Edge functions, how to run migrations, how to spin up a local supabase emulator (if used).
+    -   [x] Local dev docs: how to run Flutter app, how to run Edge functions, how to run migrations, how to spin up a local supabase emulator (if used).
 
-    -   [ ] Dependency policy (pin versions) and release checklist.
+    -   [x] Dependency policy (pin versions) and release checklist.
 
 -   Owner: Tech Lead
 
@@ -126,9 +126,9 @@ Goal: finalize UX, motion specs, component library, and produce Figma assets for
 
 -   Sub-tasks
 
-    -   [x] Complete Buyer & Vendor user flows: onboarding, map/feed, dish detail, checkout, active order, chat, vendor onboarding, vendor menu management.
+    -   [ ] Complete Buyer & Vendor user flows: onboarding, map/feed, dish detail, checkout, active order, chat, vendor onboarding, vendor menu management.
 
-    -   [x] Define admin flows: search, moderation, refund/dispute.
+    -   [ ] Define admin flows: search, moderation, refund/dispute.
 
 -   Owner: Product / UX
 
@@ -139,11 +139,11 @@ Goal: finalize UX, motion specs, component library, and produce Figma assets for
 
 -   Sub-tasks
 
-    -   [x] Design Map hero (shrink & fade rules), feed grid, dish card, bottom nav (liquid glass), center pulsing FAB, profile overlay.
+    -   [ ] Design Map hero (shrink & fade rules), feed grid, dish card, bottom nav (liquid glass), center pulsing FAB, profile overlay.
 
-    -   [x] Create annotated motion specs: map 60% → 20% shrink, AnimatedOpacity fade, map→feed debounce 600ms, FAB pulsing when active order exists.
+    -   [ ] Create annotated motion specs: map 60% → 20% shrink, AnimatedOpacity fade, map→feed debounce 600ms, FAB pulsing when active order exists.
 
-    -   [x] Vendor dashboard UI: order queue, order card states, quick replies.
+    -   [ ] Vendor dashboard UI: order queue, order card states, quick replies.
 
 -   Owner: UI Designer
 
@@ -222,36 +222,10 @@ Goal: implement buyer app flows: onboarding, map/feed, dish detail, order creati
 
     -   [x] Implement comprehensive testing for auth onboarding (unit, widget, integration tests).
 
-    -   [x] Debug and resolve user signup issues with audit triggers and RLS policies.
-
-    -   [x] Implement enhanced error handling and manual profile creation workarounds.
-
 -   Owner: Frontend / Backend
 
--   Deliverable: Auth flow integrated; user rows created in DB; comprehensive test coverage; robust error handling for database audit trigger issues.
-
-### Recent Auth Debugging Updates (Phase 3.2 Completion)
-
-**🔧 Debugging Work Completed:**
-- **Database Issue Resolution**: Identified and resolved audit trigger conflicts causing 500 errors during user signup
-- **Enhanced Error Handling**: Implemented comprehensive debugging logging in `auth_bloc.dart` with detailed signup process tracking
-- **Manual Profile Creation**: Added fallback mechanism to create user profiles manually when database triggers fail
-- **Compilation Fixes**: Resolved multiple build errors in `cache_service.dart` and `quadtree.dart`
-- **Google Maps Integration**: Successfully configured API key and map functionality
-
-**📱 Current App Status:**
-- ✅ Flutter app running successfully on Android emulator
-- ✅ Supabase authentication working with enhanced error handling
-- ✅ BLoC state management fully operational
-- ✅ Debug logging system active for troubleshooting
-- ✅ Google Maps API properly configured and functional
-
-**🛠️ Technical Improvements:**
-- Enhanced auth flow with intelligent error detection and user-friendly messages
-- Comprehensive debug output for signup process troubleshooting
-- Manual profile creation workaround for database audit trigger issues
-- Robust error handling that maintains user experience during database issues
-
+-   Deliverable: Auth flow integrated; user rows created in DB; comprehensive test coverage.
+    
 
 ## Task 3.3 — Map + Feed implementation
 
@@ -259,13 +233,13 @@ Goal: implement buyer app flows: onboarding, map/feed, dish detail, order creati
 
     -   [x] Integrate Google Maps SDK (Android & iOS) + Routes API key config.
 
-    -   [x] Implement pin clustering, map hero behavior (animated shrink/fade), and map bounds→feed query debounce (600ms).
+    -   [ ] Implement pin clustering, map hero behavior (animated shrink/fade), and map bounds→feed query debounce (600ms).
 
-    -   [x] Implement feed as grid of dish cards (only `dishes.available = TRUE`).
+    -   [ ] Implement feed as grid of dish cards (only `dishes.available = TRUE`).
 
-    -   [x] Implement "pin → mini card" interaction.
+    -   [ ] Implement "pin → mini card" interaction.
 
-    -   [x] Cache last feed & vendor list locally.
+    -   [ ] Cache last feed & vendor list locally.
 
 -   Owner: Frontend
 
@@ -276,13 +250,13 @@ Goal: implement buyer app flows: onboarding, map/feed, dish detail, order creati
 
 -   Sub-tasks
 
-    -   [x] Dish detail screen with quantity, pickup time selector (time windows validated by vendor `open_hours_json`).
+    -   [ ] Dish detail screen with quantity, pickup time selector (time windows validated by vendor `open_hours_json`).
 
-    -   [x] On "Place Order", call `create_order` Edge function with idempotency_key.
+    -   [ ] On "Place Order", call `create_order` Edge function with idempotency_key.
 
     -   [x] Edge function validates dish availability, calculates total (server-side), generates pickup_code, inserts `orders` + `order_items`, notifies vendor via realtime and push.
 
-    -   [x] Frontend receives order response and shows Active Order modal.
+    -   [ ] Frontend receives order response and shows Active Order modal.
 
 -   Owner: Frontend / Backend
 
@@ -293,11 +267,11 @@ Goal: implement buyer app flows: onboarding, map/feed, dish detail, order creati
 
 -   Sub-tasks
 
-    -   [x] FAB pulses if active order exists (any non-final state).
+    -   [ ] FAB pulses if active order exists (any non-final state).
 
-    -   [x] Tapping FAB opens Active Order modal: status timeline, pickup code (first-time visibility rules), vendor ETA, map route overlay.
+    -   [ ] Tapping FAB opens Active Order modal: status timeline, pickup code (first-time visibility rules), vendor ETA, map route overlay.
 
-    -   [x] Add "Contact vendor" button opening in-app chat.
+    -   [ ] Add "Contact vendor" button opening in-app chat.
 
 -   Owner: Frontend
 
@@ -308,11 +282,11 @@ Goal: implement buyer app flows: onboarding, map/feed, dish detail, order creati
 
 -   Sub-tasks
 
-    -   [x] Chat messages use `messages` table; subscribe to `messages:order_id` Realtime channel.
+    -   [ ] Chat messages use `messages` table; subscribe to `messages:order_id` Realtime channel.
 
-    -   [x] Implement optimistic UI (local message marked `pending`), retry on failure, show sent/delivered/failed states.
+    -   [ ] Implement optimistic UI (local message marked `pending`), retry on failure, show sent/delivered/failed states.
 
-    -   [x] Enforce client-side rate limiting UI warning (but server will enforce hard limit).
+    -   [ ] Enforce client-side rate limiting UI warning (but server will enforce hard limit).
 
 -   Owner: Frontend / Backend
 
@@ -340,11 +314,11 @@ Goal: vendor onboarding, menu and order management, vendor chat and quick replie
 
 -   Sub-tasks
 
-    -   [x] Onboarding flow: create vendor record linked to `users_public.id`.
+    -   [ ] Onboarding flow: create vendor record linked to `users_public.id`.
 
-    -   [x] Add drop-pin location selector (lat/lng) and address_text, upload business logo and first dish image.
+    -   [ ] Add drop-pin location selector (lat/lng) and address_text, upload business logo and first dish image.
 
-    -   [x] Validate vendor details (phone verified); create `vendors` row.
+    -   [ ] Validate vendor details (phone verified); create `vendors` row.
 
 -   Owner: Frontend / Backend
 
@@ -355,11 +329,11 @@ Goal: vendor onboarding, menu and order management, vendor chat and quick replie
 
 -   Sub-tasks
 
-    -   [x] CRUD for dishes: add name, description, price_cents, image_url (upload via signed URL), prep_time_minutes, tags, availability toggle.
+    -   [ ] CRUD for dishes: add name, description, price_cents, image_url (upload via signed URL), prep_time_minutes, tags, availability toggle.
 
-    -   [x] Each change updates `dishes` table; RLS ensures vendor only modifies own dishes.
+    -   [ ] Each change updates `dishes` table; RLS ensures vendor only modifies own dishes.
 
-    -   [x] Realtime propagation to buyers (dishes become available/unavailable instantly).
+    -   [ ] Realtime propagation to buyers (dishes become available/unavailable instantly).
 
 -   Owner: Frontend / Backend
 
@@ -370,13 +344,13 @@ Goal: vendor onboarding, menu and order management, vendor chat and quick replie
 
 -   Sub-tasks
 
-    -   [x] Vendor subscribes to `orders:vendor_id` realtime channel.
+    -   [ ] Vendor subscribes to `orders:vendor_id` realtime channel.
 
-    -   [x] Order card with state machine UI: Pending → Accept → Preparing → Ready → Completed. Provide accept/cancel actions (with confirmations).
+    -   [ ] Order card with state machine UI: Pending → Accept → Preparing → Ready → Completed. Provide accept/cancel actions (with confirmations).
 
-    -   [x] Implement "Ready" quick action that triggers push to buyer and moves order status via Edge function.
+    -   [ ] Implement "Ready" quick action that triggers push to buyer and moves order status via Edge function.
 
-    -   [x] Include pickup_code reveal and verification flow: vendor scans or enters pickup code to mark completed.
+    -   [ ] Include pickup_code reveal and verification flow: vendor scans or enters pickup code to mark completed.
 
 -   Owner: Frontend / Backend
 
@@ -387,11 +361,11 @@ Goal: vendor onboarding, menu and order management, vendor chat and quick replie
 
 -   Sub-tasks
 
-    -   [x] Scope chat to `order_id`; show sender role badges.
+    -   [ ] Scope chat to `order_id`; show sender role badges.
 
-    -   [x] Add quick replies and canned messages (configurable).
+    -   [ ] Add quick replies and canned messages (configurable).
 
-    -   [x] Show unread badges and last message preview on order cards.
+    -   [ ] Show unread badges and last message preview on order cards.
 
 -   Owner: Frontend
 
@@ -402,9 +376,9 @@ Goal: vendor onboarding, menu and order management, vendor chat and quick replie
 
 -   Sub-tasks
 
-    -   [x] Use an Edge function to return signed PUT URLs to `vendor_media` bucket.
+    -   [ ] Use an Edge function to return signed PUT URLs to `vendor_media` bucket.
 
-    -   [x] Validate file types & size server-side or via storage rules.
+    -   [ ] Validate file types & size server-side or via storage rules.
 
     -   [ ] Generate thumbnails on upload trigger (Edge function or scheduled job).
 

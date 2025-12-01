@@ -75,7 +75,7 @@ class OrderManagementBloc
           .eq('owner_id', currentUser.id)
           .single();
 
-      final vendorId = vendorResponse['id'] as String;
+      final vendorId = vendorResponse['id'] as String? ?? '';
 
       // Build query with optional status filter
       var query = _supabaseClient

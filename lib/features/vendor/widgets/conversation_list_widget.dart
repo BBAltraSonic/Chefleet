@@ -45,7 +45,7 @@ class ConversationListWidget extends StatelessWidget {
         final conversation = conversations[index];
         return ConversationTile(
           conversation: conversation,
-          onTap: () => onConversationSelected(conversation['id'] as String),
+          onTap: () => onConversationSelected(conversation['id'] as String? ?? ''),
         );
       },
     );

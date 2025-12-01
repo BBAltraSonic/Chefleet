@@ -196,7 +196,7 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
   }
 
   Widget _buildStatusSection(BuildContext context) {
-    final status = _order!['status'] as String;
+    final status = _order!['status'] as String? ?? 'pending';
     final statusColor = Color(
       int.parse(
         OrderManagementState.getStatusColor(status).substring(1),
@@ -604,7 +604,7 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
   }
 
   Widget _buildActionButtons(BuildContext context) {
-    final status = _order!['status'] as String;
+    final status = _order!['status'] as String? ?? 'pending';
 
     return Container(
       padding: const EdgeInsets.all(16),

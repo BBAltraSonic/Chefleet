@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
+import '../../../core/models/opening_hours_model.dart';
+import '../../../core/services/opening_hours_service.dart';
 
 part 'vendor_model.g.dart';
 
@@ -7,10 +9,10 @@ part 'vendor_model.g.dart';
 class Vendor extends Equatable {
   final String? id;
   final String? ownerId;
-  final String businessName;
+  final String? businessName;
   final String? description;
   final String? cuisineType;
-  final String phone;
+  final String? phone;
   final String? businessEmail;
   final String? address;
   final String? addressText;
@@ -18,15 +20,41 @@ class Vendor extends Equatable {
   final double? longitude;
   final String? logoUrl;
   final String? licenseUrl;
-  final String status;
+  final String? status;
   final double? rating;
   final int? reviewCount;
   final int? dishCount;
-  final bool isActive;
+  final bool? isActive;
   final Map<String, dynamic>? openHoursJson;
   final Map<String, dynamic>? metadata;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+
+  OpeningHours? get openingHours {
+    if (openHoursJson == null) return null;
+
+    try {
+      return OpeningHours.fromJson(openHoursJson!);
+    } catch (e) {
+      try {
+        return OpeningHours.fromLegacyJson(openHoursJson!);
+      } catch (e2) {
+        return null;
+      }
+    }
+  }
+
+  String get openingHoursDisplay {
+    final hours = openingHours;
+    if (hours == null) return 'Hours not set';
+    return OpeningHoursService.getOperatingHoursDisplay(hours);
+  }
+
+  bool get isOpenNow {
+    final hours = openingHours;
+    if (hours == null) return false;
+    return hours.isOpenToday;
+  }
 
   const Vendor({
     this.id,
@@ -260,6 +288,7 @@ enum VendorOnboardingStep {
   businessInfo,
   location,
   documents,
+  openingHours,
   review,
 }
 

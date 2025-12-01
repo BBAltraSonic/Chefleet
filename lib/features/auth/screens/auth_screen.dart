@@ -5,6 +5,9 @@ import '../blocs/auth_bloc.dart';
 import '../../../shared/widgets/glass_container.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/routes/app_routes.dart';
+import '../../../core/blocs/role_bloc.dart';
+import '../../../core/blocs/role_event.dart';
+import '../../../core/models/user_role.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -23,6 +26,8 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
   final _signupNameController = TextEditingController();
   final _signupEmailController = TextEditingController();
   final _signupPasswordController = TextEditingController();
+  
+  String? _selectedSignupRole;
 
   @override
   void initState() {
@@ -116,7 +121,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                         ),
                         const SizedBox(height: 24),
                         SizedBox(
-                          height: 300,
+                          height: 400,
                           child: TabBarView(
                             controller: _tabController,
                             children: [
@@ -286,13 +291,42 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                 return null;
               },
             ),
+            const SizedBox(height: 16),
+            Text(
+              'What brings you to Chefleet?',
+              style: Theme.of(context).textTheme.labelLarge,
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: ChoiceChip(
+                    label: const Text('Order Food'),
+                    selected: _selectedSignupRole == 'customer',
+                    onSelected: (selected) {
+                      setState(() => _selectedSignupRole = selected ? 'customer' : null);
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ChoiceChip(
+                    label: const Text('Sell Food'),
+                    selected: _selectedSignupRole == 'vendor',
+                    onSelected: (selected) {
+                      setState(() => _selectedSignupRole = selected ? 'vendor' : null);
+                    },
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 24),
             BlocBuilder<AuthBloc, AuthState>(
               builder: (context, state) {
                 return SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: state.isLoading ? null : () => _handleSignup(context),
+                    onPressed: (state.isLoading || _selectedSignupRole == null) ? null : () => _handleSignup(context),
                     child: state.isLoading
                         ? const SizedBox(
                             height: 20,
@@ -322,12 +356,13 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
   }
 
   void _handleSignup(BuildContext context) {
-    if (_signupFormKey.currentState!.validate()) {
+    if (_signupFormKey.currentState!.validate() && _selectedSignupRole != null) {
       context.read<AuthBloc>().add(
             AuthSignupRequested(
               _signupEmailController.text.trim(),
               _signupPasswordController.text,
               _signupNameController.text.trim(),
+              initialRole: _selectedSignupRole,
             ),
           );
     }

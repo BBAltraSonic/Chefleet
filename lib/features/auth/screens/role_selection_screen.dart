@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/routes/app_routes.dart';
 import '../../../core/models/user_role.dart';
@@ -19,6 +20,27 @@ class RoleSelectionScreen extends StatefulWidget {
 class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
   UserRole? _selectedRole;
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadInitialRole();
+  }
+
+  Future<void> _loadInitialRole() async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      final initialRole = user?.userMetadata?['initial_role'] as String?;
+      
+      if (initialRole != null && mounted) {
+        setState(() {
+          _selectedRole = UserRole.tryFromString(initialRole);
+        });
+      }
+    } catch (e) {
+      print('Error loading initial role: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -306,7 +328,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
     try {
       // Set the selected role in RoleBloc
       context.read<RoleBloc>().add(
-        RoleSwitchRequested(newRole: _selectedRole!, skipConfirmation: true),
+        InitialRoleSelected(_selectedRole!),
       );
 
       // Navigate based on role

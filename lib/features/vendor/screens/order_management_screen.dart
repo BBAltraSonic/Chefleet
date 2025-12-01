@@ -332,7 +332,7 @@ class _OrderManagementScreenState extends State<OrderManagementScreen>
     final customer = order['customer'] as Map<String, dynamic>?;
     final customerName = customer?['name'] as String? ?? 'Unknown Customer';
     final totalAmount = (order['total_amount'] as num?)?.toDouble() ?? 0.0;
-    final status = order['status'] as String;
+    final status = order['status'] as String? ?? 'pending';
     final createdAt = DateTime.tryParse(order['created_at'] ?? '') ?? DateTime.now();
     final pickupTime = DateTime.tryParse(order['pickup_time'] ?? '');
 
@@ -389,7 +389,7 @@ class _OrderManagementScreenState extends State<OrderManagementScreen>
           ],
         ),
         onTap: () {
-          _onOrderSelected(order['id'] as String);
+          _onOrderSelected(order['id'] as String? ?? '');
           _tabController.animateTo(0); // Switch to queue tab
         },
       ),

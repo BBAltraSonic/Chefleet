@@ -241,7 +241,7 @@ class QuickReplyWidget extends StatelessWidget {
               onEditQuickReply(quickReply);
               break;
             case 'toggle':
-              onToggleQuickReply(quickReply['id'] as String, !isActive);
+              onToggleQuickReply(quickReply['id'] as String? ?? '', !isActive);
               break;
             case 'delete':
               _showDeleteConfirmation(context, quickReply);
@@ -304,7 +304,7 @@ class QuickReplyWidget extends StatelessWidget {
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
-              onDeleteQuickReply(quickReply['id'] as String);
+              onDeleteQuickReply(quickReply['id'] as String? ?? '');
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('Delete'),

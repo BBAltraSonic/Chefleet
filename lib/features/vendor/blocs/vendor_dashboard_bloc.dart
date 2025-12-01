@@ -2,15 +2,21 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../services/vendor_orders_service.dart';
+
 part 'vendor_dashboard_event.dart';
 part 'vendor_dashboard_state.dart';
 
 class VendorDashboardBloc extends Bloc<VendorDashboardEvent, VendorDashboardState> {
   final SupabaseClient _supabaseClient;
+  final VendorOrdersService _ordersService;
   RealtimeChannel? _ordersChannel;
 
-  VendorDashboardBloc({required SupabaseClient supabaseClient})
-      : _supabaseClient = supabaseClient,
+  VendorDashboardBloc({
+    required SupabaseClient supabaseClient,
+    VendorOrdersService? ordersService,
+  })  : _supabaseClient = supabaseClient,
+        _ordersService = ordersService ?? VendorOrdersService(supabaseClient),
         super(const VendorDashboardState()) {
     on<LoadDashboardData>(_onLoadDashboardData);
     on<LoadOrders>(_onLoadOrders);
@@ -46,12 +52,24 @@ class VendorDashboardBloc extends Bloc<VendorDashboardEvent, VendorDashboardStat
         return;
       }
 
-      // Get vendor info
-      final vendorResponse = await _supabaseClient
+      // Get vendor info (some accounts may have multiple vendor rows; take the latest)
+      final vendorRowsResponse = await _supabaseClient
           .from('vendors')
           .select('*')
           .eq('owner_id', currentUser.id)
-          .single();
+          .order('created_at', ascending: false);
+
+      final vendorRows = List<Map<String, dynamic>>.from(vendorRowsResponse ?? const []);
+
+      if (vendorRows.isEmpty) {
+        emit(state.copyWith(
+          isLoading: false,
+          errorMessage: 'No vendor profile found for this account',
+        ));
+        return;
+      }
+
+      final vendorResponse = Map<String, dynamic>.from(vendorRows.first as Map);
 
       // Load orders and stats in parallel
       await Future.wait([
@@ -77,37 +95,9 @@ class VendorDashboardBloc extends Bloc<VendorDashboardEvent, VendorDashboardStat
     Emitter<VendorDashboardState> emit,
   ) async {
     try {
-      final response = await _supabaseClient
-          .from('orders')
-          .select('''
-            id,
-            status,
-            total_amount,
-            pickup_code,
-            created_at,
-            updated_at,
-            special_instructions,
-            buyer:users_public!orders_buyer_id_fkey (
-              id,
-              full_name,
-              phone
-            ),
-            items:order_items(
-              id,
-              quantity,
-              unit_price,
-              dishes(
-                id,
-                name,
-                description
-              )
-            )
-          ''')
-          .eq('vendor_id', event.vendorId)
-          .order('created_at', ascending: false)
-          .limit(50);
-
-      final orders = List<Map<String, dynamic>>.from(response);
+      final orders = await _ordersService.fetchRecentOrders(
+        vendorId: event.vendorId,
+      );
 
       // Filter orders based on status filter
       final filteredOrders = event.statusFilter != null
@@ -115,8 +105,10 @@ class VendorDashboardBloc extends Bloc<VendorDashboardEvent, VendorDashboardStat
           : orders;
 
       emit(state.copyWith(
-        orders: filteredOrders,
+        orders: orders,
         filteredOrders: filteredOrders,
+        statusFilter: event.statusFilter,
+        errorMessage: null,
       ));
     } catch (e) {
       emit(state.copyWith(
@@ -269,7 +261,8 @@ class VendorDashboardBloc extends Bloc<VendorDashboardEvent, VendorDashboardStat
           schema: 'public',
           table: 'orders',
           callback: (payload) {
-            if (payload.newRecord != null && payload.newRecord!['vendor_id'] == event.vendorId) {
+            final newRecord = payload.newRecord;
+            if (newRecord['vendor_id'] == event.vendorId) {
               // Refresh orders when they're updated
               add(LoadOrders(vendorId: event.vendorId, statusFilter: state.statusFilter));
               add(LoadOrderStats(vendorId: event.vendorId));
@@ -281,7 +274,8 @@ class VendorDashboardBloc extends Bloc<VendorDashboardEvent, VendorDashboardStat
           schema: 'public',
           table: 'orders',
           callback: (payload) {
-            if (payload.newRecord != null && payload.newRecord!['vendor_id'] == event.vendorId) {
+            final newRecord = payload.newRecord;
+            if (newRecord['vendor_id'] == event.vendorId) {
               // Refresh orders when new ones are created
               add(LoadOrders(vendorId: event.vendorId, statusFilter: state.statusFilter));
               add(LoadOrderStats(vendorId: event.vendorId));

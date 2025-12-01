@@ -40,12 +40,12 @@ class Order extends Equatable {
 
   factory Order.fromJson(Map<String, dynamic> json) {
     return Order(
-      id: json['id'] as String,
-      buyerId: json['buyer_id'] as String,
-      vendorId: json['vendor_id'] as String,
-      totalAmount: (json['total_amount'] as num).toDouble(),
-      status: json['status'] as String,
-      pickupCode: json['pickup_code'] as String,
+      id: json['id'] as String? ?? '',
+      buyerId: json['buyer_id'] as String? ?? '',
+      vendorId: json['vendor_id'] as String? ?? '',
+      totalAmount: (json['total_amount'] as num?)?.toDouble() ?? 0.0,
+      status: json['status'] as String? ?? 'pending',
+      pickupCode: json['pickup_code'] as String? ?? '',
       guestUserId: json['guest_user_id'] as String?,
       notes: json['notes'] as String?,
       createdAt: json['created_at'] != null 

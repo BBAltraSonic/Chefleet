@@ -313,7 +313,7 @@ class _DishEditScreenState extends State<DishEditScreen> {
           .eq('owner_id', user.id)
           .single();
 
-      final vendorId = vendorResponse['id'] as String;
+      final vendorId = vendorResponse['id'] as String? ?? '';
       final fileExt = imageFile.path.split('.').last;
       final fileName = '${vendorId}_${DateTime.now().millisecondsSinceEpoch}.$fileExt';
 

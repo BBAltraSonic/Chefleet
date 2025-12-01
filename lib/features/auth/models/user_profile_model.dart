@@ -24,19 +24,21 @@ class UserProfile extends Equatable {
   );
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
-    // Parse available roles from array of strings
-    final availableRolesList = json['available_roles'] as List<dynamic>?;
-    final availableRoles = availableRolesList != null
-        ? (availableRolesList.cast<String>()).toUserRoles()
-        : {UserRole.customer};
-
-    // Parse active role from string
-    final activeRoleString = json['active_role'] as String?;
+    // Parse active role from 'role' column
+    final activeRoleString = json['role'] as String?;
     final activeRole = UserRole.tryFromString(activeRoleString) ?? UserRole.customer;
 
+    // Parse available roles - for now derive from active role and vendor_profile_id
+    final Set<UserRole> availableRoles = {UserRole.customer};
+    if (json['vendor_profile_id'] != null || activeRole == UserRole.vendor) {
+      availableRoles.add(UserRole.vendor);
+    }
+
     return UserProfile(
-      id: json['id'] as String,
-      name: json['name'] as String,
+      // Use user_id as the ID to match auth ID, fallback to id if user_id missing
+      id: (json['user_id'] ?? json['id']) as String? ?? '',
+      // Map full_name to name
+      name: (json['full_name'] ?? json['name']) as String? ?? '',
       avatarUrl: json['avatar_url'] as String?,
       address: json['address'] != null
           ? UserAddress.fromJson(json['address'] as Map<String, dynamic>)
@@ -152,12 +154,12 @@ class UserAddress extends Equatable {
 
   factory UserAddress.fromJson(Map<String, dynamic> json) {
     return UserAddress(
-      streetAddress: json['street_address'] as String,
-      city: json['city'] as String,
-      state: json['state'] as String,
-      postalCode: json['postal_code'] as String,
-      latitude: (json['latitude'] as num).toDouble(),
-      longitude: (json['longitude'] as num).toDouble(),
+      streetAddress: json['street_address'] as String? ?? '',
+      city: json['city'] as String? ?? '',
+      state: json['state'] as String? ?? '',
+      postalCode: json['postal_code'] as String? ?? '',
+      latitude: (json['latitude'] as num?)?.toDouble() ?? 0.0,
+      longitude: (json['longitude'] as num?)?.toDouble() ?? 0.0,
     );
   }
 

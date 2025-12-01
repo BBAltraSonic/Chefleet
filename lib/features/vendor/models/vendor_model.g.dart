@@ -9,10 +9,10 @@ part of 'vendor_model.dart';
 Vendor _$VendorFromJson(Map<String, dynamic> json) => Vendor(
   id: json['id'] as String?,
   ownerId: json['ownerId'] as String?,
-  businessName: json['businessName'] as String,
+  businessName: json['businessName'] as String?,
   description: json['description'] as String?,
   cuisineType: json['cuisineType'] as String?,
-  phone: json['phone'] as String,
+  phone: json['phone'] as String?,
   businessEmail: json['businessEmail'] as String?,
   address: json['address'] as String?,
   addressText: json['addressText'] as String?,

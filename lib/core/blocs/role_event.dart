@@ -47,6 +47,16 @@ class RoleRestored extends RoleEvent {
   List<Object?> get props => [role];
 }
 
+/// Event when user selects their initial role (from RoleSelectionScreen).
+class InitialRoleSelected extends RoleEvent {
+  const InitialRoleSelected(this.role);
+
+  final UserRole role;
+
+  @override
+  List<Object?> get props => [role];
+}
+
 /// Event to request the user's available roles.
 ///
 /// Fetches the set of roles the user can switch between.

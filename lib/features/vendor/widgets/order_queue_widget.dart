@@ -229,7 +229,7 @@ class OrderQueueWidget extends StatelessWidget {
                             onStatusUpdate: (newStatus) {
                               context.read<OrderManagementBloc>().add(
                                     UpdateOrderStatus(
-                                      orderId: order['id'] as String,
+                                      orderId: order['id'] as String? ?? '',
                                       newStatus: newStatus,
                                     ),
                                   );
@@ -259,7 +259,7 @@ class OrderQueueWidget extends StatelessWidget {
                             onStatusUpdate: (newStatus) {
                               context.read<OrderManagementBloc>().add(
                                     UpdateOrderStatus(
-                                      orderId: order['id'] as String,
+                                      orderId: order['id'] as String? ?? '',
                                       newStatus: newStatus,
                                     ),
                                   );
@@ -289,7 +289,7 @@ class OrderQueueWidget extends StatelessWidget {
                             onStatusUpdate: (newStatus) {
                               context.read<OrderManagementBloc>().add(
                                     UpdateOrderStatus(
-                                      orderId: order['id'] as String,
+                                      orderId: order['id'] as String? ?? '',
                                       newStatus: newStatus,
                                     ),
                                   );
@@ -320,7 +320,7 @@ class OrderQueueWidget extends StatelessWidget {
                             onStatusUpdate: (newStatus) {
                               context.read<OrderManagementBloc>().add(
                                     UpdateOrderStatus(
-                                      orderId: order['id'] as String,
+                                      orderId: order['id'] as String? ?? '',
                                       newStatus: newStatus,
                                     ),
                                   );
@@ -351,7 +351,7 @@ class OrderQueueWidget extends StatelessWidget {
                             onStatusUpdate: (newStatus) {
                               context.read<OrderManagementBloc>().add(
                                     UpdateOrderStatus(
-                                      orderId: order['id'] as String,
+                                      orderId: order['id'] as String? ?? '',
                                       newStatus: newStatus,
                                     ),
                                   );

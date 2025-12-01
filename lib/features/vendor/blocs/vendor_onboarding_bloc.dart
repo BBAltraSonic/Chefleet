@@ -20,6 +20,7 @@ class VendorOnboardingBloc
     on<TermsAccepted>(_onTermsAccepted);
     on<StepChanged>(_onStepChanged);
     on<OnboardingSubmitted>(_onOnboardingSubmitted);
+    on<OpeningHoursUpdated>(_onOpeningHoursUpdated);
     on<OnboardingSaved>(_onOnboardingSaved);
     on<OnboardingReset>(_onOnboardingReset);
   }
@@ -39,6 +40,7 @@ class VendorOnboardingBloc
     emit(state.copyWith(
       onboardingData: updatedData,
       status: VendorOnboardingStatus.idle,
+      canGoNext: _canGoToNextStepWithData(state.currentStep, updatedData),
     ));
   }
 
@@ -56,6 +58,7 @@ class VendorOnboardingBloc
     emit(state.copyWith(
       onboardingData: updatedData,
       status: VendorOnboardingStatus.idle,
+      canGoNext: _canGoToNextStepWithData(state.currentStep, updatedData),
     ));
   }
 
@@ -71,6 +74,7 @@ class VendorOnboardingBloc
     emit(state.copyWith(
       onboardingData: updatedData,
       status: VendorOnboardingStatus.idle,
+      canGoNext: _canGoToNextStepWithData(state.currentStep, updatedData),
     ));
   }
 
@@ -85,6 +89,22 @@ class VendorOnboardingBloc
     emit(state.copyWith(
       onboardingData: updatedData,
       status: VendorOnboardingStatus.idle,
+      canGoNext: _canGoToNextStepWithData(state.currentStep, updatedData),
+    ));
+  }
+
+  void _onOpeningHoursUpdated(
+    OpeningHoursUpdated event,
+    Emitter<VendorOnboardingState> emit,
+  ) {
+    final updatedData = state.onboardingData.copyWith(
+      openHoursJson: event.openHoursJson,
+    );
+
+    emit(state.copyWith(
+      onboardingData: updatedData,
+      status: VendorOnboardingStatus.idle,
+      canGoNext: _canGoToNextStepWithData(state.currentStep, updatedData),
     ));
   }
 
@@ -94,7 +114,7 @@ class VendorOnboardingBloc
   ) {
     emit(state.copyWith(
       currentStep: event.step,
-      canGoNext: _canGoToNextStep(event.step),
+      canGoNext: _canGoToNextStepWithData(event.step, state.onboardingData),
       canGoBack: event.step != VendorOnboardingStep.businessInfo,
     ));
   }
@@ -151,17 +171,16 @@ class VendorOnboardingBloc
       final vendorData = {
         'owner_id': currentUser.id,
         'business_name': data.businessName,
-        'description': data.description,
-        'cuisine_type': data.cuisineType,
+        if (data.description != null) 'description': data.description,
+        if (data.cuisineType != null) 'cuisine_type': data.cuisineType,
         'phone': data.phone,
-        'business_email': data.businessEmail,
+        if (data.businessEmail != null) 'business_email': data.businessEmail,
         'address': data.address,
-        'address_text': data.addressText,
-        'latitude': data.latitude,
-        'longitude': data.longitude,
-        'logo_url': data.logoUrl,
-        'license_url': data.licenseUrl,
-        'open_hours_json': data.openHoursJson ?? {},
+        if (data.latitude != null) 'latitude': data.latitude,
+        if (data.longitude != null) 'longitude': data.longitude,
+        if (data.logoUrl != null) 'logo_url': data.logoUrl,
+        if (data.licenseUrl != null) 'license_url': data.licenseUrl,
+        'open_hours': data.openHoursJson ?? {},
         'status': 'pending_review',
         'is_active': false,
       };
@@ -229,23 +248,23 @@ class VendorOnboardingBloc
     }
   }
 
-  bool _canGoToNextStep(VendorOnboardingStep currentStep) {
+  bool _canGoToNextStepWithData(VendorOnboardingStep currentStep, VendorOnboardingData data) {
     switch (currentStep) {
       case VendorOnboardingStep.businessInfo:
-        return state.onboardingData.businessName.isNotEmpty &&
-            state.onboardingData.phone.isNotEmpty;
+        return data.businessName.isNotEmpty && data.phone.isNotEmpty;
       case VendorOnboardingStep.location:
-        return state.onboardingData.latitude != null &&
-            state.onboardingData.longitude != null;
+        return data.latitude != null && data.longitude != null;
       case VendorOnboardingStep.documents:
-        return state.onboardingData.logoUrl != null;
+        return true;
+      case VendorOnboardingStep.openingHours:
+        return data.openHoursJson != null && data.openHoursJson!.isNotEmpty;
       case VendorOnboardingStep.review:
-        return state.onboardingData.isValid;
+        return data.isValid;
     }
   }
 
   bool canProceedToNextStep() {
-    return _canGoToNextStep(state.currentStep);
+    return _canGoToNextStepWithData(state.currentStep, state.onboardingData);
   }
 
   bool canProceedToSubmission() {

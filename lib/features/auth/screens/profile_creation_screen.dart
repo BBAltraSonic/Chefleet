@@ -4,10 +4,15 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../blocs/user_profile_bloc.dart';
 import '../models/user_profile_model.dart';
 import '../../../core/routes/app_routes.dart';
+import '../../../core/blocs/role_bloc.dart';
+import '../../../core/blocs/role_event.dart';
+import '../../../core/models/user_role.dart';
 
 class ProfileCreationScreen extends StatefulWidget {
   const ProfileCreationScreen({super.key});
@@ -66,21 +71,72 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
 
   Future<void> _getCurrentLocation() async {
     try {
+      debugPrint('🔍 ProfileCreation._getCurrentLocation: Starting location fetch...');
       final position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
+      debugPrint('✅ ProfileCreation._getCurrentLocation: Got position: ${position.latitude}, ${position.longitude}');
 
       setState(() {
         _selectedLocation = LatLng(position.latitude, position.longitude);
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Location captured successfully')),
-      );
+      // Reverse geocode to get address from coordinates
+      try {
+        final placemarks = await placemarkFromCoordinates(
+          position.latitude,
+          position.longitude,
+        );
+
+        if (placemarks.isNotEmpty) {
+          final place = placemarks.first;
+          debugPrint('📍 Reverse geocoded address: ${place.street}, ${place.locality}, ${place.administrativeArea}, ${place.postalCode}');
+
+          setState(() {
+            _streetController.text = [place.street, place.subThoroughfare]
+                .where((s) => s != null && s.isNotEmpty)
+                .join(' ');
+            _cityController.text = place.locality ?? '';
+            _stateController.text = place.administrativeArea ?? '';
+            _postalCodeController.text = place.postalCode ?? '';
+          });
+        }
+      } catch (geocodeError) {
+        debugPrint('⚠️ Reverse geocoding failed: $geocodeError');
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Location captured successfully')),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to get location: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to get location: $e')),
+        );
+      }
+    }
+  }
+
+  void _handleProfileCreationComplete(BuildContext context) {
+    // Check if user selected a role during signup
+    final user = Supabase.instance.client.auth.currentUser;
+    final initialRole = user?.userMetadata?['initial_role'] as String?;
+    
+    debugPrint('🎯 Profile complete. Initial role from signup: $initialRole');
+    
+    if (initialRole == 'vendor') {
+      // User selected vendor during signup - set role and go to vendor onboarding
+      context.read<RoleBloc>().add(const InitialRoleSelected(UserRole.vendor));
+      context.go(VendorRoutes.onboarding);
+    } else if (initialRole == 'customer') {
+      // User selected customer during signup - set role and go to map
+      context.read<RoleBloc>().add(const InitialRoleSelected(UserRole.customer));
+      context.go(CustomerRoutes.map);
+    } else {
+      // No role selected during signup - go to role selection
+      context.go('/role-selection');
     }
   }
 
@@ -89,20 +145,18 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
       return;
     }
 
-    if (_selectedLocation == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select your location')),
-      );
-      return;
-    }
+    // Use selected location coordinates, or default to 0,0 if not provided
+    // In production, you would geocode the address to get accurate coordinates
+    final latitude = _selectedLocation?.latitude ?? 0.0;
+    final longitude = _selectedLocation?.longitude ?? 0.0;
 
     final address = UserAddress(
       streetAddress: _streetController.text.trim(),
       city: _cityController.text.trim(),
       state: _stateController.text.trim(),
       postalCode: _postalCodeController.text.trim(),
-      latitude: _selectedLocation!.latitude,
-      longitude: _selectedLocation!.longitude,
+      latitude: latitude,
+      longitude: longitude,
     );
 
     final notificationPreferences = NotificationPreferences(
@@ -134,10 +188,7 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
               SnackBar(content: Text(state.errorMessage!)),
             );
           } else if (state.profile.isNotEmpty) {
-            // Navigate to main map after profile completion
-            // Uses go_router for consistency
-            // ignore: use_build_context_synchronously
-            context.go(CustomerRoutes.map);
+            _handleProfileCreationComplete(context);
           }
         },
         child: Stack(
@@ -284,7 +335,7 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
                       ),
                       const SizedBox(height: 16),
 
-                      // Location button
+                      // Location button (optional)
                       ElevatedButton.icon(
                         onPressed: _getCurrentLocation,
                         icon: Icon(
@@ -295,10 +346,12 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
                         label: Text(
                           _selectedLocation != null
                               ? 'Location Captured'
-                              : 'Get Current Location',
+                              : 'Get Current Location (Optional)',
                         ),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
+                          backgroundColor: _selectedLocation != null 
+                              ? Colors.green 
+                              : Colors.grey[700],
                           foregroundColor: Colors.white,
                           minimumSize: const Size(double.infinity, 48),
                         ),

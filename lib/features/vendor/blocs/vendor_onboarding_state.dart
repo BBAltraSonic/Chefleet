@@ -30,7 +30,7 @@ class VendorOnboardingState extends Equatable {
     this.status = VendorOnboardingStatus.initial,
     this.errorMessage,
     this.vendor,
-    this.canGoNext = false,
+    this.canGoNext = true,
     this.canGoBack = false,
   });
 
@@ -80,11 +80,13 @@ class VendorOnboardingState extends Equatable {
         return 1;
       case VendorOnboardingStep.documents:
         return 2;
-      case VendorOnboardingStep.review:
+      case VendorOnboardingStep.openingHours:
         return 3;
+      case VendorOnboardingStep.review:
+        return 4;
     }
   }
 
-  int get totalSteps => 4;
+  int get totalSteps => 5;
   double get progress => (currentStepIndex + 1) / totalSteps;
 }

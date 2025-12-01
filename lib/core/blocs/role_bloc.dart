@@ -32,6 +32,7 @@ class RoleBloc extends Bloc<RoleEvent, RoleState> {
     on<RoleSwitchRequested>(_onRoleSwitchRequested);
     on<RoleRestored>(_onRoleRestored);
     on<AvailableRolesRequested>(_onAvailableRolesRequested);
+    on<InitialRoleSelected>(_onInitialRoleSelected);
     on<RoleRefreshRequested>(_onRoleRefreshRequested);
     on<GrantVendorRole>(_onVendorRoleGranted);
     on<RoleSyncCompleted>(_onRoleSyncCompleted);
@@ -96,16 +97,20 @@ class RoleBloc extends Bloc<RoleEvent, RoleState> {
         // No cached data, fetch from backend
         final (activeRole, availableRoles) = await _syncService.fetchRoleData();
 
-        // Save to storage
-        await _storageService.saveActiveRole(activeRole);
-        await _storageService.saveAvailableRoles(availableRoles);
+        if (activeRole == null) {
+          emit(const RoleSelectionRequired());
+        } else {
+          // Save to storage
+          await _storageService.saveActiveRole(activeRole);
+          await _storageService.saveAvailableRoles(availableRoles);
 
-        emit(RoleLoaded(
-          activeRole: activeRole,
-          availableRoles: availableRoles,
-        ));
+          emit(RoleLoaded(
+            activeRole: activeRole,
+            availableRoles: availableRoles,
+          ));
+        }
       }
-    } on RoleNotAuthenticatedException catch (e) {
+    } on RoleNotAuthenticatedException {
       emit(RoleError(
         message: 'User not authenticated',
         code: 'NOT_AUTHENTICATED',
@@ -214,6 +219,48 @@ class RoleBloc extends Bloc<RoleEvent, RoleState> {
     }
   }
 
+  /// Handles InitialRoleSelected event.
+  Future<void> _onInitialRoleSelected(
+    InitialRoleSelected event,
+    Emitter<RoleState> emit,
+  ) async {
+    emit(const RoleLoading());
+
+    try {
+      // Update backend first
+      await _syncService.syncActiveRole(event.role);
+
+      // If vendor, grant role
+      if (event.role == UserRole.vendor) {
+        await _syncService.grantVendorRole();
+      }
+
+      // Fetch fresh data
+      final (activeRole, availableRoles) = await _syncService.fetchRoleData();
+
+      // Update storage
+      if (activeRole != null) {
+        await _storageService.saveActiveRole(activeRole);
+      }
+      await _storageService.saveAvailableRoles(availableRoles);
+
+      emit(RoleLoaded(
+        activeRole: activeRole ?? event.role,
+        availableRoles: availableRoles,
+      ));
+
+      _roleChangesController.add(activeRole ?? event.role);
+    } catch (e) {
+      emit(RoleError(
+        message: 'Failed to set initial role: ${e.toString()}',
+        previousState: const RoleSelectionRequired(),
+      ));
+      
+      // Fallback to selection screen
+      emit(const RoleSelectionRequired());
+    }
+  }
+
   /// Handles RoleRestored event.
   ///
   /// Restores a role from storage on app startup.
@@ -260,16 +307,23 @@ class RoleBloc extends Bloc<RoleEvent, RoleState> {
     final currentState = state;
 
     try {
+      // No cached data, fetch from backend
       final (activeRole, availableRoles) = await _syncService.fetchRoleData();
 
       // Update storage
-      await _storageService.saveActiveRole(activeRole);
+      if (activeRole != null) {
+        await _storageService.saveActiveRole(activeRole);
+      }
       await _storageService.saveAvailableRoles(availableRoles);
 
-      emit(RoleLoaded(
-        activeRole: activeRole,
-        availableRoles: availableRoles,
-      ));
+      if (activeRole == null) {
+        emit(const RoleSelectionRequired());
+      } else {
+        emit(RoleLoaded(
+          activeRole: activeRole,
+          availableRoles: availableRoles,
+        ));
+      }
     } catch (e) {
       emit(RoleError(
         message: 'Failed to fetch available roles: ${e.toString()}',
@@ -304,16 +358,18 @@ class RoleBloc extends Bloc<RoleEvent, RoleState> {
       final (activeRole, availableRoles) = await _syncService.fetchRoleData();
 
       // Update storage
-      await _storageService.saveActiveRole(activeRole);
+      if (activeRole != null) {
+        await _storageService.saveActiveRole(activeRole);
+      }
       await _storageService.saveAvailableRoles(availableRoles);
 
       emit(RoleLoaded(
-        activeRole: activeRole,
+        activeRole: activeRole ?? UserRole.customer, // Safe fallback
         availableRoles: availableRoles,
       ));
 
       // If role changed on backend, emit change event
-      if (currentState is RoleLoaded && currentState.activeRole != activeRole) {
+      if (currentState is RoleLoaded && activeRole != null && currentState.activeRole != activeRole) {
         _roleChangesController.add(activeRole);
       }
     } catch (e) {
@@ -360,7 +416,7 @@ class RoleBloc extends Bloc<RoleEvent, RoleState> {
         _roleChangesController.add(UserRole.vendor);
       } else {
         emit(VendorRoleGranted(
-          activeRole: activeRole,
+          activeRole: activeRole ?? UserRole.customer,
           availableRoles: availableRoles,
         ));
       }
@@ -409,7 +465,7 @@ class RoleBloc extends Bloc<RoleEvent, RoleState> {
 
       // Update storage if data changed
       final currentState = state;
-      if (currentState is RoleLoaded) {
+      if (currentState is RoleLoaded && activeRole != null) {
         if (currentState.activeRole != activeRole ||
             !_setsEqual(currentState.availableRoles, availableRoles)) {
           await _storageService.saveActiveRole(activeRole);

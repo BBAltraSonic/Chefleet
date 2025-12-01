@@ -141,7 +141,7 @@ class _MapScreenState extends State<MapScreen> {
         }
       },
       markers: Set<Marker>.from(state.markers.values),
-      myLocationEnabled: true,
+      myLocationEnabled: true, // DEBUG: Google Maps location - may trigger permission request
       myLocationButtonEnabled: false,
       zoomControlsEnabled: false,
       mapToolbarEnabled: false,

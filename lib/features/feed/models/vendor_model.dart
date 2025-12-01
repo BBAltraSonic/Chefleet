@@ -1,4 +1,6 @@
 import 'package:equatable/equatable.dart';
+import '../../../core/models/opening_hours_model.dart';
+import '../../../core/services/opening_hours_service.dart';
 
 class Vendor extends Equatable {
   const Vendor({
@@ -23,7 +25,7 @@ class Vendor extends Equatable {
 
   factory Vendor.fromJson(Map<String, dynamic> json) {
     return Vendor(
-      id: json['id'] as String,
+      id: json['id'] as String? ?? '',
       name: json['business_name'] as String? ?? json['name'] as String? ?? '',
       description: json['description'] as String? ?? '',
       latitude: (json['latitude'] as num?)?.toDouble() ?? 0.0,
@@ -37,7 +39,7 @@ class Vendor extends Equatable {
       cuisineType: json['cuisine_type'] as String?,
       rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
       reviewCount: json['review_count'] as int? ?? 0,
-      openHoursJson: json['open_hours_json'] as Map<String, dynamic>?,
+      openHoursJson: json['open_hours'] as Map<String, dynamic>?,
       createdAt: json['created_at'] != null ? DateTime.tryParse(json['created_at'] as String) : null,
       updatedAt: json['updated_at'] != null ? DateTime.tryParse(json['updated_at'] as String) : null,
     );
@@ -61,6 +63,40 @@ class Vendor extends Equatable {
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
+  OpeningHours? get openingHours {
+    if (openHoursJson == null) return null;
+
+    try {
+      return OpeningHours.fromJson(openHoursJson!);
+    } catch (e) {
+      try {
+        return OpeningHours.fromLegacyJson(openHoursJson!);
+      } catch (e2) {
+        return null;
+      }
+    }
+  }
+
+  String get openingHoursDisplay {
+    final hours = openingHours;
+    if (hours == null) return 'Hours not set';
+    return OpeningHoursService.getOperatingHoursDisplay(hours);
+  }
+
+  bool get isOpenNow {
+    final hours = openingHours;
+    if (hours == null) return false;
+    return hours.isOpenToday;
+  }
+
+  String get nextOpeningTime {
+    final hours = openingHours;
+    if (hours == null) return 'Hours not available';
+
+    final nextOpen = hours.getNextOpenTime(DateTime.now());
+    return nextOpen ?? 'Currently closed';
+  }
+
   // Computed properties
   String get displayName => name;
   String get displayDescription => description.isNotEmpty ? description : 'No description available';
@@ -81,7 +117,7 @@ class Vendor extends Equatable {
       'cuisine_type': cuisineType,
       'rating': rating,
       'review_count': reviewCount,
-      'open_hours_json': openHoursJson,
+      'open_hours': openHoursJson,
       'created_at': createdAt?.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
     };

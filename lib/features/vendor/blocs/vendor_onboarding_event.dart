@@ -94,6 +94,15 @@ class OnboardingSubmitted extends VendorOnboardingEvent {
   List<Object?> get props => [onboardingData];
 }
 
+class OpeningHoursUpdated extends VendorOnboardingEvent {
+  final Map<String, dynamic>? openHoursJson;
+
+  const OpeningHoursUpdated({this.openHoursJson});
+
+  @override
+  List<Object?> get props => [openHoursJson];
+}
+
 class OnboardingSaved extends VendorOnboardingEvent {
   final VendorOnboardingData onboardingData;
 

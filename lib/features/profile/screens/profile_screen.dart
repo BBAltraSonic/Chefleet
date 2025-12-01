@@ -5,8 +5,8 @@ import '../../auth/blocs/user_profile_bloc.dart';
 import '../../auth/models/user_profile_model.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/routes/app_routes.dart';
-import '../widgets/profile_drawer.dart';
 import '../widgets/role_switcher_widget.dart';
+import '../widgets/become_vendor_card.dart';
 import '../../../shared/widgets/glass_container.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -16,7 +16,6 @@ class ProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
-      drawer: const ProfileDrawer(),
       body: BlocBuilder<UserProfileBloc, UserProfileState>(
         builder: (context, state) {
           if (state.isLoading) {
@@ -103,6 +102,16 @@ class ProfileScreen extends StatelessWidget {
           pinned: true,
           backgroundColor: Colors.transparent,
           elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go(CustomerRoutes.map);
+              }
+            },
+          ),
           flexibleSpace: FlexibleSpaceBar(
             background: Container(
               decoration: BoxDecoration(
@@ -194,6 +203,10 @@ class ProfileScreen extends StatelessWidget {
 
               // Role Switcher (only visible if user has multiple roles)
               const RoleSwitcherWidget(),
+              const SizedBox(height: AppTheme.spacing16),
+
+              // Become Vendor Card (only visible if user doesn't have vendor role)
+              const BecomeVendorCard(),
               const SizedBox(height: AppTheme.spacing16),
 
               // Address section

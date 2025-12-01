@@ -50,7 +50,7 @@ class _PlacePinMapState extends State<PlacePinMap> {
               _currentPosition = position.target;
             });
           },
-          myLocationEnabled: true,
+          myLocationEnabled: true, // DEBUG: Google Maps location - may trigger permission request
           myLocationButtonEnabled: true,
           zoomControlsEnabled: false,
         ),

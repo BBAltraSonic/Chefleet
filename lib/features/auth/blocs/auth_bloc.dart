@@ -19,14 +19,20 @@ class AuthLoginRequested extends AuthEvent {
 }
 
 class AuthSignupRequested extends AuthEvent {
-  const AuthSignupRequested(this.email, this.password, this.name);
+  const AuthSignupRequested(
+    this.email,
+    this.password,
+    this.name, {
+    this.initialRole,
+  });
 
   final String email;
   final String password;
   final String name;
+  final String? initialRole;
 
   @override
-  List<Object?> get props => [email, password, name];
+  List<Object?> get props => [email, password, name, initialRole];
 }
 
 class AuthLogoutRequested extends AuthEvent {
@@ -246,7 +252,10 @@ class AuthBloc extends AppBloc<AuthEvent, AuthState> {
       final response = await Supabase.instance.client.auth.signUp(
         email: event.email,
         password: event.password,
-        data: {'name': event.name},
+        data: {
+          'name': event.name,
+          if (event.initialRole != null) 'initial_role': event.initialRole,
+        },
       );
 
       print('DEBUG: Signup response received');
@@ -262,13 +271,12 @@ class AuthBloc extends AppBloc<AuthEvent, AuthState> {
         try {
           final supabase = Supabase.instance.client;
           final profileResult = await supabase
-              .from('profiles')
-              .insert({
-                'id': response.user!.id,
-                'email': event.email,
-                'name': event.name,
+              .from('users_public')
+              .upsert({
+                'user_id': response.user!.id,
+                'full_name': event.name,
                 'created_at': DateTime.now().toIso8601String(),
-              })
+              }, onConflict: 'user_id')
               .select()
               .maybeSingle();
 
@@ -301,16 +309,22 @@ class AuthBloc extends AppBloc<AuthEvent, AuthState> {
       print('DEBUG: Error type: ${e.runtimeType}');
       print('DEBUG: Error message: ${e.toString()}');
 
+      String userFriendlyMessage;
+
       if (e is AuthException) {
         print('DEBUG: Auth error code: ${e.code}');
         print('DEBUG: Auth error status: ${e.statusCode}');
         print('DEBUG: Auth error details: ${e.message}');
-      }
 
-      // Try a more specific error message
-      String userFriendlyMessage = 'Signup error: ${e.toString()}';
-      if (e.toString().contains('Database error saving new user')) {
-        userFriendlyMessage = 'Registration temporarily unavailable due to database maintenance. Please try again in a few minutes.';
+        // Parse AuthException for user-friendly messages
+        userFriendlyMessage = _formatSignupAuthError(e);
+      } else {
+        // Handle non-auth exceptions
+        if (e.toString().contains('Database error saving new user')) {
+          userFriendlyMessage = 'Registration temporarily unavailable due to database maintenance. Please try again in a few minutes.';
+        } else {
+          userFriendlyMessage = 'Signup failed. Please try again.';
+        }
       }
 
       emit(state.copyWith(
@@ -318,6 +332,56 @@ class AuthBloc extends AppBloc<AuthEvent, AuthState> {
         errorMessage: userFriendlyMessage,
       ));
     }
+  }
+
+  /// Format AuthException errors for signup into user-friendly messages
+  String _formatSignupAuthError(AuthException e) {
+    // Check error message content
+    final errorMsg = e.message.toLowerCase();
+    
+    // User already exists
+    if (errorMsg.contains('already registered') || 
+        errorMsg.contains('already exists') ||
+        errorMsg.contains('user already registered')) {
+      return 'This email is already registered. Please sign in instead.';
+    }
+    
+    // Invalid credentials format (misleading message from Supabase)
+    if (errorMsg.contains('invalid login credentials')) {
+      return 'Invalid email or password format. Please check your details.';
+    }
+    
+    // Email validation issues
+    if (errorMsg.contains('invalid email') || errorMsg.contains('email')) {
+      return 'Please enter a valid email address.';
+    }
+    
+    // Password validation issues
+    if (errorMsg.contains('password') && errorMsg.contains('short')) {
+      return 'Password must be at least 6 characters long.';
+    }
+    
+    if (errorMsg.contains('password')) {
+      return 'Password does not meet requirements. Please use at least 6 characters.';
+    }
+    
+    // Rate limiting
+    if (e.statusCode == '429' || errorMsg.contains('too many')) {
+      return 'Too many signup attempts. Please try again in a few minutes.';
+    }
+    
+    // Network or server errors
+    if (e.statusCode == '500' || e.statusCode == '503') {
+      return 'Server error. Please try again later.';
+    }
+    
+    // Generic fallback with status code if available
+    if (e.statusCode != null) {
+      return 'Signup failed (${e.statusCode}). Please try again.';
+    }
+    
+    // Last resort fallback
+    return 'Signup failed. Please check your details and try again.';
   }
 
   Future<void> _onLogoutRequested(

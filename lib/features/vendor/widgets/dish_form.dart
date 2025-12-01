@@ -249,7 +249,7 @@ class _DishFormState extends State<DishForm> {
           .eq('owner_id', user.id)
           .single();
 
-      final vendorId = vendorResponse['id'] as String;
+      final vendorId = vendorResponse['id'] as String? ?? '';
 
       // Generate unique filename
       final fileExt = imageFile.path.split('.').last;

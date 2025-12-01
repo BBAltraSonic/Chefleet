@@ -523,16 +523,26 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
 
   Future<Position?> _getCurrentLocation() async {
     try {
+      debugPrint('🔍 MapFeedBloc._getCurrentLocation: Starting location fetch...');
+
       // Check if location services are enabled
       final bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      debugPrint('🔍 MapFeedBloc._getCurrentLocation: Location services enabled: $serviceEnabled');
+
       if (!serviceEnabled) {
         throw Exception('Location services are disabled.');
       }
 
       // Check location permissions
+      debugPrint('🔍 MapFeedBloc._getCurrentLocation: Checking location permission...');
       LocationPermission permission = await Geolocator.checkPermission();
+      debugPrint('🔍 MapFeedBloc._getCurrentLocation: Current permission status: $permission');
+
       if (permission == LocationPermission.denied) {
+        debugPrint('🚨 MapFeedBloc._getCurrentLocation: Permission denied, REQUESTING PERMISSION NOW...');
         permission = await Geolocator.requestPermission();
+        debugPrint('🔍 MapFeedBloc._getCurrentLocation: Permission request result: $permission');
+
         if (permission == LocationPermission.denied) {
           throw Exception('Location permissions are denied.');
         }
@@ -543,11 +553,15 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
       }
 
       // Get current position
-      return await Geolocator.getCurrentPosition(
+      debugPrint('🔍 MapFeedBloc._getCurrentLocation: Getting current position...');
+      final position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
         timeLimit: const Duration(seconds: 10),
       );
+      debugPrint('✅ MapFeedBloc._getCurrentLocation: Got position: ${position.latitude}, ${position.longitude}');
+      return position;
     } catch (e) {
+      debugPrint('❌ MapFeedBloc._getCurrentLocation: Error getting location: $e');
       return null;
     }
   }

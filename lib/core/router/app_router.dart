@@ -1,5 +1,8 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
 
 // Auth Screens
 import '../../features/auth/screens/auth_screen.dart';
@@ -22,6 +25,7 @@ import '../../features/settings/screens/settings_screen.dart';
 import '../../features/settings/screens/notifications_screen.dart';
 
 // Vendor Screens
+import '../../features/vendor/blocs/vendor_dashboard_bloc.dart';
 import '../../features/vendor/screens/vendor_dashboard_screen.dart';
 import '../../features/vendor/screens/vendor_orders_screen.dart';
 import '../../features/vendor/screens/vendor_dishes_screen.dart';
@@ -39,8 +43,8 @@ import '../../features/vendor/screens/vendor_chat_screen.dart';
 import '../../features/feed/models/dish_model.dart';
 
 // Blocs
-import '../../features/auth/blocs/auth_bloc.dart' show AuthBloc, AuthMode;
-import '../../features/auth/blocs/user_profile_bloc.dart';
+import '../../features/auth/blocs/auth_bloc.dart' show AuthBloc, AuthMode, AuthState;
+import '../../features/auth/blocs/user_profile_bloc.dart' show UserProfileBloc, UserProfileState;
 import '../blocs/role_bloc.dart';
 import '../blocs/role_state.dart';
 import '../models/user_role.dart';
@@ -81,8 +85,12 @@ class AppRouter {
     required UserProfileBloc profileBloc,
     required RoleBloc roleBloc,
   }) {
+    // Create a listenable that triggers redirect when auth/profile/role state changes
+    final refreshNotifier = _RouterRefreshNotifier(authBloc, profileBloc, roleBloc);
+    
     return GoRouter(
       initialLocation: splash,
+      refreshListenable: refreshNotifier,
       redirect: (BuildContext context, GoRouterState state) {
         return _globalRedirect(
           state: state,
@@ -114,6 +122,10 @@ class AppRouter {
         GoRoute(
           path: profileEdit,
           builder: (context, state) => const ProfileManagementScreen(),
+        ),
+        GoRoute(
+          path: VendorRoutes.onboarding,
+          builder: (context, state) => const VendorOnboardingScreen(),
         ),
         
         // ============================================================
@@ -215,11 +227,16 @@ class AppRouter {
         // ============================================================
         ShellRoute(
           builder: (context, state, child) {
-            return VendorAppShell(
-              child: child,
-              availableRoles: roleBloc.state is RoleLoaded
-                  ? (roleBloc.state as RoleLoaded).availableRoles
-                  : {UserRole.vendor},
+            return BlocProvider(
+              create: (context) => VendorDashboardBloc(
+                supabaseClient: Supabase.instance.client,
+              )..add(const LoadDashboardData()),
+              child: VendorAppShell(
+                child: child,
+                availableRoles: roleBloc.state is RoleLoaded
+                    ? (roleBloc.state as RoleLoaded).availableRoles
+                    : {UserRole.vendor},
+              ),
             );
           },
           routes: [
@@ -328,12 +345,6 @@ class AppRouter {
               builder: (context, state) => const ModerationToolsScreen(),
             ),
             
-            // Vendor Onboarding
-            GoRoute(
-              path: VendorRoutes.onboarding,
-              builder: (context, state) => const VendorOnboardingScreen(),
-            ),
-            
             // Vendor Quick Tour
             GoRoute(
               path: VendorRoutes.quickTour,
@@ -393,6 +404,14 @@ class AppRouter {
       return profileCreation;
     }
     
+    // After profile creation, redirect to role selection if not already there
+    if (isAuthenticated && hasProfile && roleState is RoleLoaded) {
+      final hasRoleSelected = roleState.activeRole != null;
+      if (!hasRoleSelected && currentPath != roleSelection && currentPath != profileCreation) {
+        return roleSelection;
+      }
+    }
+    
     // Role-based routing guard
     if (roleState is RoleLoaded && isAuthenticated) {
       final redirect = RoleRouteGuard.validateAccess(
@@ -406,5 +425,37 @@ class AppRouter {
     }
     
     return null;
+  }
+}
+
+/// A ChangeNotifier that listens to AuthBloc, UserProfileBloc, and RoleBloc
+/// and notifies GoRouter to re-run redirect logic when state changes.
+class _RouterRefreshNotifier extends ChangeNotifier {
+  _RouterRefreshNotifier(
+    AuthBloc authBloc,
+    UserProfileBloc profileBloc,
+    RoleBloc roleBloc,
+  ) {
+    _authSubscription = authBloc.stream.listen((_) {
+      notifyListeners();
+    });
+    _profileSubscription = profileBloc.stream.listen((_) {
+      notifyListeners();
+    });
+    _roleSubscription = roleBloc.stream.listen((_) {
+      notifyListeners();
+    });
+  }
+
+  late final StreamSubscription<AuthState> _authSubscription;
+  late final StreamSubscription<UserProfileState> _profileSubscription;
+  late final StreamSubscription<RoleState> _roleSubscription;
+
+  @override
+  void dispose() {
+    _authSubscription.cancel();
+    _profileSubscription.cancel();
+    _roleSubscription.cancel();
+    super.dispose();
   }
 }

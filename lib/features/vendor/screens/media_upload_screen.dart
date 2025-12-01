@@ -543,8 +543,8 @@ class _MediaUploadScreenState extends State<MediaUploadScreen>
             onPressed: () {
               Navigator.of(context).pop();
               context.read<MediaUploadBloc>().add(DeleteMedia(
-                mediaId: media['id'] as String,
-                filePath: media['file_path'] as String,
+                mediaId: media['id'] as String? ?? '',
+                filePath: media['file_path'] as String? ?? '',
               ));
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),

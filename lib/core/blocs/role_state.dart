@@ -140,3 +140,8 @@ class VendorRoleGranted extends RoleLoaded {
     required super.availableRoles,
   });
 }
+
+/// State when user needs to select a role (new user flow).
+class RoleSelectionRequired extends RoleState {
+  const RoleSelectionRequired();
+}

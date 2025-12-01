@@ -36,10 +36,10 @@ class RoleSyncService {
     }
 
     try {
-      await _supabase.from('profiles').update({
-        'active_role': role.value,
+      await _supabase.from('users_public').update({
+        'role': role.value,
         'updated_at': DateTime.now().toIso8601String(),
-      }).eq('id', userId);
+      }).eq('user_id', userId);
     } catch (e) {
       // Queue for retry if network error
       if (_isNetworkError(e)) {
@@ -58,8 +58,9 @@ class RoleSyncService {
   /// Fetches the user's role data from the backend.
   ///
   /// Returns a tuple of (activeRole, availableRoles).
+  /// activeRole may be null if the user hasn't selected a role yet.
   /// Throws [RoleSyncException] if fetch fails.
-  Future<(UserRole, Set<UserRole>)> fetchRoleData() async {
+  Future<(UserRole?, Set<UserRole>)> fetchRoleData() async {
     final userId = _supabase.auth.currentUser?.id;
     if (userId == null) {
       throw const RoleNotAuthenticatedException();
@@ -67,18 +68,19 @@ class RoleSyncService {
 
     try {
       final response = await _supabase
-          .from('profiles')
-          .select('active_role, available_roles')
-          .eq('id', userId)
+          .from('users_public')
+          .select('role, vendor_profile_id')
+          .eq('user_id', userId)
           .single();
 
-      final activeRoleString = response['active_role'] as String?;
-      final activeRole = UserRole.tryFromString(activeRoleString) ?? UserRole.customer;
+      final activeRoleString = response['role'] as String?;
+      final activeRole = UserRole.tryFromString(activeRoleString);
 
-      final availableRolesList = response['available_roles'] as List<dynamic>?;
-      final availableRoles = availableRolesList != null
-          ? (availableRolesList.cast<String>()).toUserRoles()
-          : {UserRole.customer};
+      // Derive available roles
+      final availableRoles = {UserRole.customer};
+      if (response['vendor_profile_id'] != null || activeRole == UserRole.vendor) {
+        availableRoles.add(UserRole.vendor);
+      }
 
       return (activeRole, availableRoles);
     } catch (e) {
@@ -97,9 +99,9 @@ class RoleSyncService {
 
     try {
       final response = await _supabase
-          .from('profiles')
+          .from('users_public')
           .select()
-          .eq('id', userId)
+          .eq('user_id', userId)
           .maybeSingle();
 
       if (response == null) return null;
@@ -121,24 +123,8 @@ class RoleSyncService {
     }
 
     try {
-      // First, fetch current available roles
-      final response = await _supabase
-          .from('profiles')
-          .select('available_roles')
-          .eq('id', userId)
-          .single();
-
-      final currentRoles = (response['available_roles'] as List<dynamic>?)
-              ?.cast<String>()
-              .toUserRoles() ??
-          {UserRole.customer};
-
-      // Add vendor role if not already present
-      final updatedRoles = {...currentRoles, UserRole.vendor};
-
-      // Update with new roles
+      // Update with new roles (just update vendor_profile_id in new schema)
       final updateData = {
-        'available_roles': updatedRoles.toStringList(),
         'updated_at': DateTime.now().toIso8601String(),
       };
 
@@ -146,7 +132,7 @@ class RoleSyncService {
         updateData['vendor_profile_id'] = vendorProfileId;
       }
 
-      await _supabase.from('profiles').update(updateData).eq('id', userId);
+      await _supabase.from('users_public').update(updateData).eq('user_id', userId);
     } catch (e) {
       throw RoleSyncException('Failed to grant vendor role: ${e.toString()}');
     }
@@ -165,32 +151,23 @@ class RoleSyncService {
     try {
       // Fetch current data
       final response = await _supabase
-          .from('profiles')
-          .select('available_roles, active_role')
-          .eq('id', userId)
+          .from('users_public')
+          .select('role')
+          .eq('user_id', userId)
           .single();
 
-      final currentRoles = (response['available_roles'] as List<dynamic>?)
-              ?.cast<String>()
-              .toUserRoles() ??
-          {UserRole.customer};
-
       final currentActiveRole =
-          UserRole.tryFromString(response['active_role'] as String?) ?? UserRole.customer;
-
-      // Remove vendor role
-      final updatedRoles = currentRoles.where((r) => r != UserRole.vendor).toSet();
+          UserRole.tryFromString(response['role'] as String?) ?? UserRole.customer;
 
       // If currently in vendor mode, switch to customer
       final newActiveRole =
           currentActiveRole == UserRole.vendor ? UserRole.customer : currentActiveRole;
 
-      await _supabase.from('profiles').update({
-        'available_roles': updatedRoles.toStringList(),
-        'active_role': newActiveRole.value,
+      await _supabase.from('users_public').update({
+        'role': newActiveRole.value,
         'vendor_profile_id': null,
         'updated_at': DateTime.now().toIso8601String(),
-      }).eq('id', userId);
+      }).eq('user_id', userId);
     } catch (e) {
       throw RoleSyncException('Failed to revoke vendor role: ${e.toString()}');
     }
@@ -207,10 +184,10 @@ class RoleSyncService {
 
     for (final operation in operations) {
       try {
-        await _supabase.from('profiles').update({
-          'active_role': operation.role.value,
+        await _supabase.from('users_public').update({
+          'role': operation.role.value,
           'updated_at': DateTime.now().toIso8601String(),
-        }).eq('id', operation.userId);
+        }).eq('user_id', operation.userId);
       } catch (e) {
         // Re-queue if still failing
         if (_isNetworkError(e)) {

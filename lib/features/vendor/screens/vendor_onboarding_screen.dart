@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../blocs/vendor_onboarding_bloc.dart';
 import '../models/vendor_model.dart';
+import '../widgets/opening_hours_selector_widget.dart';
 import '../../../core/blocs/role_bloc.dart';
 import '../../../core/blocs/role_event.dart';
+import '../../../core/routes/app_routes.dart';
+import '../../../core/models/opening_hours_model.dart';
+import '../../../core/services/opening_hours_service.dart';
 
 class VendorOnboardingScreen extends StatefulWidget {
   const VendorOnboardingScreen({super.key});
@@ -51,23 +56,25 @@ class _VendorOnboardingScreenState extends State<VendorOnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Become a Vendor'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.close),
-          onPressed: () => _showExitConfirmation(),
-        ),
-        actions: [
-          TextButton(
-            onPressed: _saveProgress,
-            child: const Text('Save Progress'),
+    return BlocProvider.value(
+      value: _bloc,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Become a Vendor'),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.close),
+            onPressed: () => _showExitConfirmation(),
           ),
-        ],
-      ),
-      body: BlocConsumer<VendorOnboardingBloc, VendorOnboardingState>(
+          actions: [
+            TextButton(
+              onPressed: _saveProgress,
+              child: const Text('Save Progress'),
+            ),
+          ],
+        ),
+        body: BlocConsumer<VendorOnboardingBloc, VendorOnboardingState>(
         listener: (context, state) {
           if (state.isSuccess) {
             _showSuccessDialog();
@@ -94,6 +101,7 @@ class _VendorOnboardingScreenState extends State<VendorOnboardingScreen> {
                     _buildBusinessInfoStep(state),
                     _buildLocationStep(state),
                     _buildDocumentsStep(state),
+                    _buildOpeningHoursStep(state),
                     _buildReviewStep(state),
                   ],
                 ),
@@ -104,6 +112,7 @@ class _VendorOnboardingScreenState extends State<VendorOnboardingScreen> {
             ],
           );
         },
+      ),
       ),
     );
   }
@@ -390,6 +399,37 @@ class _VendorOnboardingScreenState extends State<VendorOnboardingScreen> {
                 ],
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOpeningHoursStep(VendorOnboardingState state) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Business Hours',
+            style: Theme.of(context).textTheme.headlineSmall,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Set your operating hours. Customers will see when you\'re available.',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Colors.grey[600],
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          OpeningHoursSelectorWidget(
+            initialHoursJson: state.onboardingData.openHoursJson,
+            onHoursChanged: (hoursJson) {
+              _bloc.add(OpeningHoursUpdated(openHoursJson: hoursJson));
+            },
+            enabled: !state.isLoading,
           ),
         ],
       ),
@@ -721,20 +761,21 @@ class _VendorOnboardingScreenState extends State<VendorOnboardingScreen> {
   void _showExitConfirmation() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Exit Onboarding?'),
         content: const Text(
           'Your progress will be lost if you exit. Are you sure you want to continue?',
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(dialogContext).pop(),
             child: const Text('Cancel'),
           ),
           TextButton(
             onPressed: () {
-              Navigator.of(context).pop();
-              Navigator.of(context).pop();
+              Navigator.of(dialogContext).pop();
+              // Navigate to customer map as fallback
+              context.go(CustomerRoutes.map);
             },
             child: const Text('Exit'),
           ),
@@ -758,7 +799,7 @@ class _VendorOnboardingScreenState extends State<VendorOnboardingScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Application Submitted!'),
         content: const Text(
           'Your vendor application has been submitted for review. We\'ll notify you once it\'s approved.',
@@ -766,8 +807,9 @@ class _VendorOnboardingScreenState extends State<VendorOnboardingScreen> {
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.of(context).pop();
-              Navigator.of(context).pop();
+              Navigator.of(dialogContext).pop();
+              // Navigate to vendor dashboard after successful onboarding
+              context.go(VendorRoutes.dashboard);
             },
             child: const Text('Done'),
           ),

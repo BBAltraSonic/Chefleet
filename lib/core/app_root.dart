@@ -8,6 +8,7 @@ import 'widgets/role_shell_switcher.dart';
 import '../features/auth/blocs/auth_bloc.dart' as auth;
 import '../features/auth/screens/splash_screen.dart';
 import '../features/auth/screens/auth_screen.dart';
+import '../features/auth/screens/role_selection_screen.dart';
 
 /// Root widget that manages authentication and role-based app shell switching.
 ///
@@ -85,37 +86,43 @@ class _AppRootState extends State<AppRoot> {
                 return const SplashScreen();
               }
 
-            // Show splash screen while switching roles
-            if (roleState is RoleSwitching) {
-              print('DEBUG AppRoot: Showing splash (role switching)');
+              // Show splash screen while switching roles
+              if (roleState is RoleSwitching) {
+                print('DEBUG AppRoot: Showing splash (role switching)');
+                return const SplashScreen();
+              }
+
+              // Show role selection screen if role selection is required
+              if (roleState is RoleSelectionRequired) {
+                print('DEBUG AppRoot: Showing role selection screen');
+                return const RoleSelectionScreen();
+              }
+
+              // Show error screen if role loading failed
+              if (roleState is RoleError) {
+                print('DEBUG AppRoot: Showing error screen');
+                return _RoleErrorScreen(
+                  message: roleState.message,
+                  onRetry: () {
+                    print('DEBUG AppRoot: User clicked retry');
+                    _hasRequestedRole = false;
+                    context.read<RoleBloc>().add(const RoleRequested());
+                  },
+                );
+              }
+
+              // Show the appropriate shell based on active role
+              if (roleState is RoleLoaded) {
+                return RoleShellSwitcher(
+                  activeRole: roleState.activeRole,
+                  availableRoles: roleState.availableRoles,
+                );
+              }
+
+              // Fallback to splash screen for any other state
               return const SplashScreen();
-            }
-
-            // Show error screen if role loading failed
-            if (roleState is RoleError) {
-              print('DEBUG AppRoot: Showing error screen');
-              return _RoleErrorScreen(
-                message: roleState.message,
-                onRetry: () {
-                  print('DEBUG AppRoot: User clicked retry');
-                  _hasRequestedRole = false;
-                  context.read<RoleBloc>().add(const RoleRequested());
-                },
-              );
-            }
-
-            // Show the appropriate shell based on active role
-            if (roleState is RoleLoaded) {
-              return RoleShellSwitcher(
-                activeRole: roleState.activeRole,
-                availableRoles: roleState.availableRoles,
-              );
-            }
-
-            // Fallback to splash screen for any other state
-            return const SplashScreen();
-          },
-        );
+            },
+          );
         },
       ),
     );

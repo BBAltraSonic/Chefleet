@@ -74,7 +74,7 @@ class VendorChatBloc extends Bloc<VendorChatEvent, VendorChatState> {
           .eq('owner_id', currentUser.id)
           .single();
 
-      final vendorId = vendorResponse['id'] as String;
+      final vendorId = vendorResponse['id'] as String? ?? '';
 
       // Load conversations with last message and unread count
       final response = await _supabaseClient
@@ -217,7 +217,7 @@ class VendorChatBloc extends Bloc<VendorChatEvent, VendorChatState> {
           .eq('owner_id', currentUser.id)
           .single();
 
-      final vendorId = vendorResponse['id'] as String;
+      final vendorId = vendorResponse['id'] as String? ?? '';
 
       final response = await _supabaseClient
           .from('vendor_quick_replies')
@@ -265,7 +265,7 @@ class VendorChatBloc extends Bloc<VendorChatEvent, VendorChatState> {
           .eq('owner_id', currentUser.id)
           .single();
 
-      final vendorId = vendorResponse['id'] as String;
+      final vendorId = vendorResponse['id'] as String? ?? '';
 
       await _supabaseClient.from('vendor_quick_replies').insert({
         'vendor_id': vendorId,

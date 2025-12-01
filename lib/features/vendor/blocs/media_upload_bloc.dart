@@ -311,7 +311,7 @@ class MediaUploadBloc extends Bloc<MediaUploadEvent, MediaUploadState> {
           .eq('owner_id', currentUser.id)
           .single();
 
-      final vendorId = vendorResponse['id'] as String;
+      final vendorId = vendorResponse['id'] as String? ?? '';
 
       // Load media records
       final response = await _supabaseClient
@@ -483,7 +483,7 @@ class MediaUploadBloc extends Bloc<MediaUploadEvent, MediaUploadState> {
         .eq('owner_id', currentUser.id)
         .single();
 
-    final vendorId = vendorResponse['id'] as String;
+    final vendorId = vendorResponse['id'] as String? ?? '';
 
     final recordData = {
       ...mediaData,

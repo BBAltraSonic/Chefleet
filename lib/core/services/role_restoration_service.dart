@@ -1,7 +1,6 @@
 import '../models/user_role.dart';
 import 'role_storage_service.dart';
 import 'role_sync_service.dart';
-import 'role_service.dart';
 
 /// Service for restoring user role state during app initialization.
 ///
@@ -26,7 +25,7 @@ class RoleRestorationService {
   /// Restores the user's role state during app startup.
   ///
   /// Returns a [RoleRestorationResult] containing:
-  /// - The active role to use
+  /// - The active role to use (nullable)
   /// - Available roles
   /// - Whether restoration was successful
   /// - Any errors encountered
@@ -56,7 +55,9 @@ class RoleRestorationService {
 
         if (hasConflict) {
           // Backend wins - update local storage
-          await _storageService.saveActiveRole(backendActiveRole);
+          if (backendActiveRole != null) {
+            await _storageService.saveActiveRole(backendActiveRole);
+          }
           await _storageService.saveAvailableRoles(backendAvailableRoles);
 
           return RoleRestorationResult(
@@ -69,7 +70,9 @@ class RoleRestorationService {
 
         // No conflict - use backend data and update local if needed
         if (localActiveRole == null || localAvailableRoles == null) {
-          await _storageService.saveActiveRole(backendActiveRole);
+          if (backendActiveRole != null) {
+            await _storageService.saveActiveRole(backendActiveRole);
+          }
           await _storageService.saveAvailableRoles(backendAvailableRoles);
         }
 
@@ -171,7 +174,7 @@ class RoleRestorationResult {
   });
 
   /// The active role to use
-  final UserRole activeRole;
+  final UserRole? activeRole;
 
   /// Available roles for the user
   final Set<UserRole> availableRoles;
