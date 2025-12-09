@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -11,9 +12,13 @@ import 'order_history_screen.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/routes/app_routes.dart';
 import '../../../shared/widgets/glass_container.dart';
+import '../widgets/analytics_tab.dart';
 
 class VendorDashboardScreen extends StatefulWidget {
-  const VendorDashboardScreen({super.key});
+  /// Optional initial tab index (0=Orders, 1=Menu, 2=Stats, 3=History)
+  final int initialTab;
+
+  const VendorDashboardScreen({super.key, this.initialTab = 0});
 
   @override
   State<VendorDashboardScreen> createState() => _VendorDashboardScreenState();
@@ -24,19 +29,31 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen>
   late TabController _tabController;
   String _selectedStatusFilter = 'all';
 
+  VendorDashboardBloc? _dashboardBloc;
+  StreamSubscription<VendorDashboardState>? _blocSubscription;
+
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
-
-    // Load dashboard data and subscribe to real-time updates
+    _tabController = TabController(
+      length: 4,
+      vsync: this,
+      initialIndex: widget.initialTab,
+    );
+    
+    // safe lookups
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<VendorDashboardBloc>().add(LoadDashboardData());
+      if (!mounted) return;
+      _dashboardBloc = context.read<VendorDashboardBloc>();
+      _dashboardBloc?.add(LoadDashboardData());
 
       // Subscribe to real-time order updates after vendor data is loaded
-      context.read<VendorDashboardBloc>().stream.listen((state) {
+      // IMPORTANT: Store subscription and cancel it in dispose
+      _blocSubscription = _dashboardBloc?.stream.listen((state) {
+        if (!mounted) return;
         if (state.vendor != null) {
-          context.read<VendorDashboardBloc>().add(
+          // Use captured bloc reference to be safe even if context is technically deactivated
+          _dashboardBloc?.add(
             SubscribeToOrderUpdates(vendorId: state.vendor!['id']),
           );
         }
@@ -47,39 +64,50 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen>
   @override
   void dispose() {
     _tabController.dispose();
-    context.read<VendorDashboardBloc>().add(UnsubscribeFromOrderUpdates());
+    _blocSubscription?.cancel(); // Cancel stream subscription to prevent disposal errors
+    _dashboardBloc?.add(UnsubscribeFromOrderUpdates());
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: () async {
-            context.read<VendorDashboardBloc>().add(RefreshDashboard());
+      backgroundColor: const Color(0xFFF8F9FE), // clean off-white
+      body: RefreshIndicator(
+        onRefresh: () async {
+          context.read<VendorDashboardBloc>().add(RefreshDashboard());
+        },
+        child: BlocBuilder<VendorDashboardBloc, VendorDashboardState>(
+          builder: (context, state) {
+            if (state.isLoading && state.vendor == null) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            if (state.errorMessage != null) {
+              return _buildErrorState(state.errorMessage!);
+            }
+
+            // Using NestedScrollView to prevent "dependents is empty" assertions
+            // and handle tab scrolling properly
+            return NestedScrollView(
+              key: const PageStorageKey('VendorDashboardNestedScrollView'),
+              headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
+                return <Widget>[
+                  SliverToBoxAdapter(child: _buildHeader(state)),
+                  SliverToBoxAdapter(child: _buildStatsGrid(state)),
+                  SliverPersistentHeader(
+                    pinned: true,
+                    delegate: _SliverAppBarDelegate(
+                      minHeight: 80.0,
+                      maxHeight: 80.0,
+                      child: _buildTabBar(),
+                    ),
+                  ),
+                ];
+              },
+              body: _buildTabContent(state),
+            );
           },
-          child: BlocBuilder<VendorDashboardBloc, VendorDashboardState>(
-            builder: (context, state) {
-              if (state.isLoading && state.vendor == null) {
-                return const Center(child: CircularProgressIndicator());
-              }
-
-              if (state.errorMessage != null) {
-                return _buildErrorState(state.errorMessage!);
-              }
-
-              return Column(
-                children: [
-                  _buildHeader(state),
-                  _buildStatsGrid(state),
-                  _buildTabBar(),
-                  _buildTabContent(state),
-                ],
-              );
-            },
-          ),
         ),
       ),
     );
@@ -87,7 +115,7 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen>
 
   Widget _buildHeader(VendorDashboardState state) {
     return Container(
-      padding: const EdgeInsets.all(AppTheme.spacing20),
+      padding: const EdgeInsets.fromLTRB(20, 60, 20, 20), // Added top padding for status bar area since we removed SafeArea
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -99,68 +127,65 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Welcome back!',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppTheme.secondaryGreen,
+                      'Welcome back,',
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: Colors.grey[600],
+                        fontSize: 16,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       state.vendor?['business_name'] as String? ?? 'Vendor',
-                      style: Theme.of(context).textTheme.headlineMedium,
+                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFF1A1A1A),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
               ),
               Row(
                 children: [
-                  IconButton(
+                  _buildGlassIconButton(
+                    icon: Icons.help_outline_rounded,
                     onPressed: () => context.push(VendorRoutes.quickTour),
-                    icon: const Icon(Icons.help_outline),
-                    tooltip: 'Quick Tour',
-                    style: IconButton.styleFrom(
-                      backgroundColor: AppTheme.surfaceGreen,
-                    ),
                   ),
-                  const SizedBox(width: 8),
-                  IconButton(
-                    onPressed: () => context.read<VendorDashboardBloc>().add(RefreshDashboard()),
-                    icon: const Icon(Icons.refresh),
-                    style: IconButton.styleFrom(
-                      backgroundColor: AppTheme.surfaceGreen,
-                    ),
+                  const SizedBox(width: 12),
+                  _buildGlassIconButton(
+                    icon: Icons.person_outline_rounded,
+                    onPressed: () => context.push(VendorRoutes.profile),
                   ),
                 ],
               ),
             ],
           ),
           if (state.successMessage != null) ...[
-            const SizedBox(height: AppTheme.spacing12),
+            const SizedBox(height: 16),
             GlassContainer(
-              padding: const EdgeInsets.all(AppTheme.spacing12),
-              borderRadius: AppTheme.radiusSmall,
-              color: AppTheme.primaryGreen,
+              padding: const EdgeInsets.all(12),
+              borderRadius: 16,
+              color: const Color(0xFF4CAF50),
               opacity: 0.1,
               child: Row(
                 children: [
-                  const Icon(Icons.check_circle, color: AppTheme.primaryGreen, size: 20),
-                  const SizedBox(width: AppTheme.spacing8),
+                  const Icon(Icons.check_circle_rounded, color: Color(0xFF4CAF50), size: 20),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       state.successMessage!,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppTheme.darkText,
+                      style: const TextStyle(
+                        color: Color(0xFF1A1A1A),
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ),
-                  IconButton(
-                    onPressed: () {
-                      context.read<VendorDashboardBloc>().add(RefreshDashboard());
+                  GestureDetector(
+                    onTap: () {
+                       context.read<VendorDashboardBloc>().add(RefreshDashboard());
                     },
-                    icon: const Icon(Icons.close, size: 18),
-                    color: AppTheme.darkText,
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
+                    child: const Icon(Icons.close_rounded, size: 18, color: Colors.black54),
                   ),
                 ],
               ),
@@ -171,11 +196,36 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen>
     );
   }
 
+  Widget _buildGlassIconButton({required IconData icon, required VoidCallback onPressed}) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+             color: Colors.grey.withOpacity(0.1),
+             blurRadius: 10,
+             offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: IconButton(
+        onPressed: onPressed,
+        icon: Icon(icon, color: const Color(0xFF1A1A1A), size: 22),
+        style: IconButton.styleFrom(
+          padding: const EdgeInsets.all(8),
+          minimumSize: Size.zero,
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
+      ),
+    );
+  }
+
   Widget _buildStatsGrid(VendorDashboardState state) {
     final stats = state.stats;
     if (stats == null) return const SizedBox(height: 16);
 
-    return Container(
+    return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -183,45 +233,47 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen>
           Text(
             'Overview',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF1A1A1A),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           GridView.count(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             crossAxisCount: 2,
             mainAxisSpacing: 12,
             crossAxisSpacing: 12,
-            childAspectRatio: 1.4,
+            childAspectRatio: 1.35, // Make cards shorter to prevent overflow
+            padding: EdgeInsets.zero,
             children: [
               StatsCard(
                 title: 'Today\'s Orders',
                 value: stats.todayOrders.toString(),
                 subtitle: '\$${stats.todayRevenue.toStringAsFixed(2)}',
-                icon: Icons.shopping_bag,
-                color: Colors.blue,
+                icon: Icons.shopping_bag_outlined,
+                color: const Color(0xFF2196F3),
               ),
               StatsCard(
                 title: 'Active Orders',
                 value: stats.activeOrders.toString(),
                 subtitle: '${stats.pendingOrders} pending',
-                icon: Icons.pending_actions,
-                color: Colors.orange,
+                icon: Icons.timer_outlined,
+                color: const Color(0xFFFF9800),
               ),
               StatsCard(
                 title: 'This Week',
                 value: stats.weekOrders.toString(),
                 subtitle: '\$${stats.weekRevenue.toStringAsFixed(2)}',
-                icon: Icons.date_range,
-                color: Colors.green,
+                icon: Icons.calendar_view_week_rounded,
+                color: const Color(0xFF4CAF50), // Green
               ),
               StatsCard(
                 title: 'This Month',
                 value: stats.monthOrders.toString(),
                 subtitle: '\$${stats.monthRevenue.toStringAsFixed(2)}',
-                icon: Icons.calendar_month,
-                color: Colors.purple,
+                icon: Icons.calendar_month_rounded,
+                color: const Color(0xFF9C27B0),
               ),
             ],
           ),
@@ -232,40 +284,55 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen>
 
   Widget _buildTabBar() {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: TabBar(
-        controller: _tabController,
-        indicator: BoxDecoration(
-          color: Theme.of(context).colorScheme.primary,
-          borderRadius: BorderRadius.circular(12),
+      color: const Color(0xFFF8F9FE), // Match background for sticky header
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      child: Container(
+        height: 45,
+        decoration: BoxDecoration(
+          color: Colors.grey[200],
+          borderRadius: BorderRadius.circular(25),
         ),
-        labelColor: Colors.white,
-        unselectedLabelColor: Colors.grey[600],
-        tabs: const [
-          Tab(text: 'Orders'),
-          Tab(text: 'Menu'),
-          Tab(text: 'Analytics'),
-          Tab(text: 'History'),
-        ],
+        padding: const EdgeInsets.all(4),
+        child: TabBar(
+          controller: _tabController,
+          indicator: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(21),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          labelColor: const Color(0xFF1A1A1A),
+          unselectedLabelColor: Colors.grey[600],
+          labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+          unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+          indicatorSize: TabBarIndicatorSize.tab,
+          dividerColor: Colors.transparent,
+          tabs: const [
+            Tab(text: 'Orders'),
+            Tab(text: 'Menu'),
+            Tab(text: 'Stats'),
+            Tab(text: 'History'),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildTabContent(VendorDashboardState state) {
-    return Expanded(
-      child: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildOrdersTab(state),
-          _buildMenuTab(state),
-          _buildAnalyticsTab(state),
-          _buildHistoryTab(),
-        ],
-      ),
+     // No changes to logic here, just wrapping in logic above
+    return TabBarView(
+      controller: _tabController,
+      children: [
+        _buildOrdersTab(state),
+        _buildMenuTab(state),
+        _buildAnalyticsTab(state),
+        _buildHistoryTab(),
+      ],
     );
   }
 
@@ -376,10 +443,40 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen>
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              TextButton.icon(
-                onPressed: () => context.push(VendorRoutes.dishAdd),
-                icon: const Icon(Icons.add),
-                label: const Text('Add Item'),
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {
+                  debugPrint('Add Item button pressed - attempting navigation to ${VendorRoutes.dishAdd}');
+                  context.push(VendorRoutes.dishAdd).then((_) {
+                    debugPrint('Returned from dish add screen');
+                    if (context.mounted) {
+                      context.read<VendorDashboardBloc>().add(RefreshDashboard());
+                    }
+                  }).catchError((error) {
+                    debugPrint('Navigation error: $error');
+                  });
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.add, color: Theme.of(context).colorScheme.primary, size: 18),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Add Item',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ],
           ),
@@ -425,43 +522,7 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen>
   }
 
   Widget _buildAnalyticsTab(VendorDashboardState state) {
-    return Padding(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Analytics',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 16),
-          // TODO: Implement analytics charts and detailed stats
-          Expanded(
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.analytics_outlined,
-                    size: 64,
-                    color: Colors.grey[400],
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Analytics coming soon',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+    return AnalyticsTab(state: state);
   }
 
   Widget _buildErrorState(String errorMessage) {
@@ -555,12 +616,6 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen>
             ),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 16),
-          ElevatedButton.icon(
-            onPressed: () => context.push(VendorRoutes.dishAdd),
-            icon: const Icon(Icons.add),
-            label: const Text('Add First Item'),
-          ),
         ],
       ),
     );
@@ -568,5 +623,35 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen>
 
   Widget _buildHistoryTab() {
     return const OrderHistoryScreen();
+  }
+}
+
+class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
+  _SliverAppBarDelegate({
+    required this.minHeight,
+    required this.maxHeight,
+    required this.child,
+  });
+
+  final double minHeight;
+  final double maxHeight;
+  final Widget child;
+
+  @override
+  double get minExtent => minHeight;
+
+  @override
+  double get maxExtent => maxHeight; // Fixed to minHeight for static size if needed
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return SizedBox.expand(child: child);
+  }
+
+  @override
+  bool shouldRebuild(_SliverAppBarDelegate oldDelegate) {
+    return maxHeight != oldDelegate.maxHeight ||
+        minHeight != oldDelegate.minHeight ||
+        child != oldDelegate.child;
   }
 }

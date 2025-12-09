@@ -2,6 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:chefleet/core/diagnostics/diagnostic_domains.dart';
+import 'package:chefleet/core/diagnostics/diagnostic_harness.dart';
+import 'package:chefleet/core/diagnostics/diagnostic_severity.dart';
 import '../models/cart_item.dart';
 import 'cart_event.dart';
 import 'cart_state.dart';
@@ -20,16 +23,58 @@ class CartBloc extends Bloc<CartEvent, CartState> {
   }
 
   static const String _cartStorageKey = 'shopping_cart';
+  final DiagnosticHarness _diagnostics = DiagnosticHarness.instance;
+
+  void _logCart(
+    String event, {
+    Map<String, Object?> payload = const <String, Object?>{},
+    DiagnosticSeverity severity = DiagnosticSeverity.info,
+    String? correlationId,
+  }) {
+    _diagnostics.log(
+      domain: DiagnosticDomains.ordering,
+      event: 'cart.$event',
+      payload: payload,
+      severity: severity,
+      correlationId: correlationId,
+    );
+  }
+
+  String? _currentVendorScope() {
+    if (state.items.isEmpty) {
+      return null;
+    }
+    return 'vendor-${state.items.first.dish.vendorId}';
+  }
 
   /// Add item to cart or update quantity if already exists
   Future<void> _onAddToCart(AddToCart event, Emitter<CartState> emit) async {
     try {
+      _logCart(
+        'add_to_cart.request',
+        payload: {
+          'dishId': event.dish.id,
+          'vendorId': event.dish.vendorId,
+          'quantity': event.quantity,
+        },
+        correlationId: 'dish-${event.dish.id}',
+        severity: DiagnosticSeverity.debug,
+      );
       if (state.items.isNotEmpty) {
         final currentVendorId = state.items.first.dish.vendorId;
         if (currentVendorId != event.dish.vendorId) {
           emit(state.copyWith(
             error: 'You can only order from one vendor at a time. Please clear your cart first.',
           ));
+          _logCart(
+            'add_to_cart.vendor_conflict',
+            payload: {
+              'existingVendorId': currentVendorId,
+              'incomingVendorId': event.dish.vendorId,
+            },
+            severity: DiagnosticSeverity.warn,
+            correlationId: 'vendor-$currentVendorId',
+          );
           return;
         }
       }
@@ -61,8 +106,22 @@ class CartBloc extends Bloc<CartEvent, CartState> {
 
       emit(state.copyWith(items: updatedItems));
       add(const SaveCart());
+      _logCart(
+        'add_to_cart.success',
+        payload: {
+          'dishId': event.dish.id,
+          'totalItems': state.totalItems + event.quantity,
+        },
+        correlationId: _currentVendorScope(),
+      );
     } catch (e) {
       emit(state.copyWith(error: 'Failed to add item to cart: ${e.toString()}'));
+      _logCart(
+        'add_to_cart.error',
+        payload: {'message': e.toString()},
+        severity: DiagnosticSeverity.error,
+        correlationId: _currentVendorScope(),
+      );
     }
   }
 
@@ -72,14 +131,31 @@ class CartBloc extends Bloc<CartEvent, CartState> {
     Emitter<CartState> emit,
   ) async {
     try {
+      _logCart(
+        'remove_from_cart.request',
+        payload: {'dishId': event.dishId},
+        severity: DiagnosticSeverity.debug,
+        correlationId: _currentVendorScope(),
+      );
       final updatedItems = state.items
           .where((item) => item.dish.id != event.dishId)
           .toList();
 
       emit(state.copyWith(items: updatedItems));
       add(const SaveCart());
+      _logCart(
+        'remove_from_cart.success',
+        payload: {'dishId': event.dishId, 'remainingItems': updatedItems.length},
+        correlationId: _currentVendorScope(),
+      );
     } catch (e) {
       emit(state.copyWith(error: 'Failed to remove item: ${e.toString()}'));
+      _logCart(
+        'remove_from_cart.error',
+        payload: {'message': e.toString(), 'dishId': event.dishId},
+        severity: DiagnosticSeverity.error,
+        correlationId: _currentVendorScope(),
+      );
     }
   }
 
@@ -89,6 +165,12 @@ class CartBloc extends Bloc<CartEvent, CartState> {
     Emitter<CartState> emit,
   ) async {
     try {
+      _logCart(
+        'update_quantity.request',
+        payload: {'dishId': event.dishId, 'quantity': event.quantity},
+        severity: DiagnosticSeverity.debug,
+        correlationId: _currentVendorScope(),
+      );
       if (event.quantity <= 0) {
         // If quantity is 0 or less, remove the item
         add(RemoveFromCart(event.dishId));
@@ -104,8 +186,19 @@ class CartBloc extends Bloc<CartEvent, CartState> {
 
       emit(state.copyWith(items: updatedItems));
       add(const SaveCart());
+      _logCart(
+        'update_quantity.success',
+        payload: {'dishId': event.dishId, 'quantity': event.quantity},
+        correlationId: _currentVendorScope(),
+      );
     } catch (e) {
       emit(state.copyWith(error: 'Failed to update quantity: ${e.toString()}'));
+      _logCart(
+        'update_quantity.error',
+        payload: {'message': e.toString(), 'dishId': event.dishId},
+        severity: DiagnosticSeverity.error,
+        correlationId: _currentVendorScope(),
+      );
     }
   }
 
@@ -115,6 +208,12 @@ class CartBloc extends Bloc<CartEvent, CartState> {
     Emitter<CartState> emit,
   ) async {
     try {
+      _logCart(
+        'update_instructions.request',
+        payload: {'dishId': event.dishId},
+        severity: DiagnosticSeverity.debug,
+        correlationId: _currentVendorScope(),
+      );
       final updatedItems = state.items.map((item) {
         if (item.dish.id == event.dishId) {
           return item.copyWith(specialInstructions: event.instructions);
@@ -124,10 +223,21 @@ class CartBloc extends Bloc<CartEvent, CartState> {
 
       emit(state.copyWith(items: updatedItems));
       add(const SaveCart());
+      _logCart(
+        'update_instructions.success',
+        payload: {'dishId': event.dishId},
+        correlationId: _currentVendorScope(),
+      );
     } catch (e) {
       emit(state.copyWith(
         error: 'Failed to update instructions: ${e.toString()}',
       ));
+      _logCart(
+        'update_instructions.error',
+        payload: {'message': e.toString(), 'dishId': event.dishId},
+        severity: DiagnosticSeverity.error,
+        correlationId: _currentVendorScope(),
+      );
     }
   }
 
@@ -137,6 +247,11 @@ class CartBloc extends Bloc<CartEvent, CartState> {
     Emitter<CartState> emit,
   ) async {
     emit(state.copyWith(pickupTime: event.pickupTime));
+    _logCart(
+      'pickup_time.updated',
+      payload: {'pickupTime': event.pickupTime.toIso8601String()},
+      correlationId: _currentVendorScope(),
+    );
   }
 
   /// Clear all items from cart
@@ -144,14 +259,27 @@ class CartBloc extends Bloc<CartEvent, CartState> {
     try {
       emit(const CartState(items: []));
       add(const SaveCart());
+      _logCart(
+        'clear_cart.success',
+        severity: DiagnosticSeverity.debug,
+      );
     } catch (e) {
       emit(state.copyWith(error: 'Failed to clear cart: ${e.toString()}'));
+      _logCart(
+        'clear_cart.error',
+        payload: {'message': e.toString()},
+        severity: DiagnosticSeverity.error,
+      );
     }
   }
 
   /// Load cart from local storage
   Future<void> _onLoadCart(LoadCart event, Emitter<CartState> emit) async {
     try {
+      _logCart(
+        'load_cart.request',
+        severity: DiagnosticSeverity.debug,
+      );
       emit(state.copyWith(isLoading: true));
 
       final prefs = await SharedPreferences.getInstance();
@@ -167,12 +295,21 @@ class CartBloc extends Bloc<CartEvent, CartState> {
       } else {
         emit(state.copyWith(isLoading: false));
       }
+      _logCart(
+        'load_cart.success',
+        payload: {'items': state.items.length},
+      );
     } catch (e) {
       emit(CartState(
         items: state.items,
         isLoading: false,
         error: 'Failed to load cart: ${e.toString()}',
       ));
+      _logCart(
+        'load_cart.error',
+        payload: {'message': e.toString()},
+        severity: DiagnosticSeverity.error,
+      );
     }
   }
 
@@ -184,11 +321,21 @@ class CartBloc extends Bloc<CartEvent, CartState> {
       final cartJson = json.encode(itemsJson);
 
       await prefs.setString(_cartStorageKey, cartJson);
+      _logCart(
+        'save_cart.success',
+        payload: {'items': state.items.length},
+        severity: DiagnosticSeverity.debug,
+      );
     } catch (e) {
       // Silent fail - don't disrupt user experience for storage issues
       emit(state.copyWith(
         error: 'Failed to save cart: ${e.toString()}',
       ));
+      _logCart(
+        'save_cart.error',
+        payload: {'message': e.toString()},
+        severity: DiagnosticSeverity.error,
+      );
     }
   }
 }

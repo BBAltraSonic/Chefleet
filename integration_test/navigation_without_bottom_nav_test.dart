@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:chefleet/core/diagnostics/testing/diagnostic_tester_helpers.dart';
 import 'package:chefleet/main.dart' as app;
+
+import 'diagnostic_harness.dart';
 
 /// Integration test for navigation flows without bottom navigation bar
 /// Tests the new navigation model: Map/Feed primary, FAB for orders, profile in header
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  ensureIntegrationDiagnostics(scenarioName: 'navigation_without_bottom_nav');
 
   group('Navigation Without Bottom Nav - Guest Flow', () {
     testWidgets('Guest can browse nearby dishes without bottom navigation', (tester) async {
-      // Launch app
-      app.main();
-      await tester.pumpAndSettle(const Duration(seconds: 3));
+      await _launchNavApp(tester, description: 'guest browse flow');
+      await _pumpSettle(tester, 'wait for initial map', duration: const Duration(seconds: 3));
 
       // Verify no bottom navigation bar exists
       expect(
@@ -29,7 +31,7 @@ void main() {
       );
 
       // Step 1: Verify initial landing on map/nearby dishes
-      await tester.pumpAndSettle(const Duration(seconds: 2));
+      await _pumpSettle(tester, 'settle initial landing', duration: const Duration(seconds: 2));
       
       // Should see either map or nearby dishes
       final hasMapOrFeed = find.text('Nearby Dishes').evaluate().isNotEmpty ||
@@ -44,8 +46,8 @@ void main() {
       // Step 2: Toggle between map and list view
       if (find.byIcon(Icons.list).evaluate().isNotEmpty) {
         // Currently on map, toggle to list
-        await tester.tap(find.byIcon(Icons.list));
-        await tester.pumpAndSettle();
+        await _tapIcon(tester, Icons.list, 'toggle to list view');
+        await _pumpSettle(tester, 'settle list view');
         
         // Should see "Nearby Dishes" title
         expect(
@@ -62,8 +64,8 @@ void main() {
         reason: 'Profile icon should be in header',
       );
 
-      await tester.tap(find.byIcon(Icons.person_outline));
-      await tester.pumpAndSettle();
+      await _tapIcon(tester, Icons.person_outline, 'open profile from header');
+      await _pumpSettle(tester, 'settle profile transition');
 
       // Should navigate to profile (may show guest prompt)
       final hasProfileOrPrompt = find.textContaining('Profile').evaluate().isNotEmpty ||
@@ -78,8 +80,8 @@ void main() {
     });
 
     testWidgets('FAB opens Active Orders modal', (tester) async {
-      app.main();
-      await tester.pumpAndSettle(const Duration(seconds: 3));
+      await _launchNavApp(tester, description: 'fab modal flow');
+      await _pumpSettle(tester, 'wait for map load', duration: const Duration(seconds: 3));
 
       // Verify FAB exists
       expect(
@@ -89,8 +91,8 @@ void main() {
       );
 
       // Tap FAB
-      await tester.tap(find.byIcon(Icons.shopping_bag_outlined));
-      await tester.pumpAndSettle();
+      await _tapIcon(tester, Icons.shopping_bag_outlined, 'open active orders');
+      await _pumpSettle(tester, 'settle active orders modal');
 
       // Verify Active Orders modal opens
       expect(
@@ -100,13 +102,13 @@ void main() {
       );
 
       // Close modal
-      await tester.tapAt(const Offset(10, 10)); // Tap outside
-      await tester.pumpAndSettle();
+      await diagnosticTapAt(tester, const Offset(10, 10), description: 'dismiss active orders');
+      await _pumpSettle(tester, 'settle modal dismissal');
     });
 
     testWidgets('Guest can view dish details from nearby dishes', (tester) async {
-      app.main();
-      await tester.pumpAndSettle(const Duration(seconds: 3));
+      await _launchNavApp(tester, description: 'guest dish detail flow');
+      await _pumpSettle(tester, 'wait for initial state', duration: const Duration(seconds: 3));
 
       // Navigate to nearby dishes if not already there
       if (find.byIcon(Icons.list).evaluate().isNotEmpty) {
@@ -122,8 +124,8 @@ void main() {
       
       if (dishCards.isNotEmpty) {
         // Tap first dish
-        await tester.tap(find.byType(Card).first);
-        await tester.pumpAndSettle();
+        await _tapFinder(tester, find.byType(Card).first, 'open first dish card');
+        await _pumpSettle(tester, 'settle dish detail');
 
         // Should navigate to dish detail
         // Verify dish detail elements (varies by implementation)

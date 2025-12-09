@@ -10,16 +10,19 @@ import 'package:chefleet/core/models/user_role.dart';
 import 'package:chefleet/core/services/role_storage_service.dart';
 import 'package:chefleet/core/services/role_sync_service.dart';
 import 'package:chefleet/core/widgets/role_shell_switcher.dart';
+import 'package:chefleet/core/diagnostics/testing/diagnostic_tester_helpers.dart';
 import 'package:chefleet/features/customer/customer_app_shell.dart';
 import 'package:chefleet/features/vendor/vendor_app_shell.dart';
 import 'package:chefleet/features/profile/widgets/role_switcher.dart';
+
+import 'diagnostic_harness.dart';
 
 // Mocks
 class MockRoleStorageService extends Mock implements RoleStorageService {}
 class MockRoleSyncService extends Mock implements RoleSyncService {}
 
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  ensureIntegrationDiagnostics(scenarioName: 'role_switching_flow');
 
   group('Role Switching Flow - Complete Integration Tests', () {
     late MockRoleStorageService mockStorageService;

@@ -5,6 +5,9 @@ import '../../auth/blocs/user_profile_bloc.dart';
 import '../../auth/models/user_profile_model.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/routes/app_routes.dart';
+import '../../../core/blocs/role_bloc.dart';
+import '../../../core/blocs/role_state.dart';
+import '../../../core/models/user_role.dart';
 import '../widgets/role_switcher_widget.dart';
 import '../widgets/become_vendor_card.dart';
 import '../../../shared/widgets/glass_container.dart';
@@ -205,9 +208,20 @@ class ProfileScreen extends StatelessWidget {
               const RoleSwitcherWidget(),
               const SizedBox(height: AppTheme.spacing16),
 
-              // Become Vendor Card (only visible if user doesn't have vendor role)
-              const BecomeVendorCard(),
-              const SizedBox(height: AppTheme.spacing16),
+              // Become Vendor Card (hidden in vendor mode)
+              BlocBuilder<RoleBloc, RoleState>(
+                builder: (context, roleState) {
+                  final isInVendorMode = roleState is RoleLoaded &&
+                      roleState.activeRole == UserRole.vendor;
+                  if (isInVendorMode) return const SizedBox.shrink();
+                  return const Column(
+                    children: [
+                      BecomeVendorCard(),
+                      SizedBox(height: AppTheme.spacing16),
+                    ],
+                  );
+                },
+              ),
 
               // Address section
               if (profile.address != null)
@@ -266,6 +280,9 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Widget _buildQuickActions(BuildContext context) {
+    final roleState = context.watch<RoleBloc>().state;
+    final isVendorMode = roleState is RoleLoaded && roleState.activeRole == UserRole.vendor;
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -285,20 +302,25 @@ class ProfileScreen extends StatelessWidget {
           opacity: 0.6,
           child: Column(
             children: [
-              _buildActionTile(
-                context,
-                icon: Icons.favorite_outline,
-                title: 'Favourites',
-                subtitle: 'Your saved dishes',
-                onTap: () => context.push(CustomerRoutes.favourites),
-              ),
-              const Divider(height: 1, indent: 64),
+              // Only show Favourites for customers
+              if (!isVendorMode) ...[
+                _buildActionTile(
+                  context,
+                  icon: Icons.favorite_outline,
+                  title: 'Favourites',
+                  subtitle: 'Your saved dishes',
+                  onTap: () => context.push(CustomerRoutes.favourites),
+                ),
+                const Divider(height: 1, indent: 64),
+              ],
               _buildActionTile(
                 context,
                 icon: Icons.notifications_outlined,
                 title: 'Notifications',
                 subtitle: 'Manage preferences',
-                onTap: () => context.push(CustomerRoutes.notifications),
+                onTap: () => context.push(
+                  isVendorMode ? VendorRoutes.notifications : CustomerRoutes.notifications,
+                ),
               ),
               const Divider(height: 1, indent: 64),
               _buildActionTile(
@@ -306,7 +328,9 @@ class ProfileScreen extends StatelessWidget {
                 icon: Icons.settings_outlined,
                 title: 'Settings',
                 subtitle: 'App preferences',
-                onTap: () => context.push(CustomerRoutes.settings),
+                onTap: () => context.push(
+                  isVendorMode ? VendorRoutes.settings : CustomerRoutes.settings,
+                ),
               ),
             ],
           ),

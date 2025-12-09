@@ -1,8 +1,10 @@
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthException;
+import '../diagnostics/instrumentation/repository_diagnostics_mixin.dart';
 import 'base_repository.dart';
 import '../exceptions/app_exceptions.dart';
 
-abstract class SupabaseRepository<T> extends DataRepository<T> {
+abstract class SupabaseRepository<T> extends DataRepository<T>
+    with RepositoryDiagnosticsMixin {
   SupabaseRepository(this.client);
 
   final SupabaseClient client;
@@ -19,70 +21,124 @@ abstract class SupabaseRepository<T> extends DataRepository<T> {
   }
 
   @override
-  Future<List<T>> getAll() async {
-    try {
-      final response = await client.from(tableName).select();
-      return (response as List<dynamic>).map((item) => fromMap(item as Map<String, dynamic>)).toList();
-    } catch (e) {
-      throw _handleException(e);
-    }
+  Future<List<T>> getAll() {
+    return runRepositorySpan<List<T>>(
+      'getAll',
+      () async {
+        try {
+          final response = await client.from(tableName).select();
+          return (response as List<dynamic>)
+              .map((item) => fromMap(item as Map<String, dynamic>))
+              .toList();
+        } catch (e) {
+          throw _handleException(e);
+        }
+      },
+      payload: {'table': tableName},
+      onSuccess: (result) => {'count': result.length},
+    );
   }
 
   @override
-  Future<T?> getById(String id) async {
-    try {
-      final response = await client.from(tableName).select().eq('id', id).single();
-      return fromMap(response);
-    } catch (e) {
-      throw _handleException(e);
-    }
+  Future<T?> getById(String id) {
+    return runRepositorySpan<T?>(
+      'getById',
+      () async {
+        try {
+          final response = await client.from(tableName).select().eq('id', id).single();
+          return fromMap(response);
+        } catch (e) {
+          throw _handleException(e);
+        }
+      },
+      correlationId: id,
+      payload: {'table': tableName},
+    );
   }
 
   @override
-  Future<T> create(T item) async {
-    try {
-      final mapData = toMap(item);
-      final response = await client.from(tableName).insert(mapData).select().single();
-      return fromMap(response);
-    } catch (e) {
-      throw _handleException(e);
-    }
+  Future<T> create(T item) {
+    return runRepositorySpan<T>(
+      'create',
+      () async {
+        try {
+          final mapData = toMap(item);
+          final response =
+              await client.from(tableName).insert(mapData).select().single();
+          return fromMap(response);
+        } catch (e) {
+          throw _handleException(e);
+        }
+      },
+      payload: {'table': tableName},
+    );
   }
 
   @override
-  Future<T> update(T item) async {
-    try {
-      final mapData = toMap(item);
-      final response = await client.from(tableName).update(mapData).eq('id', mapData['id']).select().single();
-      return fromMap(response);
-    } catch (e) {
-      throw _handleException(e);
-    }
+  Future<T> update(T item) {
+    return runRepositorySpan<T>(
+      'update',
+      () async {
+        try {
+          final mapData = toMap(item);
+          final response = await client
+              .from(tableName)
+              .update(mapData)
+              .eq('id', mapData['id'])
+              .select()
+              .single();
+          return fromMap(response);
+        } catch (e) {
+          throw _handleException(e);
+        }
+      },
+      correlationId: toMap(item)['id']?.toString(),
+      payload: {'table': tableName},
+    );
   }
 
   @override
-  Future<void> delete(String id) async {
-    try {
-      await client.from(tableName).delete().eq('id', id);
-    } catch (e) {
-      throw _handleException(e);
-    }
+  Future<void> delete(String id) {
+    return runRepositorySpan<void>(
+      'delete',
+      () async {
+        try {
+          await client.from(tableName).delete().eq('id', id);
+        } catch (e) {
+          throw _handleException(e);
+        }
+      },
+      correlationId: id,
+      payload: {'table': tableName},
+    );
   }
 
   @override
-  Future<List<T>> search(Map<String, dynamic> query) async {
-    try {
-      var queryBuilder = client.from(tableName).select();
+  Future<List<T>> search(Map<String, dynamic> query) {
+    return runRepositorySpan<List<T>>(
+      'search',
+      () async {
+        try {
+          var queryBuilder = client.from(tableName).select();
 
-      for (final entry in query.entries) {
-        queryBuilder = queryBuilder.eq(entry.key, entry.value);
-      }
+          for (final entry in query.entries) {
+            queryBuilder = queryBuilder.eq(entry.key, entry.value);
+          }
 
-      final response = await queryBuilder;
-      return (response as List<dynamic>).map((item) => fromMap(item as Map<String, dynamic>)).toList();
-    } catch (e) {
-      throw _handleException(e);
-    }
+          final response = await queryBuilder;
+          return (response as List<dynamic>)
+              .map((item) => fromMap(item as Map<String, dynamic>))
+              .toList();
+        } catch (e) {
+          throw _handleException(e);
+        }
+      },
+      payload: {
+        'table': tableName,
+        'filters': query.map((key, value) => MapEntry(key, value.toString())),
+      },
+      onSuccess: (result) => {'count': result.length},
+    );
   }
 
   T fromMap(Map<String, dynamic> map);

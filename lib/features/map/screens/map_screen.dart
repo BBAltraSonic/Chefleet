@@ -15,6 +15,7 @@ import '../../feed/widgets/vendor_mini_card.dart';
 import '../../dish/widgets/dish_modal.dart';
 import '../blocs/map_feed_bloc.dart';
 import '../widgets/category_filter_bar.dart';
+import '../widgets/map_feed_empty_state.dart';
 import '../widgets/personalized_header.dart';
 import '../../cart/blocs/cart_bloc.dart';
 import '../../cart/blocs/cart_state.dart';
@@ -322,33 +323,9 @@ class _MapScreenState extends State<MapScreen> {
                         ),
                       )
                     else if (state.dishes.isEmpty)
-                      SliverFillRemaining(
-                        child: Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.restaurant_menu,
-                                size: 64,
-                                color: theme.primaryColor.withOpacity(0.3),
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                'No dishes found nearby',
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Try adjusting your location or check back later',
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                      const MapFeedEmptyState(
+                        title: 'No dishes found nearby',
+                        subtitle: 'Try adjusting your location or check back later',
                       )
                     else
                       SliverPadding(

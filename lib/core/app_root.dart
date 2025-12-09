@@ -119,6 +119,14 @@ class _AppRootState extends State<AppRoot> {
                 );
               }
 
+              if (roleState is RoleSwitched) {
+                print('DEBUG AppRoot: Showing shell after role switched to ${roleState.newRole}');
+                return RoleShellSwitcher(
+                  activeRole: roleState.newRole,
+                  availableRoles: roleState.availableRoles,
+                );
+              }
+
               // Fallback to splash screen for any other state
               return const SplashScreen();
             },

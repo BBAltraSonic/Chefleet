@@ -466,25 +466,29 @@ class _DishEditScreenState extends State<DishEditScreen> {
                               'Spice Level',
                               style: Theme.of(context).textTheme.bodyMedium,
                             ),
-                            Row(
-                              children: List.generate(5, (index) {
-                                return IconButton(
-                                  onPressed: () {
-                                    setState(() {
-                                      _spiceLevel = index + 1;
-                                    });
-                                  },
-                                  icon: Icon(
-                                    index < _spiceLevel
-                                        ? Icons.local_fire_department
-                                        : Icons.local_fire_department_outlined,
-                                    color: index < _spiceLevel ? Colors.orange : null,
-                                    size: 20,
-                                  ),
-                                  padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
-                                );
-                              }),
+                            SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: List.generate(5, (index) {
+                                  return IconButton(
+                                    onPressed: () {
+                                      setState(() {
+                                        _spiceLevel = index + 1;
+                                      });
+                                    },
+                                    icon: Icon(
+                                      index < _spiceLevel
+                                          ? Icons.local_fire_department
+                                          : Icons.local_fire_department_outlined,
+                                      color: index < _spiceLevel ? Colors.orange : null,
+                                      size: 18,
+                                    ),
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                                  );
+                                }),
+                              ),
                             ),
                           ],
                         ),

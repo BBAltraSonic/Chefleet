@@ -84,11 +84,16 @@ class RoleBloc extends Bloc<RoleEvent, RoleState> {
       final cachedRole = await _storageService.getActiveRole();
       final cachedAvailableRoles = await _storageService.getAvailableRoles();
 
-      if (cachedRole != null && cachedAvailableRoles != null) {
-        // Emit cached data immediately
+      if (cachedRole != null) {
+        final fallbackRoles = <UserRole>{
+          cachedRole,
+          ...?cachedAvailableRoles,
+          UserRole.customer,
+        };
+
         emit(RoleLoaded(
           activeRole: cachedRole,
-          availableRoles: cachedAvailableRoles,
+          availableRoles: fallbackRoles,
         ));
 
         // Then sync with backend in background
@@ -400,26 +405,42 @@ class RoleBloc extends Bloc<RoleEvent, RoleState> {
       // Grant vendor role on backend
       await _syncService.grantVendorRole(vendorProfileId: event.vendorProfileId);
 
+      final optimisticRoles = <UserRole>{UserRole.customer, UserRole.vendor};
+      if (currentState is RoleLoaded) {
+        optimisticRoles.addAll(currentState.availableRoles);
+      }
+
+      await _storageService.saveAvailableRoles(optimisticRoles);
+
+      UserRole optimisticActiveRole =
+          currentState is RoleLoaded ? currentState.activeRole : UserRole.customer;
+
+      if (event.switchToVendor) {
+        optimisticActiveRole = UserRole.vendor;
+        await _storageService.saveActiveRole(UserRole.vendor);
+      }
+
+      emit(VendorRoleGranted(
+        activeRole: optimisticActiveRole,
+        availableRoles: optimisticRoles,
+      ));
+
+      if (event.switchToVendor) {
+        _roleChangesController.add(UserRole.vendor);
+      }
+
       // Fetch updated role data
       final (activeRole, availableRoles) = await _syncService.fetchRoleData();
 
-      // Update storage
       await _storageService.saveAvailableRoles(availableRoles);
-
-      // Switch to vendor if requested
-      if (event.switchToVendor) {
-        await _storageService.saveActiveRole(UserRole.vendor);
-        emit(VendorRoleGranted(
-          activeRole: UserRole.vendor,
-          availableRoles: availableRoles,
-        ));
-        _roleChangesController.add(UserRole.vendor);
-      } else {
-        emit(VendorRoleGranted(
-          activeRole: activeRole ?? UserRole.customer,
-          availableRoles: availableRoles,
-        ));
+      if (activeRole != null) {
+        await _storageService.saveActiveRole(activeRole);
       }
+
+      emit(VendorRoleGranted(
+        activeRole: activeRole ?? optimisticActiveRole,
+        availableRoles: availableRoles,
+      ));
     } catch (e) {
       emit(RoleError(
         message: 'Failed to grant vendor role: ${e.toString()}',

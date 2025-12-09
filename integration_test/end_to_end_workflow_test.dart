@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:chefleet/core/diagnostics/testing/diagnostic_tester_helpers.dart';
 import 'package:chefleet/main.dart' as app;
 import 'package:chefleet/features/auth/blocs/auth_bloc.dart';
 import 'package:chefleet/features/map/blocs/map_feed_bloc.dart';
@@ -9,9 +10,11 @@ import 'package:chefleet/features/feed/models/dish_model.dart';
 import 'package:chefleet/core/services/cache_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'diagnostic_harness.dart';
+
 /// End-to-end workflow integration tests for the Chefleet app
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  ensureIntegrationDiagnostics(scenarioName: 'end_to_end_workflow');
 
   group('Chefleet End-to-End Workflow Tests', () {
     testWidgets('complete user journey from app launch to vendor selection', (WidgetTester tester) async {
@@ -133,8 +136,8 @@ void main() {
         await tester.pumpAndSettle(const Duration(seconds: 2));
 
         // Fill in login form
-        await tester.enterText(find.byKey(Key('email_field')), 'test@example.com');
-        await tester.enterText(find.byKey(Key('password_field')), 'password123');
+        await tester.enterText(find.byKey(const Key('email_field')), 'test@example.com');
+        await tester.enterText(find.byKey(const Key('password_field')), 'password123');
         await tester.tap(find.text('Continue'));
         await tester.pumpAndSettle(const Duration(seconds: 5));
 
@@ -146,10 +149,10 @@ void main() {
         await tester.pumpAndSettle(const Duration(seconds: 2));
 
         // Fill in signup form
-        await tester.enterText(find.byKey(Key('name_field')), 'Test User');
-        await tester.enterText(find.byKey(Key('email_field')), 'test@example.com');
-        await tester.enterText(find.byKey(Key('password_field')), 'password123');
-        await tester.enterText(find.byKey(Key('confirm_password_field')), 'password123');
+        await tester.enterText(find.byKey(const Key('name_field')), 'Test User');
+        await tester.enterText(find.byKey(const Key('email_field')), 'test@example.com');
+        await tester.enterText(find.byKey(const Key('password_field')), 'password123');
+        await tester.enterText(find.byKey(const Key('confirm_password_field')), 'password123');
         await tester.tap(find.text('Create Account'));
         await tester.pumpAndSettle(const Duration(seconds: 5));
 
@@ -298,8 +301,8 @@ void main() {
         await tester.pumpAndSettle(const Duration(seconds: 2));
 
         // Fill in checkout information
-        await tester.enterText(find.byKey(Key('address_field')), '123 Test Street');
-        await tester.enterText(find.byKey(Key('phone_field')), '+1234567890');
+        await tester.enterText(find.byKey(const Key('address_field')), '123 Test Street');
+        await tester.enterText(find.byKey(const Key('phone_field')), '+1234567890');
         await tester.tap(find.text('Place Order'));
         await tester.pumpAndSettle(const Duration(seconds: 5));
 
@@ -430,7 +433,7 @@ void main() {
         final center = tester.getCenter(googleMapFinder);
         await tester.drag(
           googleMapFinder,
-          Offset(50, 0),
+          const Offset(50, 0),
           500,
         );
         await tester.pump(const Duration(milliseconds: 100));

@@ -105,11 +105,17 @@ class OpeningHoursUpdated extends VendorOnboardingEvent {
 
 class OnboardingSaved extends VendorOnboardingEvent {
   final VendorOnboardingData onboardingData;
+  final VendorOnboardingStep currentStep;
+  final bool isAutoSave;
 
-  const OnboardingSaved({required this.onboardingData});
+  const OnboardingSaved({
+    required this.onboardingData,
+    required this.currentStep,
+    this.isAutoSave = false,
+  });
 
   @override
-  List<Object?> get props => [onboardingData];
+  List<Object?> get props => [onboardingData, currentStep, isAutoSave];
 }
 
 class OnboardingReset extends VendorOnboardingEvent {

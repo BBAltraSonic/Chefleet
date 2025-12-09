@@ -2,6 +2,9 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:chefleet/core/diagnostics/diagnostic_domains.dart';
+import 'package:chefleet/core/diagnostics/diagnostic_harness.dart';
+import 'package:chefleet/core/diagnostics/diagnostic_severity.dart';
 import '../../auth/blocs/auth_bloc.dart';
 
 part 'active_orders_event.dart';
@@ -12,6 +15,7 @@ class ActiveOrdersBloc extends Bloc<ActiveOrdersEvent, ActiveOrdersState> {
   final AuthBloc _authBloc;
   RealtimeChannel? _ordersChannel;
   StreamSubscription? _authSubscription;
+  final DiagnosticHarness _diagnostics = DiagnosticHarness.instance;
 
   ActiveOrdersBloc({
     required SupabaseClient supabaseClient,
@@ -37,6 +41,26 @@ class ActiveOrdersBloc extends Bloc<ActiveOrdersEvent, ActiveOrdersState> {
     });
   }
 
+  void _logActive(
+    String event, {
+    DiagnosticSeverity severity = DiagnosticSeverity.info,
+    Map<String, Object?> payload = const <String, Object?>{},
+  }) {
+    final authState = _authBloc.state;
+    final correlationId = authState.isGuest
+        ? authState.guestId != null ? 'guest-${authState.guestId}' : null
+        : authState.user != null
+            ? 'user-${authState.user!.id}'
+            : null;
+    _diagnostics.log(
+      domain: DiagnosticDomains.ordering,
+      event: 'active_orders.$event',
+      severity: severity,
+      payload: payload,
+      correlationId: correlationId,
+    );
+  }
+
   @override
   Future<void> close() {
     _ordersChannel?.unsubscribe();
@@ -49,6 +73,7 @@ class ActiveOrdersBloc extends Bloc<ActiveOrdersEvent, ActiveOrdersState> {
     Emitter<ActiveOrdersState> emit,
   ) async {
     emit(state.copyWith(isLoading: true));
+    _logActive('load.request', severity: DiagnosticSeverity.debug);
 
     try {
       final authState = _authBloc.state;
@@ -90,6 +115,11 @@ class ActiveOrdersBloc extends Bloc<ActiveOrdersEvent, ActiveOrdersState> {
         fabState: orders.isEmpty ? FabState.hidden : FabState.visible,
       ));
 
+      _logActive(
+        'load.success',
+        payload: {'orders': orders.length},
+      );
+
       // Subscribe to real-time updates
       add(SubscribeToOrderUpdates());
     } catch (e) {
@@ -97,6 +127,11 @@ class ActiveOrdersBloc extends Bloc<ActiveOrdersEvent, ActiveOrdersState> {
         isLoading: false,
         errorMessage: 'Failed to load active orders: ${e.toString()}',
       ));
+      _logActive(
+        'load.error',
+        severity: DiagnosticSeverity.error,
+        payload: {'message': e.toString()},
+      );
     }
   }
 
@@ -105,10 +140,11 @@ class ActiveOrdersBloc extends Bloc<ActiveOrdersEvent, ActiveOrdersState> {
     Emitter<ActiveOrdersState> emit,
   ) async {
     if (_ordersChannel != null) return;
+    _logActive('subscribe.request', severity: DiagnosticSeverity.debug);
 
     final authState = _authBloc.state;
     final currentUser = _supabaseClient.auth.currentUser;
-    
+
     // Don't subscribe if neither authenticated nor guest
     if (currentUser == null && !authState.isGuest) return;
 
@@ -126,7 +162,7 @@ class ActiveOrdersBloc extends Bloc<ActiveOrdersEvent, ActiveOrdersState> {
           callback: (payload) {
             // Check if this order belongs to the current user/guest
             bool isMyOrder = false;
-            
+
             if (authState.isGuest && authState.guestId != null) {
               isMyOrder = (payload.newRecord['guest_user_id'] == authState.guestId) ||
                   (payload.oldRecord['guest_user_id'] == authState.guestId);
@@ -134,13 +170,14 @@ class ActiveOrdersBloc extends Bloc<ActiveOrdersEvent, ActiveOrdersState> {
               isMyOrder = (payload.newRecord['buyer_id'] == currentUser.id) ||
                   (payload.oldRecord['buyer_id'] == currentUser.id);
             }
-            
+
             if (isMyOrder) {
               add(LoadActiveOrders());
             }
           },
         )
         .subscribe();
+    _logActive('subscribe.success');
   }
 
   Future<void> _onUnsubscribeFromOrderUpdates(
@@ -151,12 +188,14 @@ class ActiveOrdersBloc extends Bloc<ActiveOrdersEvent, ActiveOrdersState> {
       await _ordersChannel!.unsubscribe();
       _ordersChannel = null;
     }
+    _logActive('subscribe.dispose', severity: DiagnosticSeverity.debug);
   }
 
   Future<void> _onRefreshActiveOrders(
     RefreshActiveOrders event,
     Emitter<ActiveOrdersState> emit,
   ) async {
+    _logActive('refresh.trigger', severity: DiagnosticSeverity.debug);
     add(LoadActiveOrders());
   }
 
@@ -180,17 +219,21 @@ class ActiveOrdersBloc extends Bloc<ActiveOrdersEvent, ActiveOrdersState> {
   // FAB state management
   void showFab() {
     emit(state.copyWith(fabState: FabState.visible));
+    _logActive('fab.show', severity: DiagnosticSeverity.debug);
   }
 
   void hideFab() {
     emit(state.copyWith(fabState: FabState.hidden));
+    _logActive('fab.hide', severity: DiagnosticSeverity.debug);
   }
 
   void startFabPulse() {
     emit(state.copyWith(fabState: FabState.pulsing));
+    _logActive('fab.pulse.start', severity: DiagnosticSeverity.debug);
   }
 
   void stopFabPulse() {
     emit(state.copyWith(fabState: FabState.visible));
+    _logActive('fab.pulse.stop', severity: DiagnosticSeverity.debug);
   }
 }

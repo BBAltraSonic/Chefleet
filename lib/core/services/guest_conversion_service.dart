@@ -1,4 +1,10 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../diagnostics/diagnostic_domains.dart';
+import '../diagnostics/diagnostic_harness.dart';
+import '../diagnostics/diagnostic_severity.dart';
+import '../diagnostics/instrumentation/correlation_scopes.dart';
+import '../diagnostics/instrumentation/system_services_diagnostics.dart';
 import 'guest_session_service.dart';
 
 /// Service for converting guest accounts to registered user accounts
@@ -16,6 +22,7 @@ class GuestConversionService {
 
   final SupabaseClient _supabaseClient;
   final GuestSessionService _guestSessionService;
+  final DiagnosticHarness _diagnostics = DiagnosticHarness.instance;
 
   /// Convert a guest session to a registered user account
   /// 
@@ -31,87 +38,156 @@ class GuestConversionService {
     required String password,
     required String name,
   }) async {
-    try {
-      // Step 1: Validate guest session exists and is not already converted
-      final isValid = await _validateGuestSession(guestId);
-      if (!isValid) {
+    return CorrelationScopes.runGuest(guestId, () async {
+      final correlationId = 'guest-$guestId';
+      _logConversion(
+        event: 'guest_conversion.start',
+        severity: DiagnosticSeverity.info,
+        correlationId: correlationId,
+        payload: {
+          'email': email,
+        },
+      );
+
+      try {
+        final isValid = await _validateGuestSession(guestId, correlationId);
+        if (!isValid) {
+          _logConversion(
+            event: 'guest_conversion.invalid_session',
+            severity: DiagnosticSeverity.warn,
+            correlationId: correlationId,
+            payload: {'guest_id': guestId},
+          );
+          return const ConversionResult(
+            success: false,
+            errorMessage: 'Invalid or already converted guest session',
+          );
+        }
+
+        final authResponse = await SystemServicesDiagnostics.traceSupabaseCall(
+          action: 'auth.signUp',
+          correlationId: correlationId,
+          requestPayload: {
+            'email': email,
+          },
+          runner: () => _supabaseClient.auth.signUp(
+            email: email,
+            password: password,
+            data: {'name': name},
+          ),
+          onSuccess: (response) => {
+            'user_id': response.user?.id,
+          },
+        );
+
+        if (authResponse.user == null) {
+          _logConversion(
+            event: 'guest_conversion.auth_failed',
+            severity: DiagnosticSeverity.warn,
+            correlationId: correlationId,
+            payload: {'email': email},
+          );
+          return const ConversionResult(
+            success: false,
+            errorMessage: 'Failed to create user account',
+          );
+        }
+
+        final newUserId = authResponse.user!.id;
+
+        final migrationResult = await _migrateGuestData(
+          guestId: guestId,
+          newUserId: newUserId,
+          correlationId: correlationId,
+        );
+
+        if (!migrationResult.success) {
+          _logConversion(
+            event: 'guest_conversion.migration_warning',
+            severity: DiagnosticSeverity.warn,
+            correlationId: correlationId,
+            payload: {'message': migrationResult.errorMessage},
+          );
+        }
+
+        await _guestSessionService.clearGuestSession();
+
+        _logConversion(
+          event: 'guest_conversion.success',
+          severity: DiagnosticSeverity.info,
+          correlationId: correlationId,
+          payload: {
+            'user_id': newUserId,
+            'orders_migrated': migrationResult.ordersMigrated,
+            'messages_migrated': migrationResult.messagesMigrated,
+          },
+        );
+
+        return ConversionResult(
+          success: true,
+          userId: newUserId,
+          ordersMigrated: migrationResult.ordersMigrated,
+          messagesMigrated: migrationResult.messagesMigrated,
+        );
+      } on AuthException catch (e, stackTrace) {
+        _logConversion(
+          event: 'guest_conversion.auth_exception',
+          severity: DiagnosticSeverity.error,
+          correlationId: correlationId,
+          payload: {'error': e.message},
+          extra: stackTrace.toString(),
+        );
         return ConversionResult(
           success: false,
-          errorMessage: 'Invalid or already converted guest session',
+          errorMessage: _formatAuthError(e),
         );
-      }
-
-      // Step 2: Create auth.users account
-      final authResponse = await _supabaseClient.auth.signUp(
-        email: email,
-        password: password,
-        data: {'name': name},
-      );
-
-      if (authResponse.user == null) {
+      } catch (e, stackTrace) {
+        _logConversion(
+          event: 'guest_conversion.error',
+          severity: DiagnosticSeverity.error,
+          correlationId: correlationId,
+          payload: {'error': e.toString()},
+          extra: stackTrace.toString(),
+        );
         return ConversionResult(
           success: false,
-          errorMessage: 'Failed to create user account',
+          errorMessage: 'Conversion failed: ${e.toString()}',
         );
       }
-
-      final newUserId = authResponse.user!.id;
-
-      // Step 3: Migrate guest data using edge function
-      final migrationResult = await _migrateGuestData(
-        guestId: guestId,
-        newUserId: newUserId,
-      );
-
-      if (!migrationResult.success) {
-        // Account was created but migration failed
-        // Log the error but don't fail the conversion
-        print('Warning: Data migration failed: ${migrationResult.errorMessage}');
-      }
-
-      // Step 4: Clear local guest session
-      await _guestSessionService.clearGuestSession();
-
-      return ConversionResult(
-        success: true,
-        userId: newUserId,
-        ordersMigrated: migrationResult.ordersMigrated,
-        messagesMigrated: migrationResult.messagesMigrated,
-      );
-    } on AuthException catch (e) {
-      return ConversionResult(
-        success: false,
-        errorMessage: _formatAuthError(e),
-      );
-    } catch (e) {
-      return ConversionResult(
-        success: false,
-        errorMessage: 'Conversion failed: ${e.toString()}',
-      );
-    }
+    });
   }
 
   /// Validate that a guest session exists and can be converted
-  Future<bool> _validateGuestSession(String guestId) async {
+  Future<bool> _validateGuestSession(String guestId, String correlationId) async {
     try {
-      final session = await _supabaseClient
-          .from('guest_sessions')
-          .select('id, converted_to_user_id')
-          .eq('guest_id', guestId)
-          .maybeSingle();
+      final session = await SystemServicesDiagnostics.traceSupabaseCall(
+        action: 'guest_sessions.validate',
+        correlationId: correlationId,
+        requestPayload: {'guest_id': guestId},
+        runner: () => _supabaseClient
+            .from('guest_sessions')
+            .select('id, converted_to_user_id')
+            .eq('guest_id', guestId)
+            .maybeSingle(),
+      );
 
       if (session == null) {
         return false;
       }
 
-      // Check if already converted
       if (session['converted_to_user_id'] != null) {
         return false;
       }
 
       return true;
-    } catch (e) {
-      print('Error validating guest session: $e');
+    } catch (e, stackTrace) {
+      _logConversion(
+        event: 'guest_conversion.validation_error',
+        severity: DiagnosticSeverity.error,
+        correlationId: correlationId,
+        payload: {'error': e.toString()},
+        extra: stackTrace.toString(),
+      );
       return false;
     }
   }
@@ -120,20 +196,29 @@ class GuestConversionService {
   Future<MigrationResult> _migrateGuestData({
     required String guestId,
     required String newUserId,
+    required String correlationId,
   }) async {
     try {
-      final response = await _supabaseClient.functions.invoke(
-        'migrate_guest_data',
-        body: {
+      final response = await SystemServicesDiagnostics.traceSupabaseCall(
+        action: 'functions.migrate_guest_data',
+        correlationId: correlationId,
+        requestPayload: {
           'guest_id': guestId,
           'new_user_id': newUserId,
         },
+        runner: () => _supabaseClient.functions.invoke(
+          'migrate_guest_data',
+          body: {
+            'guest_id': guestId,
+            'new_user_id': newUserId,
+          },
+        ),
       );
 
       final data = response.data as Map<String, dynamic>?;
 
       if (data == null) {
-        return MigrationResult(
+        return const MigrationResult(
           success: false,
           errorMessage: 'No response from migration function',
         );
@@ -145,7 +230,14 @@ class GuestConversionService {
         ordersMigrated: data['orders_migrated'] as int? ?? 0,
         messagesMigrated: data['messages_migrated'] as int? ?? 0,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      _logConversion(
+        event: 'guest_conversion.migration_error',
+        severity: DiagnosticSeverity.error,
+        correlationId: correlationId,
+        payload: {'error': e.toString()},
+        extra: stackTrace.toString(),
+      );
       return MigrationResult(
         success: false,
         errorMessage: 'Migration error: ${e.toString()}',
@@ -156,23 +248,31 @@ class GuestConversionService {
   /// Get guest session statistics for conversion prompt
   Future<GuestSessionStats> getGuestSessionStats(String guestId) async {
     try {
-      // Get order count
-      final ordersResponse = await _supabaseClient
-          .from('orders')
-          .select('id')
-          .eq('guest_user_id', guestId);
+      final correlationId = 'guest-$guestId';
+      final ordersResponse = await SystemServicesDiagnostics.traceSupabaseCall(
+        action: 'orders.stats',
+        correlationId: correlationId,
+        requestPayload: {'guest_user_id': guestId},
+        runner: () => _supabaseClient
+            .from('orders')
+            .select('id')
+            .eq('guest_user_id', guestId),
+      );
 
       final orderCount = (ordersResponse as List).length;
 
-      // Get message count
-      final messagesResponse = await _supabaseClient
-          .from('messages')
-          .select('id')
-          .eq('guest_sender_id', guestId);
+      final messagesResponse = await SystemServicesDiagnostics.traceSupabaseCall(
+        action: 'messages.stats',
+        correlationId: correlationId,
+        requestPayload: {'guest_sender_id': guestId},
+        runner: () => _supabaseClient
+            .from('messages')
+            .select('id')
+            .eq('guest_sender_id', guestId),
+      );
 
       final messageCount = (messagesResponse as List).length;
 
-      // Get session info
       final sessionInfo = await _guestSessionService.getGuestSessionInfo(guestId);
       final createdAt = sessionInfo?['created_at'] != null
           ? DateTime.parse(sessionInfo!['created_at'] as String)
@@ -183,9 +283,15 @@ class GuestConversionService {
         messageCount: messageCount,
         sessionAge: DateTime.now().difference(createdAt),
       );
-    } catch (e) {
-      print('Error getting guest session stats: $e');
-      return GuestSessionStats(
+    } catch (e, stackTrace) {
+      _logConversion(
+        event: 'guest_conversion.stats_error',
+        severity: DiagnosticSeverity.error,
+        correlationId: 'guest-$guestId',
+        payload: {'error': e.toString()},
+        extra: stackTrace.toString(),
+      );
+      return const GuestSessionStats(
         orderCount: 0,
         messageCount: 0,
         sessionAge: Duration.zero,
@@ -233,6 +339,23 @@ class GuestConversionService {
       default:
         return 'Registration failed: ${e.message}';
     }
+  }
+
+  void _logConversion({
+    required String event,
+    required DiagnosticSeverity severity,
+    required String correlationId,
+    Map<String, Object?> payload = const <String, Object?>{},
+    String? extra,
+  }) {
+    _diagnostics.log(
+      domain: DiagnosticDomains.guestConversion,
+      event: event,
+      severity: severity,
+      correlationId: correlationId,
+      payload: payload,
+      extra: extra,
+    );
   }
 }
 

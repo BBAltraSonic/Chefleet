@@ -5,19 +5,21 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:chefleet/main.dart' as app;
 import 'package:chefleet/core/services/guest_session_service.dart';
+import 'package:chefleet/core/diagnostics/testing/diagnostic_tester_helpers.dart';
+import 'diagnostic_harness.dart';
 
 /// End-to-End test for complete guest user journey
 /// 
 /// Tests the entire flow from app launch through guest mode,
 /// ordering, chatting, and conversion to registered user
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  ensureIntegrationDiagnostics(scenarioName: 'guest_journey_e2e');
 
   group('Complete Guest Journey E2E Test', () {
     late GuestSessionService guestSessionService;
 
     setUpAll(() async {
-      // Initialize Supabase with test environment
+      // Supabase with test environment
       await Supabase.initialize(
         url: const String.fromEnvironment('SUPABASE_URL'),
         anonKey: const String.fromEnvironment('SUPABASE_ANON_KEY'),
@@ -37,13 +39,21 @@ void main() {
       // ========== PHASE 1: APP LAUNCH & GUEST MODE START ==========
       print('📱 Phase 1: Launching app');
       app.main();
-      await tester.pumpAndSettle(const Duration(seconds: 2));
+      await diagnosticPumpAndSettle(
+        tester,
+        duration: const Duration(seconds: 2),
+        description: 'wait for splash',
+      );
 
       // Verify splash screen
       print('✓ Splash screen loaded');
 
       // Wait for navigation to auth screen
-      await tester.pumpAndSettle(const Duration(seconds: 2));
+      await diagnosticPumpAndSettle(
+        tester,
+        duration: const Duration(seconds: 2),
+        description: 'navigate to auth',
+      );
 
       // Verify auth screen with guest option
       expect(find.text('Chefleet'), findsOneWidget);
@@ -52,8 +62,16 @@ void main() {
 
       // Start guest mode
       print('👤 Starting guest mode');
-      await tester.tap(find.text('Continue as Guest'));
-      await tester.pumpAndSettle(const Duration(seconds: 2));
+      await diagnosticTap(
+        tester,
+        find.text('Continue as Guest'),
+        description: 'start guest mode',
+      );
+      await diagnosticPumpAndSettle(
+        tester,
+        duration: const Duration(seconds: 2),
+        description: 'settle guest mode',
+      );
 
       // Verify guest session created
       final guestSession = await guestSessionService.getGuestSession();
@@ -69,7 +87,11 @@ void main() {
       print('🗺️  Phase 2: Browsing dishes');
       
       // Wait for map to load dishes
-      await tester.pumpAndSettle(const Duration(seconds: 3));
+      await diagnosticPumpAndSettle(
+        tester,
+        duration: const Duration(seconds: 3),
+        description: 'load dishes on map',
+      );
 
       // Verify dishes are displayed on map
       expect(find.byType(app.DishMarker), findsWidgets);
@@ -77,8 +99,16 @@ void main() {
 
       // Tap on a dish marker
       final firstDish = find.byType(app.DishMarker).first;
-      await tester.tap(firstDish);
-      await tester.pumpAndSettle(const Duration(seconds: 1));
+      await diagnosticTap(
+        tester,
+        firstDish,
+        description: 'select first dish',
+      );
+      await diagnosticPumpAndSettle(
+        tester,
+        duration: const Duration(seconds: 1),
+        description: 'load dish detail',
+      );
 
       // Verify dish detail screen
       expect(find.byType(app.DishDetailScreen), findsOneWidget);
@@ -88,13 +118,21 @@ void main() {
       print('🛒 Phase 3: Placing first order');
 
       // Add dish to cart
-      await tester.tap(find.text('Add to Cart'));
-      await tester.pumpAndSettle();
+      await diagnosticTap(
+        tester,
+        find.text('Add to Cart'),
+        description: 'add dish to cart',
+      );
+      await diagnosticPumpAndSettle(tester, description: 'settle after add');
       print('✓ Added dish to cart');
 
       // Navigate to cart
-      await tester.tap(find.byIcon(Icons.shopping_cart));
-      await tester.pumpAndSettle();
+      await diagnosticTap(
+        tester,
+        find.byIcon(Icons.shopping_cart),
+        description: 'open cart',
+      );
+      await diagnosticPumpAndSettle(tester, description: 'load cart');
 
       // Verify cart screen
       expect(find.byType(app.CartScreen), findsOneWidget);
@@ -102,24 +140,44 @@ void main() {
       print('✓ Cart screen displayed');
 
       // Proceed to checkout
-      await tester.tap(find.text('Checkout'));
-      await tester.pumpAndSettle(const Duration(seconds: 1));
+      await diagnosticTap(
+        tester,
+        find.text('Checkout'),
+        description: 'proceed to checkout',
+      );
+      await diagnosticPumpAndSettle(
+        tester,
+        duration: const Duration(seconds: 1),
+        description: 'load checkout form',
+      );
 
       // Fill delivery information
-      await tester.enterText(
+      await diagnosticEnterText(
+        tester,
         find.byKey(const Key('delivery_address')),
         '123 Test Street, Test City',
+        description: 'enter delivery address',
       );
-      await tester.enterText(
+      await diagnosticEnterText(
+        tester,
         find.byKey(const Key('phone_number')),
         '+1234567890',
+        description: 'enter phone number',
       );
-      await tester.pumpAndSettle();
+      await diagnosticPumpAndSettle(tester, description: 'settle form');
       print('✓ Filled delivery information');
 
       // Place order
-      await tester.tap(find.text('Place Order'));
-      await tester.pumpAndSettle(const Duration(seconds: 3));
+      await diagnosticTap(
+        tester,
+        find.text('Place Order'),
+        description: 'place order',
+      );
+      await diagnosticPumpAndSettle(
+        tester,
+        duration: const Duration(seconds: 3),
+        description: 'process order',
+      );
 
       // Verify order confirmation
       expect(find.byType(app.OrderConfirmationScreen), findsOneWidget);
@@ -130,7 +188,11 @@ void main() {
       print('💬 Phase 4: First conversion prompt');
 
       // Wait for conversion prompt to appear
-      await tester.pumpAndSettle(const Duration(seconds: 1));
+      await diagnosticPumpAndSettle(
+        tester,
+        duration: const Duration(seconds: 1),
+        description: 'wait for conversion prompt',
+      );
 
       // Verify conversion prompt after first order
       expect(find.text('Save Your Progress'), findsOneWidget);
@@ -139,8 +201,12 @@ void main() {
       print('✓ Conversion prompt displayed after first order');
 
       // Dismiss for now
-      await tester.tap(find.text('Not Now'));
-      await tester.pumpAndSettle();
+      await diagnosticTap(
+        tester,
+        find.text('Not Now'),
+        description: 'dismiss conversion prompt',
+      );
+      await diagnosticPumpAndSettle(tester, description: 'settle after dismiss');
       print('✓ Dismissed conversion prompt');
 
       // ========== PHASE 5: CHAT INTERACTION ==========

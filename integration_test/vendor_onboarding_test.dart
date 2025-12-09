@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:chefleet/core/diagnostics/testing/diagnostic_tester_helpers.dart';
 import 'package:chefleet/main.dart' as app;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'diagnostic_harness.dart';
+
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  ensureIntegrationDiagnostics(scenarioName: 'vendor_onboarding');
 
   group('Vendor Onboarding Integration Tests', () {
     late SupabaseClient supabase;

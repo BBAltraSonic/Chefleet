@@ -1,6 +1,9 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:uuid/uuid.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:chefleet/core/diagnostics/diagnostic_domains.dart';
+import 'package:chefleet/core/diagnostics/diagnostic_harness.dart';
+import 'package:chefleet/core/diagnostics/diagnostic_severity.dart';
 import '../../../core/repositories/order_repository.dart';
 import '../../auth/blocs/auth_bloc.dart';
 import 'order_event.dart';
@@ -32,6 +35,29 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
   final SupabaseClient _supabaseClient;
   final AuthBloc _authBloc;
   static const double _taxRate = 0.0875; // 8.75% tax rate
+  final DiagnosticHarness _diagnostics = DiagnosticHarness.instance;
+
+  void _logOrdering(
+    String event, {
+    DiagnosticSeverity severity = DiagnosticSeverity.info,
+    Map<String, Object?> payload = const <String, Object?>{},
+    String? orderId,
+  }) {
+    final correlationId = orderId != null
+        ? 'order-$orderId'
+        : state.placedOrderId != null
+            ? 'order-${state.placedOrderId}'
+            : state.items.isNotEmpty
+                ? 'vendor-${state.items.first.vendorId}'
+                : null;
+    _diagnostics.log(
+      domain: DiagnosticDomains.ordering,
+      event: event,
+      severity: severity,
+      payload: payload,
+      correlationId: correlationId,
+    );
+  }
 
   void _onOrderStarted(OrderStarted event, Emitter<OrderState> emit) {
     emit(state.copyWith(status: OrderStatus.idle));
@@ -39,6 +65,14 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
 
   void _onOrderItemAdded(OrderItemAdded event, Emitter<OrderState> emit) async {
     emit(state.copyWith(status: OrderStatus.loading));
+    _logOrdering(
+      'cart.item_add.request',
+      severity: DiagnosticSeverity.debug,
+      payload: {
+        'dishId': event.dishId,
+        'quantity': event.quantity,
+      },
+    );
 
     try {
       // Find existing item
@@ -88,16 +122,35 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
         final newItems = [...state.items, newItem];
         _updateTotals(newItems, emit);
       }
+      _logOrdering(
+        'cart.item_add.success',
+        payload: {
+          'totalItems': state.items.length,
+        },
+      );
     } catch (e) {
       emit(state.copyWith(
         status: OrderStatus.error,
         errorMessage: 'Failed to add item to cart: $e',
       ));
+      _logOrdering(
+        'cart.item_add.error',
+        severity: DiagnosticSeverity.error,
+        payload: {'message': e.toString()},
+      );
     }
   }
 
   void _onOrderItemUpdated(OrderItemUpdated event, Emitter<OrderState> emit) {
     emit(state.copyWith(status: OrderStatus.loading));
+    _logOrdering(
+      'cart.item_update.request',
+      severity: DiagnosticSeverity.debug,
+      payload: {
+        'dishId': event.dishId,
+        'quantity': event.quantity,
+      },
+    );
 
     try {
       final existingIndex = state.items.indexWhere(
@@ -114,27 +167,50 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
         newItems[existingIndex] = updatedItem;
         _updateTotals(newItems, emit);
       }
+      _logOrdering(
+        'cart.item_update.success',
+        payload: {'dishId': event.dishId},
+      );
     } catch (e) {
       emit(state.copyWith(
         status: OrderStatus.error,
         errorMessage: 'Failed to update item: $e',
       ));
+      _logOrdering(
+        'cart.item_update.error',
+        severity: DiagnosticSeverity.error,
+        payload: {'message': e.toString()},
+      );
     }
   }
 
   void _onOrderItemRemoved(OrderItemRemoved event, Emitter<OrderState> emit) {
     emit(state.copyWith(status: OrderStatus.loading));
+    _logOrdering(
+      'cart.item_remove.request',
+      severity: DiagnosticSeverity.debug,
+      payload: {'dishId': event.dishId},
+    );
 
     try {
       final newItems = state.items
           .where((item) => item.dishId != event.dishId)
           .toList();
       _updateTotals(newItems, emit);
+      _logOrdering(
+        'cart.item_remove.success',
+        payload: {'remainingItems': newItems.length},
+      );
     } catch (e) {
       emit(state.copyWith(
         status: OrderStatus.error,
         errorMessage: 'Failed to remove item: $e',
       ));
+      _logOrdering(
+        'cart.item_remove.error',
+        severity: DiagnosticSeverity.error,
+        payload: {'message': e.toString()},
+      );
     }
   }
 
@@ -149,6 +225,10 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
     emit(state.copyWith(
       pickupTime: event.pickupTime,
     ));
+    _logOrdering(
+      'cart.pickup_time.selected',
+      payload: {'pickupTime': event.pickupTime.toIso8601String()},
+    );
   }
 
   void _onSpecialInstructionsUpdated(
@@ -158,6 +238,10 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
     emit(state.copyWith(
       specialInstructions: event.instructions,
     ));
+    _logOrdering(
+      'cart.instructions.updated',
+      payload: {'length': event.instructions.length},
+    );
   }
 
   void _onOrderPlaced(OrderPlaced event, Emitter<OrderState> emit) async {
@@ -166,6 +250,11 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
         status: OrderStatus.error,
         errorMessage: 'Please complete all required fields before placing order',
       ));
+      _logOrdering(
+        'order.place.invalid',
+        severity: DiagnosticSeverity.warn,
+        payload: {'reason': 'missing_fields'},
+      );
       return;
     }
 
@@ -173,6 +262,13 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
       status: OrderStatus.placing,
       isPlacingOrder: true,
     ));
+    _logOrdering(
+      'order.place.request',
+      severity: DiagnosticSeverity.debug,
+      payload: {
+        'items': state.items.length,
+      },
+    );
 
     try {
       // Generate idempotency key
@@ -222,6 +318,10 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
         status: OrderStatus.success,
         placedOrderId: orderId,
       ));
+      _logOrdering(
+        'order.place.success',
+        orderId: orderId,
+      );
 
     } catch (e) {
       emit(state.copyWith(
@@ -229,6 +329,11 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
         errorMessage: 'Failed to place order: $e',
         isPlacingOrder: false,
       ));
+      _logOrdering(
+        'order.place.error',
+        severity: DiagnosticSeverity.error,
+        payload: {'message': e.toString()},
+      );
     }
   }
 
@@ -238,10 +343,19 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
       errorMessage: event.error,
       isPlacingOrder: false,
     ));
+    _logOrdering(
+      'order.failure',
+      severity: DiagnosticSeverity.error,
+      payload: {'message': event.error},
+    );
   }
 
   void _onOrderRetried(OrderRetried event, Emitter<OrderState> emit) {
     add(OrderPlaced());
+    _logOrdering(
+      'order.retry',
+      severity: DiagnosticSeverity.debug,
+    );
   }
 
   void _onOrderReset(OrderReset event, Emitter<OrderState> emit) {
@@ -249,6 +363,7 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
       status: OrderStatus.idle,
       errorMessage: null,
     ));
+    _logOrdering('order.reset');
   }
 
   void _updateTotals(List<OrderItem> items, Emitter<OrderState> emit) {

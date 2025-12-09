@@ -38,123 +38,144 @@ class OrderCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
+        margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
-          color: theme.cardTheme.color ?? colorScheme.surface,
-          borderRadius: BorderRadius.circular(16),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
           boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(theme.brightness == Brightness.dark ? 0.3 : 0.1),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
+             BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 24,
+              offset: const Offset(0, 8),
+              spreadRadius: 2,
             ),
           ],
+          border: Border.all(
+            color: Colors.grey.withOpacity(0.08),
+            width: 1,
+          ),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Order #${order['id'].toString().substring(0, 8).toUpperCase()}',
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        buyer['full_name'] as String? ?? 'Customer',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      if (buyer['phone'] != null)
-                        Text(
-                          buyer['phone'] as String? ?? '',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header Status Strip
+              Container(
+                width: double.infinity,
+                height: 4,
+                color: _getStatusColor(status, isDark: theme.brightness == Brightness.dark),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Text(
+                                    '#${order['id'].toString().substring(0, 8).toUpperCase()}',
+                                    style: theme.textTheme.titleMedium?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: colorScheme.primary,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  _buildStatusBadge(context, status),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Icon(Icons.person_outline, size: 16, color: colorScheme.onSurfaceVariant),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    buyer['full_name'] as String? ?? 'Customer',
+                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                      color: colorScheme.onSurfaceVariant,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
                         ),
-                    ],
-                  ),
-                ),
-                _buildStatusBadge(context, status),
-              ],
-            ),
-            const SizedBox(height: 12),
-            _buildOrderItems(context, items),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Total',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              '\$${totalAmount.toStringAsFixed(2)}',
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: colorScheme.onSurface,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              DateFormat('MMM dd, h:mm a').format(createdAt),
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                    Text(
-                      '\$${totalAmount.toStringAsFixed(2)}',
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: colorScheme.primary,
-                      ),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                      child: Divider(),
                     ),
-                  ],
-                ),
-                Text(
-                  DateFormat('MMM dd, h:mm a').format(createdAt),
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-            if (order['special_instructions'] != null &&
-                order['special_instructions'].toString().isNotEmpty) ...[
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.orange.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: Colors.orange.withOpacity(0.3),
-                  ),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      Icons.info_outline,
-                      size: 16,
-                      color: Colors.orange[700],
-                    ),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        order['special_instructions'] as String? ?? '',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: Colors.orange[700],
+                    _buildOrderItems(context, items),
+                    if (order['special_instructions'] != null &&
+                        order['special_instructions'].toString().isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Colors.orange.withOpacity(0.2),
+                          ),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(
+                              Icons.info_outline,
+                              size: 18,
+                              color: Colors.orange[700],
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                order['special_instructions'] as String? ?? '',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: Colors.orange[900],
+                                  height: 1.3,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ),
+                    ],
+                    const SizedBox(height: 20),
+                    _buildActionButtons(context, status),
                   ],
                 ),
               ),
             ],
-            const SizedBox(height: 16),
-            _buildActionButtons(context, status),
-          ],
+          ),
         ),
       ),
     );
@@ -247,14 +268,10 @@ class OrderCard extends StatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: textColor.withOpacity(0.3),
-          width: 1,
-        ),
+        color: backgroundColor.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
         displayText,
@@ -393,5 +410,23 @@ class OrderCard extends StatelessWidget {
         ],
       ),
     );
+  }
+  Color _getStatusColor(String status, {bool isDark = false}) {
+    switch (status) {
+      case 'pending':
+        return isDark ? Colors.orange[300]! : Colors.orange;
+      case 'accepted':
+        return isDark ? Colors.blue[300]! : Colors.blue;
+      case 'preparing':
+        return isDark ? Colors.purple[300]! : Colors.purple;
+      case 'ready':
+        return isDark ? Colors.green[300]! : Colors.green;
+      case 'completed':
+        return isDark ? Colors.grey[300]! : Colors.grey;
+      case 'cancelled':
+        return isDark ? Colors.red[300]! : Colors.red;
+      default:
+        return isDark ? Colors.grey[300]! : Colors.grey;
+    }
   }
 }

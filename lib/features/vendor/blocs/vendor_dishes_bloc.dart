@@ -85,6 +85,10 @@ class VendorDishesError extends VendorDishesState {
 }
 
 // Bloc
+/// **DEPRECATED**: This BLoC is deprecated. Use [MenuManagementBloc] instead.
+/// The "Dishes" bottom navigation tab now redirects to the Dashboard Menu tab,
+/// which uses [MenuManagementBloc] with full Supabase integration.
+@Deprecated('Use MenuManagementBloc instead')
 class VendorDishesBloc extends Bloc<VendorDishesEvent, VendorDishesState> {
   VendorDishesBloc() : super(const VendorDishesInitial()) {
     on<LoadVendorDishes>(_onLoadVendorDishes);

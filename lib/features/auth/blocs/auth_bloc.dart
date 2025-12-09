@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:chefleet/core/diagnostics/diagnostic_domains.dart';
+import 'package:chefleet/core/diagnostics/diagnostic_harness.dart';
+import 'package:chefleet/core/diagnostics/diagnostic_severity.dart';
 import '../../../core/blocs/base_bloc.dart';
 import '../../../core/services/guest_session_service.dart';
 
@@ -145,9 +148,36 @@ class AuthBloc extends AppBloc<AuthEvent, AuthState> {
   }
 
   final GuestSessionService _guestSessionService;
+  final DiagnosticHarness _diagnostics = DiagnosticHarness.instance;
+
+  void _logAuth(
+    String event, {
+    DiagnosticSeverity severity = DiagnosticSeverity.info,
+    Map<String, Object?> payload = const <String, Object?>{},
+    String? correlationId,
+  }) {
+    _diagnostics.log(
+      domain: DiagnosticDomains.auth,
+      event: event,
+      severity: severity,
+      payload: payload,
+      correlationId: correlationId ?? _currentCorrelationScope(),
+    );
+  }
+
+  String? _currentCorrelationScope() {
+    if (state.user != null) {
+      return 'user-${state.user!.id}';
+    }
+    if (state.guestId != null) {
+      return 'guest-${state.guestId}';
+    }
+    return null;
+  }
 
   void _initializeAuth() {
     try {
+      _logAuth('init.start', severity: DiagnosticSeverity.debug);
       // Get current auth state safely
       final currentUser = Supabase.instance.client.auth.currentUser;
 
@@ -156,10 +186,16 @@ class AuthBloc extends AppBloc<AuthEvent, AuthState> {
         if (isClosed) return; // Don't add events if bloc is disposed
         add(AuthStatusChanged(currentUser));
       });
+      _logAuth('init.success', severity: DiagnosticSeverity.debug);
     } catch (e) {
       // Handle initialization errors gracefully
       if (isClosed) return;
       add(AuthErrorOccurred('Auth initialization failed: ${e.toString()}'));
+      _logAuth(
+        'init.error',
+        severity: DiagnosticSeverity.error,
+        payload: {'message': e.toString()},
+      );
     }
   }
 
@@ -217,6 +253,11 @@ class AuthBloc extends AppBloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) async {
     emit(state.copyWith(isLoading: true, errorMessage: null));
+    _logAuth(
+      'login.request',
+      severity: DiagnosticSeverity.debug,
+      payload: {'email': event.email},
+    );
 
     try {
       final response = await Supabase.instance.client.auth.signInWithPassword(
@@ -226,17 +267,32 @@ class AuthBloc extends AppBloc<AuthEvent, AuthState> {
 
       if (response.user != null) {
         add(AuthStatusChanged(response.user));
+        _logAuth(
+          'login.success',
+          payload: {'userId': response.user!.id},
+          correlationId: 'user-${response.user!.id}',
+        );
       } else {
         emit(state.copyWith(
           isLoading: false,
           errorMessage: 'Login failed. Please check your credentials.',
         ));
+        _logAuth(
+          'login.failure',
+          severity: DiagnosticSeverity.warn,
+          payload: {'reason': 'invalid_credentials'},
+        );
       }
     } catch (e) {
       emit(state.copyWith(
         isLoading: false,
         errorMessage: 'Login error: ${e.toString()}',
       ));
+      _logAuth(
+        'login.error',
+        severity: DiagnosticSeverity.error,
+        payload: {'message': e.toString()},
+      );
     }
   }
 
@@ -245,6 +301,14 @@ class AuthBloc extends AppBloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) async {
     emit(state.copyWith(isLoading: true, errorMessage: null));
+    _logAuth(
+      'signup.request',
+      severity: DiagnosticSeverity.debug,
+      payload: {
+        'email': event.email,
+        if (event.initialRole != null) 'initialRole': event.initialRole,
+      },
+    );
 
     try {
       print('DEBUG: Starting signup for email: ${event.email}');
@@ -291,6 +355,11 @@ class AuthBloc extends AppBloc<AuthEvent, AuthState> {
             print('DEBUG: Detected audit trigger issue, user created but profile failed');
             // Still proceed with successful signup since auth user was created
             // The profile can be created later or through a separate process
+            _logAuth(
+              'signup.profile_fallback',
+              severity: DiagnosticSeverity.warn,
+              payload: {'message': profileError.toString()},
+            );
           } else {
             // Re-throw non-audit related errors
             rethrow;
@@ -298,11 +367,21 @@ class AuthBloc extends AppBloc<AuthEvent, AuthState> {
         }
 
         add(AuthStatusChanged(response.user));
+        _logAuth(
+          'signup.success',
+          payload: {'userId': response.user!.id},
+          correlationId: 'user-${response.user!.id}',
+        );
       } else {
         emit(state.copyWith(
           isLoading: false,
           errorMessage: 'Signup failed. Please try again.',
         ));
+        _logAuth(
+          'signup.failure',
+          severity: DiagnosticSeverity.warn,
+          payload: {'reason': 'unknown'},
+        );
       }
     } catch (e) {
       print('DEBUG: Detailed signup error:');
@@ -331,6 +410,11 @@ class AuthBloc extends AppBloc<AuthEvent, AuthState> {
         isLoading: false,
         errorMessage: userFriendlyMessage,
       ));
+      _logAuth(
+        'signup.error',
+        severity: DiagnosticSeverity.error,
+        payload: {'message': userFriendlyMessage, 'raw': e.toString()},
+      );
     }
   }
 
@@ -389,12 +473,19 @@ class AuthBloc extends AppBloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) async {
     try {
+      _logAuth('logout.request', severity: DiagnosticSeverity.debug);
       await Supabase.instance.client.auth.signOut();
       add(const AuthStatusChanged(null));
+      _logAuth('logout.success');
     } catch (e) {
       emit(state.copyWith(
         errorMessage: 'Logout error: ${e.toString()}',
       ));
+      _logAuth(
+        'logout.error',
+        severity: DiagnosticSeverity.error,
+        payload: {'message': e.toString()},
+      );
     }
   }
 

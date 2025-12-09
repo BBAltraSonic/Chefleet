@@ -5,6 +5,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:chefleet/core/diagnostics/diagnostic_domains.dart';
+import 'package:chefleet/core/diagnostics/diagnostic_harness.dart';
+import 'package:chefleet/core/diagnostics/diagnostic_severity.dart';
 import '../../../core/blocs/base_bloc.dart';
 import '../../../core/services/cache_service.dart';
 import '../../../core/utils/vendor_cluster_manager.dart';
@@ -234,6 +237,7 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
   static const int _pageSize = 20;
   final CacheService _cacheService = CacheService();
   final VendorClusterManager _clusterManager = VendorClusterManager();
+  final DiagnosticHarness _diagnostics = DiagnosticHarness.instance;
 
   VendorClusterManager get clusterManager => _clusterManager;
 
@@ -246,6 +250,10 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
       errorMessage: null,
       isOffline: false,
     ));
+    _logMap(
+      'initialize.start',
+      severity: DiagnosticSeverity.debug,
+    );
 
     try {
       // Allow UI to render by yielding to the event loop
@@ -261,6 +269,14 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
         if (cachedDishes.isNotEmpty && cachedVendors.isNotEmpty) {
           // Update clustering with cached vendor data
         _clusterManager.setVendors(cachedVendors);
+        _logMap(
+          'cache.hit',
+          severity: DiagnosticSeverity.debug,
+          payload: {
+            'dishes': cachedDishes.length,
+            'vendors': cachedVendors.length,
+          },
+        );
 
         // Apply category filter if not 'All'
         final displayDishes = state.selectedCategory == 'All'
@@ -294,17 +310,40 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
         if (position != null) {
           debugPrint('✅ MapFeedBloc: Location obtained: ${position.latitude}, ${position.longitude}');
           emit(state.copyWith(currentPosition: position));
+          _logMap(
+            'location.success',
+            payload: {
+              'lat': position.latitude,
+              'lng': position.longitude,
+            },
+          );
         } else {
           debugPrint('⚠️ MapFeedBloc: Location is null, will load all vendors');
+          _logMap(
+            'location.null',
+            severity: DiagnosticSeverity.warn,
+          );
         }
       } catch (e) {
         // Silently fail location, app can work without it
         debugPrint('❌ MapFeedBloc: Location error: $e');
+        _logMap(
+          'location.error',
+          severity: DiagnosticSeverity.error,
+          payload: {'message': e.toString()},
+        );
       }
 
       debugPrint('📥 MapFeedBloc: Loading vendors and dishes...');
       await _loadVendorsAndDishes(emit);
       debugPrint('✅ MapFeedBloc: Loaded ${state.dishes.length} dishes, ${state.vendors.length} vendors');
+      _logMap(
+        'initialize.success',
+        payload: {
+          'vendors': state.vendors.length,
+          'dishes': state.dishes.length,
+        },
+      );
 
       emit(state.copyWith(
         isLoading: false,
@@ -318,6 +357,11 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
         errorMessage: 'Failed to initialize map: ${e.toString()}',
         isOffline: false,
       ));
+      _logMap(
+        'initialize.error',
+        severity: DiagnosticSeverity.error,
+        payload: {'message': e.toString()},
+      );
     }
   }
 
@@ -354,6 +398,11 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
     Emitter<MapFeedState> emit,
   ) {
     emit(state.copyWith(mapBounds: event.bounds));
+    _logMap(
+      'bounds.changed',
+      severity: DiagnosticSeverity.debug,
+      payload: _boundsPayload(event.bounds),
+    );
 
     // Debounce the feed refresh
     _debouncer?.cancel();
@@ -367,6 +416,11 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
     Emitter<MapFeedState> emit,
   ) async {
     if (state.mapBounds == null) return;
+    _logMap(
+      'feed.refresh.request',
+      severity: DiagnosticSeverity.debug,
+      payload: _boundsPayload(state.mapBounds!),
+    );
 
     emit(state.copyWith(
       isLoading: true,
@@ -382,12 +436,24 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
         errorMessage: null,
         isOffline: false,
       ));
+      _logMap(
+        'feed.refresh.success',
+        payload: {
+          'vendors': state.vendors.length,
+          'dishes': state.dishes.length,
+        },
+      );
     } catch (e) {
       emit(state.copyWith(
         isLoading: false,
         errorMessage: 'Failed to refresh feed: ${e.toString()}',
         isOffline: false,
       ));
+      _logMap(
+        'feed.refresh.error',
+        severity: DiagnosticSeverity.error,
+        payload: {'message': e.toString()},
+      );
     }
   }
 
@@ -396,6 +462,11 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
     Emitter<MapFeedState> emit,
   ) {
     emit(state.copyWith(searchQuery: event.query));
+    _logMap(
+      'search.query_changed',
+      severity: DiagnosticSeverity.debug,
+      payload: {'query': event.query},
+    );
 
     _searchDebouncer?.cancel();
     _searchDebouncer = Timer(const Duration(milliseconds: 600), () {
@@ -494,6 +565,11 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
     Emitter<MapFeedState> emit,
   ) {
     emit(state.copyWith(zoomLevel: event.zoom));
+    _logMap(
+      'zoom.changed',
+      severity: DiagnosticSeverity.debug,
+      payload: {'zoom': event.zoom},
+    );
 
     // Update clustering with new zoom level
     _updateClustering(emit);
@@ -569,6 +645,15 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
   Future<void> _loadVendorsAndDishes(Emitter<MapFeedState> emit) async {
     final bounds = state.mapBounds;
     final hasLocationContext = bounds != null || state.currentPosition != null;
+    _logMap(
+      'data.load.request',
+      severity: DiagnosticSeverity.debug,
+      payload: {
+        'hasBounds': bounds != null,
+        'hasPosition': state.currentPosition != null,
+        'searchQuery': state.searchQuery,
+      },
+    );
     
     debugPrint('📍 MapFeedBloc: hasLocationContext=$hasLocationContext, bounds=$bounds, position=${state.currentPosition}');
     
@@ -611,6 +696,10 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
           }).toList();
 
       debugPrint('✅ MapFeedBloc: Filtered to ${vendors.length} vendors');
+      _logMap(
+        'vendors.loaded',
+        payload: {'count': vendors.length},
+      );
 
       // Load dishes from these vendors
       if (vendors.isNotEmpty) {
@@ -639,6 +728,14 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
         if (bounds != null) {
           await _cacheService.cacheViewport(bounds);
         }
+        _logMap(
+          'cache.update',
+          severity: DiagnosticSeverity.debug,
+          payload: {
+            'dishes': dishes.length,
+            'vendors': vendors.length,
+          },
+        );
 
         // Update clustering with new vendor data
         _clusterManager.setVendors(vendors);
@@ -694,6 +791,11 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
           errorMessage: 'Error loading data: ${e.toString()}',
           isOffline: false,
         ));
+        _logMap(
+          'data.load.error',
+          severity: DiagnosticSeverity.error,
+          payload: {'message': e.toString()},
+        );
         return;
       }
       
@@ -735,8 +837,35 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
           errorMessage: 'Network unavailable and no cached data available.',
           isOffline: true,
         ));
+        _logMap(
+          'data.load.failure_no_cache',
+          severity: DiagnosticSeverity.error,
+          payload: {'message': e.toString()},
+        );
       }
     }
+  }
+
+  void _logMap(
+    String event, {
+    DiagnosticSeverity severity = DiagnosticSeverity.info,
+    Map<String, Object?> payload = const <String, Object?>{},
+  }) {
+    _diagnostics.log(
+      domain: DiagnosticDomains.buyerMapFeed,
+      event: event,
+      severity: severity,
+      payload: payload,
+    );
+  }
+
+  Map<String, Object?> _boundsPayload(LatLngBounds bounds) {
+    return {
+      'southwestLat': bounds.southwest.latitude,
+      'southwestLng': bounds.southwest.longitude,
+      'northeastLat': bounds.northeast.latitude,
+      'northeastLng': bounds.northeast.longitude,
+    };
   }
 
   bool _isPointInBounds(LatLng point, LatLngBounds bounds) {

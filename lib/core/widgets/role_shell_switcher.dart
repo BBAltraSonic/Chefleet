@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../models/user_role.dart';
 import '../../features/customer/customer_app_shell.dart';
 import '../../features/vendor/vendor_app_shell.dart';
+import '../../features/map/screens/map_screen.dart';
+import '../../features/vendor/screens/vendor_dashboard_screen.dart';
 
 /// Widget that switches between customer and vendor app shells based on active role.
 ///
@@ -31,13 +33,15 @@ class RoleShellSwitcher extends StatelessWidget {
       index: activeRole == UserRole.customer ? 0 : 1,
       sizing: StackFit.expand,
       children: [
-        // Customer App Shell
+        // Customer App Shell with Map screen as default
         CustomerAppShell(
           availableRoles: availableRoles,
+          child: const MapScreen(),
         ),
-        // Vendor App Shell
+        // Vendor App Shell with Dashboard as default
         VendorAppShell(
           availableRoles: availableRoles,
+          child: const VendorDashboardScreen(),
         ),
       ],
     );

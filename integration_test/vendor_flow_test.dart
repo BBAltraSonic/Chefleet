@@ -1,19 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:chefleet/core/diagnostics/testing/diagnostic_tester_helpers.dart';
 import 'package:chefleet/main.dart' as app;
 
+import 'diagnostic_harness.dart';
+
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  ensureIntegrationDiagnostics(scenarioName: 'vendor_flow');
 
   group('Vendor Flow Integration Tests', () {
     testWidgets('Complete vendor flow: accept -> prepare -> ready -> complete', (WidgetTester tester) async {
       // Start the app
       app.main();
-      await tester.pumpAndSettle();
+      await diagnosticPumpAndSettle(tester, description: 'settle vendor dashboard');
 
       // Assume vendor is authenticated and on dashboard
-      await tester.pumpAndSettle();
+      await diagnosticPumpAndSettle(tester, description: 'wait for vendor data');
 
       // Step 1: Verify vendor dashboard
       expect(find.text('Dashboard'), findsOneWidget);
@@ -25,13 +28,13 @@ void main() {
 
       // Step 3: Filter to pending orders
       final pendingFilter = find.text('Pending');
-      await tester.tap(pendingFilter);
-      await tester.pumpAndSettle();
+      await diagnosticTap(tester, pendingFilter, description: 'filter pending orders');
+      await diagnosticPumpAndSettle(tester, description: 'settle pending filter');
 
       // Step 4: Tap on a pending order
       final orderCard = find.byType(Card).first;
-      await tester.tap(orderCard);
-      await tester.pumpAndSettle();
+      await diagnosticTap(tester, orderCard, description: 'open pending order');
+      await diagnosticPumpAndSettle(tester, description: 'settle order detail');
 
       // Step 5: Verify order detail screen
       expect(find.textContaining('Order'), findsOneWidget);
@@ -40,8 +43,12 @@ void main() {
 
       // Step 6: Accept the order
       final acceptButton = find.text('Accept Order');
-      await tester.tap(acceptButton);
-      await tester.pumpAndSettle(const Duration(seconds: 2));
+      await diagnosticTap(tester, acceptButton, description: 'accept order');
+      await diagnosticPumpAndSettle(
+        tester,
+        duration: const Duration(seconds: 2),
+        description: 'wait for accept order response',
+      );
 
       // Step 7: Verify success toast
       expect(find.text('Order accepted'), findsOneWidget);
@@ -51,16 +58,24 @@ void main() {
 
       // Step 9: Start preparing
       final prepareButton = find.text('Start Preparing');
-      await tester.tap(prepareButton);
-      await tester.pumpAndSettle(const Duration(seconds: 2));
+      await diagnosticTap(tester, prepareButton, description: 'start preparing');
+      await diagnosticPumpAndSettle(
+        tester,
+        duration: const Duration(seconds: 2),
+        description: 'wait for preparing state',
+      );
 
       // Step 10: Verify status updated to preparing
       expect(find.text('Preparing'), findsOneWidget);
 
       // Step 11: Mark as ready
       final readyButton = find.text('Mark as Ready');
-      await tester.tap(readyButton);
-      await tester.pumpAndSettle(const Duration(seconds: 2));
+      await diagnosticTap(tester, readyButton, description: 'mark as ready');
+      await diagnosticPumpAndSettle(
+        tester,
+        duration: const Duration(seconds: 2),
+        description: 'wait for ready state',
+      );
 
       // Step 12: Verify status updated to ready
       expect(find.text('Ready'), findsOneWidget);
@@ -71,13 +86,17 @@ void main() {
       // Step 14: Enter pickup code for verification
       final codeInput = find.byType(TextField);
       if (codeInput.evaluate().isNotEmpty) {
-        await tester.enterText(codeInput, '1234');
-        await tester.pumpAndSettle();
+        await diagnosticEnterText(tester, codeInput, '1234', description: 'enter pickup code');
+        await diagnosticPumpAndSettle(tester, description: 'settle pickup code entry');
 
         // Step 15: Verify pickup
         final verifyButton = find.text('Verify Pickup');
-        await tester.tap(verifyButton);
-        await tester.pumpAndSettle(const Duration(seconds: 2));
+        await diagnosticTap(tester, verifyButton, description: 'verify pickup');
+        await diagnosticPumpAndSettle(
+          tester,
+          duration: const Duration(seconds: 2),
+          description: 'wait for pickup verification',
+        );
 
         // Step 16: Verify order completed
         expect(find.text('Completed'), findsOneWidget);
@@ -85,13 +104,13 @@ void main() {
 
       // Step 17: Navigate back to dashboard
       final backButton = find.byIcon(Icons.arrow_back);
-      await tester.tap(backButton);
-      await tester.pumpAndSettle();
+      await diagnosticTap(tester, backButton, description: 'return to dashboard');
+      await diagnosticPumpAndSettle(tester, description: 'settle dashboard return');
 
       // Step 18: Verify order moved to completed
       final completedFilter = find.text('Completed');
-      await tester.tap(completedFilter);
-      await tester.pumpAndSettle();
+      await diagnosticTap(tester, completedFilter, description: 'filter completed orders');
+      await diagnosticPumpAndSettle(tester, description: 'settle completed filter');
 
       expect(find.byType(Card), findsWidgets);
 
@@ -99,51 +118,54 @@ void main() {
     });
 
     testWidgets('Vendor can add a new dish', (WidgetTester tester) async {
-      app.main();
-      await tester.pumpAndSettle();
+      await _launchVendorApp(tester, description: 'vendor add dish');
 
       // Navigate to add dish screen
       final addDishButton = find.byIcon(Icons.add);
       if (addDishButton.evaluate().isNotEmpty) {
-        await tester.tap(addDishButton);
-        await tester.pumpAndSettle();
+        await _tapFinder(tester, addDishButton, 'open add dish');
+        await _pumpSettle(tester, 'settle add dish screen');
       }
 
       // Fill in dish details
       final nameField = find.byType(TextField).at(0);
-      await tester.enterText(nameField, 'New Test Dish');
-      await tester.pumpAndSettle();
+      await _enterTextField(tester, nameField, 'New Test Dish', 'enter dish name');
+      await _pumpSettle(tester, 'settle name entry');
 
       final descriptionField = find.byType(TextField).at(1);
-      await tester.enterText(descriptionField, 'A delicious new dish');
-      await tester.pumpAndSettle();
+      await _enterTextField(tester, descriptionField, 'A delicious new dish', 'enter dish description');
+      await _pumpSettle(tester, 'settle description entry');
 
       final priceField = find.byType(TextField).at(2);
-      await tester.enterText(priceField, '12.99');
-      await tester.pumpAndSettle();
+      await _enterTextField(tester, priceField, '12.99', 'enter dish price');
+      await _pumpSettle(tester, 'settle price entry');
 
       // Select category
       final categoryDropdown = find.byType(DropdownButton<String>);
       if (categoryDropdown.evaluate().isNotEmpty) {
-        await tester.tap(categoryDropdown);
-        await tester.pumpAndSettle();
+        await _tapFinder(tester, categoryDropdown, 'open category dropdown');
+        await _pumpSettle(tester, 'settle category dropdown');
 
         final categoryOption = find.text('Main Course').last;
-        await tester.tap(categoryOption);
-        await tester.pumpAndSettle();
+        await _tapFinder(tester, categoryOption, 'select main course category');
+        await _pumpSettle(tester, 'settle category selection');
       }
 
       // Upload image (mock)
       final uploadButton = find.text('Upload Image');
       if (uploadButton.evaluate().isNotEmpty) {
-        await tester.tap(uploadButton);
-        await tester.pumpAndSettle();
+        await _tapFinder(tester, uploadButton, 'open upload dialog');
+        await _pumpSettle(tester, 'settle upload action');
       }
 
       // Save dish
       final saveButton = find.text('Save Dish');
-      await tester.tap(saveButton);
-      await tester.pumpAndSettle(const Duration(seconds: 2));
+      await _tapFinder(tester, saveButton, 'save dish');
+      await _pumpSettle(
+        tester,
+        'wait for dish save',
+        duration: const Duration(seconds: 2),
+      );
 
       // Verify success
       expect(find.text('Dish added successfully'), findsOneWidget);
@@ -152,27 +174,31 @@ void main() {
     });
 
     testWidgets('Vendor can chat with customer', (WidgetTester tester) async {
-      app.main();
-      await tester.pumpAndSettle();
+      await _launchVendorApp(tester, description: 'vendor chat flow');
 
       // Navigate to an order
       final orderCard = find.byType(Card).first;
-      await tester.tap(orderCard);
-      await tester.pumpAndSettle();
+      await _tapFinder(tester, orderCard, 'open order for chat');
+      await _pumpSettle(tester, 'settle order modal');
 
       // Open chat
       final chatButton = find.byIcon(Icons.chat);
-      await tester.tap(chatButton);
-      await tester.pumpAndSettle();
+      await _tapFinder(tester, chatButton, 'open vendor chat');
+      await _pumpSettle(tester, 'settle chat screen');
 
       // Verify chat screen
       expect(find.byType(TextField), findsOneWidget);
 
       // Send a message
-      await tester.enterText(find.byType(TextField), 'Your order is ready!');
+      await _enterTextField(
+        tester,
+        find.byType(TextField),
+        'Your order is ready!',
+        'enter vendor chat message',
+      );
       final sendButton = find.byIcon(Icons.send);
-      await tester.tap(sendButton);
-      await tester.pumpAndSettle();
+      await _tapFinder(tester, sendButton, 'send vendor chat message');
+      await _pumpSettle(tester, 'settle chat send');
 
       // Verify message sent
       expect(find.text('Your order is ready!'), findsOneWidget);
@@ -275,4 +301,42 @@ void main() {
       print('✅ Reject order test completed successfully');
     });
   });
+}
+
+Future<void> _launchVendorApp(WidgetTester tester, {String description = 'app launch'}) async {
+  app.main();
+  await _pumpSettle(tester, 'settle after $description');
+}
+
+Future<void> _pumpSettle(
+  WidgetTester tester,
+  String description, {
+  Duration? duration,
+}) {
+  return diagnosticPumpAndSettle(
+    tester,
+    duration: duration,
+    description: description,
+  );
+}
+
+Future<void> _tapFinder(WidgetTester tester, Finder finder, String description) {
+  return diagnosticTap(tester, finder, description: description);
+}
+
+Future<void> _tapIcon(WidgetTester tester, IconData icon, String description) {
+  return _tapFinder(tester, find.byIcon(icon), description);
+}
+
+Future<void> _tapText(WidgetTester tester, String text, String description) {
+  return _tapFinder(tester, find.text(text), description);
+}
+
+Future<void> _enterTextField(
+  WidgetTester tester,
+  Finder finder,
+  String text,
+  String description,
+) {
+  return diagnosticEnterText(tester, finder, text, description: description);
 }

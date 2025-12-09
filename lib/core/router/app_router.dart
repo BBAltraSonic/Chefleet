@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
@@ -243,9 +244,14 @@ class AppRouter {
             // Vendor Dashboard
             GoRoute(
               path: VendorRoutes.dashboard,
-              pageBuilder: (context, state) => const NoTransitionPage(
-                child: VendorDashboardScreen(),
-              ),
+              pageBuilder: (context, state) {
+                // Parse tab query parameter (default to 0 = Orders)
+                final tabParam = state.uri.queryParameters['tab'];
+                final initialTab = int.tryParse(tabParam ?? '') ?? 0;
+                return NoTransitionPage(
+                  child: VendorDashboardScreen(initialTab: initialTab),
+                );
+              },
             ),
             
             // Vendor Orders
@@ -388,11 +394,13 @@ class AppRouter {
     
     // Guest user restrictions
     if (isGuest) {
-      // Guests can only access customer map and dish details
+      // Guests can access customer map, dish details, profile, and order-related screens
       if (currentPath.startsWith(CustomerRoutes.map) || 
           currentPath.startsWith(CustomerRoutes.dish) ||
           currentPath.startsWith(CustomerRoutes.checkout) ||
-          currentPath.startsWith(CustomerRoutes.orders)) {
+          currentPath.startsWith(CustomerRoutes.orders) ||
+          currentPath.startsWith(CustomerRoutes.profile) ||
+          currentPath.startsWith(CustomerRoutes.chat)) {
         return null;
       }
       // Redirect to auth for registration prompt
@@ -412,6 +420,32 @@ class AppRouter {
       }
     }
     
+    
+    final hasVendorAccess = roleState is RoleLoaded &&
+        roleState.availableRoles.contains(UserRole.vendor);
+
+    // Only force onboarding if the user still lacks vendor access. After we
+    // auto-approve and grant the vendor role, stale metadata should not keep
+    // bouncing the user back into the onboarding flow.
+    // CRITICAL: Check metadata AND role state to avoid redirect loops
+    // ALSO: Don't redirect during initial role loading to avoid race conditions
+    final isRoleLoading = roleState is! RoleLoaded;
+    final hasPendingVendorOnboarding =
+        !hasVendorAccess && !isRoleLoading && _userHasPendingVendorOnboarding();
+
+    if (hasPendingVendorOnboarding && currentPath != VendorRoutes.onboarding) {
+      return VendorRoutes.onboarding;
+    }
+
+    // If user has vendor role but is still on onboarding screen, redirect to dashboard
+    if (!hasPendingVendorOnboarding && currentPath == VendorRoutes.onboarding) {
+      final shouldGoToDashboard = roleState is RoleLoaded &&
+          roleState.availableRoles.contains(UserRole.vendor);
+      if (shouldGoToDashboard) {
+        return VendorRoutes.dashboard;
+      }
+    }
+
     // Role-based routing guard
     if (roleState is RoleLoaded && isAuthenticated) {
       final redirect = RoleRouteGuard.validateAccess(
@@ -425,6 +459,23 @@ class AppRouter {
     }
     
     return null;
+  }
+
+  static bool _userHasPendingVendorOnboarding() {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return false;
+    return hasPendingVendorOnboarding(user.userMetadata);
+  }
+
+  @visibleForTesting
+  static bool hasPendingVendorOnboarding(Map<String, dynamic>? metadata) {
+    if (metadata == null) return false;
+    final progress = metadata['vendor_onboarding_progress'];
+    if (progress == null) return false;
+    if (progress is Map<String, dynamic>) {
+      return (progress['data'] ?? progress).isNotEmpty;
+    }
+    return true;
   }
 }
 

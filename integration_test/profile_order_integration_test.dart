@@ -7,11 +7,14 @@ import 'package:chefleet/main.dart' as app;
 import 'package:chefleet/features/auth/blocs/user_profile_bloc.dart';
 import 'package:chefleet/features/auth/models/user_profile_model.dart';
 import 'package:chefleet/features/profile/screens/profile_screen.dart';
+import 'package:chefleet/core/diagnostics/testing/diagnostic_tester_helpers.dart';
+
+import 'diagnostic_harness.dart';
 
 class MockUserProfileBloc extends Mock implements UserProfileBloc {}
 
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  ensureIntegrationDiagnostics(scenarioName: 'profile_order');
 
   group('Profile to Order Integration Tests', () {
     late MockUserProfileBloc mockUserProfileBloc;
@@ -24,7 +27,7 @@ void main() {
         id: 'test-user-123',
         name: 'Test User',
         avatarUrl: 'https://example.com/avatar.jpg',
-        address: UserAddress(
+        address: const UserAddress(
           streetAddress: '123 Main St',
           city: 'San Francisco',
           state: 'CA',

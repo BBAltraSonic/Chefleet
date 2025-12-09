@@ -8,14 +8,16 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../blocs/vendor_onboarding_bloc.dart';
 import '../models/vendor_model.dart';
 import '../widgets/opening_hours_selector_widget.dart';
+import '../widgets/place_pin_map.dart';
 import '../../../core/blocs/role_bloc.dart';
 import '../../../core/blocs/role_event.dart';
+import '../../../core/blocs/role_state.dart';
 import '../../../core/routes/app_routes.dart';
-import '../../../core/models/opening_hours_model.dart';
-import '../../../core/services/opening_hours_service.dart';
 
 class VendorOnboardingScreen extends StatefulWidget {
-  const VendorOnboardingScreen({super.key});
+  const VendorOnboardingScreen({super.key, this.bloc});
+
+  final VendorOnboardingBloc? bloc;
 
   @override
   State<VendorOnboardingScreen> createState() => _VendorOnboardingScreenState();
@@ -24,6 +26,7 @@ class VendorOnboardingScreen extends StatefulWidget {
 class _VendorOnboardingScreenState extends State<VendorOnboardingScreen> {
   late final PageController _pageController;
   late final VendorOnboardingBloc _bloc;
+  late final bool _ownsBloc;
   final ImagePicker _imagePicker = ImagePicker();
 
   final _businessNameController = TextEditingController();
@@ -32,13 +35,23 @@ class _VendorOnboardingScreenState extends State<VendorOnboardingScreen> {
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
   final _addressController = TextEditingController();
+  VendorOnboardingData? _lastHydratedData;
+  VendorOnboardingStep? _lastHydratedStep;
 
   @override
   void initState() {
     super.initState();
-    _pageController = PageController();
-    _bloc = VendorOnboardingBloc(supabaseClient: Supabase.instance.client);
-    _bloc.loadSavedProgress();
+    _ownsBloc = widget.bloc == null;
+    _bloc = widget.bloc ?? VendorOnboardingBloc(supabaseClient: Supabase.instance.client);
+    
+    // Initialize PageController with the current step from state
+    // This ensures we show the correct page when resuming saved progress
+    _pageController = PageController(initialPage: _bloc.state.currentStepIndex);
+    
+    _hydrateControllers(_bloc.state);
+    if (_ownsBloc) {
+      _bloc.loadSavedProgress();
+    }
   }
 
   @override
@@ -50,69 +63,102 @@ class _VendorOnboardingScreenState extends State<VendorOnboardingScreen> {
     _phoneController.dispose();
     _emailController.dispose();
     _addressController.dispose();
-    _bloc.close();
+    if (_ownsBloc) {
+      _bloc.close();
+    }
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider.value(
-      value: _bloc,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Become a Vendor'),
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.close),
-            onPressed: () => _showExitConfirmation(),
-          ),
-          actions: [
-            TextButton(
-              onPressed: _saveProgress,
-              child: const Text('Save Progress'),
-            ),
-          ],
+    return MultiBlocListener(
+      listeners: [
+        // Listen for vendor role grant completion
+        BlocListener<RoleBloc, RoleState>(
+          listener: (context, roleState) {
+            if (roleState is VendorRoleGranted) {
+              // Only navigate if we're in success state (onboarding completed)
+              if (_bloc.state.isSuccess) {
+                // Dismiss any open dialogs first
+                Navigator.of(context, rootNavigator: true).popUntil((route) {
+                  return route.isFirst || !route.willHandlePopInternally;
+                });
+                
+                // Navigate to vendor dashboard
+                context.go(VendorRoutes.dashboard);
+              }
+            }
+          },
         ),
-        body: BlocConsumer<VendorOnboardingBloc, VendorOnboardingState>(
-        listener: (context, state) {
-          if (state.isSuccess) {
-            _showSuccessDialog();
-          } else if (state.isError) {
-            _showErrorDialog(state.errorMessage!);
-          } else if (state.isSaved) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Progress saved')),
-            );
-          }
-        },
-        builder: (context, state) {
-          return Column(
-            children: [
-              // Progress indicator
-              _buildProgressIndicator(state),
-
-              // Content
-              Expanded(
-                child: PageView(
-                  controller: _pageController,
-                  physics: const NeverScrollableScrollPhysics(),
-                  children: [
-                    _buildBusinessInfoStep(state),
-                    _buildLocationStep(state),
-                    _buildDocumentsStep(state),
-                    _buildOpeningHoursStep(state),
-                    _buildReviewStep(state),
-                  ],
-                ),
+      ],
+      child: BlocProvider.value(
+        value: _bloc,
+        child: Scaffold(
+          appBar: AppBar(
+            title: const Text('Become a Vendor'),
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.close),
+              onPressed: () => _showExitConfirmation(),
+            ),
+            actions: [
+              TextButton(
+                onPressed: _saveProgress,
+                child: const Text('Save Progress'),
               ),
-
-              // Bottom navigation
-              _buildBottomNavigation(state),
             ],
-          );
-        },
-      ),
+          ),
+          body: BlocConsumer<VendorOnboardingBloc, VendorOnboardingState>(
+          listener: (context, state) {
+            if (state.isSuccess) {
+              _showSuccessDialog();
+            } else if (state.isError) {
+              _showErrorDialog(state.errorMessage!);
+            } else if (state.isSaved) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Progress saved')),
+              );
+            }
+
+            final shouldHydrate =
+                (state.status == VendorOnboardingStatus.loaded ||
+                    state.status == VendorOnboardingStatus.initial) &&
+                (_lastHydratedData != state.onboardingData ||
+                    _lastHydratedStep != state.currentStep);
+
+            if (shouldHydrate) {
+              _hydrateControllers(state);
+            }
+          },
+          builder: (context, state) {
+            return Column(
+              children: [
+                // Progress indicator
+                _buildProgressIndicator(state),
+
+                // Content
+                Expanded(
+                  child: PageView(
+                    controller: _pageController,
+                    physics: const NeverScrollableScrollPhysics(),
+                    children: [
+                      _buildBusinessInfoStep(state),
+                      _buildLocationStep(state),
+                      _buildDocumentsStep(state),
+                      _buildOpeningHoursStep(state),
+                      _buildReviewStep(state),
+                    ],
+                  ),
+                ),
+
+                // Bottom navigation
+                _buildBottomNavigation(state),
+              ],
+            );
+          },
+        ),
+        ),
       ),
     );
   }
@@ -167,6 +213,7 @@ class _VendorOnboardingScreenState extends State<VendorOnboardingScreen> {
           const SizedBox(height: 24),
 
           TextFormField(
+            key: const Key('business_name_field'),
             controller: _businessNameController,
             decoration: const InputDecoration(
               labelText: 'Business Name *',
@@ -185,6 +232,7 @@ class _VendorOnboardingScreenState extends State<VendorOnboardingScreen> {
           const SizedBox(height: 16),
 
           TextFormField(
+            key: const Key('description_field'),
             controller: _descriptionController,
             decoration: const InputDecoration(
               labelText: 'Business Description',
@@ -204,6 +252,7 @@ class _VendorOnboardingScreenState extends State<VendorOnboardingScreen> {
           const SizedBox(height: 16),
 
           TextFormField(
+            key: const Key('cuisine_field'),
             controller: _cuisineTypeController,
             decoration: const InputDecoration(
               labelText: 'Cuisine Type',
@@ -222,6 +271,7 @@ class _VendorOnboardingScreenState extends State<VendorOnboardingScreen> {
           const SizedBox(height: 16),
 
           TextFormField(
+            key: const Key('phone_field'),
             controller: _phoneController,
             decoration: const InputDecoration(
               labelText: 'Phone Number *',
@@ -241,6 +291,7 @@ class _VendorOnboardingScreenState extends State<VendorOnboardingScreen> {
           const SizedBox(height: 16),
 
           TextFormField(
+            key: const Key('business_email_field'),
             controller: _emailController,
             decoration: const InputDecoration(
               labelText: 'Business Email',
@@ -323,6 +374,7 @@ class _VendorOnboardingScreenState extends State<VendorOnboardingScreen> {
           const SizedBox(height: 16),
 
           ElevatedButton.icon(
+            key: const Key('set_location_button'),
             onPressed: _selectLocationOnMap,
             icon: const Icon(Icons.my_location),
             label: const Text('Set Location on Map'),
@@ -330,6 +382,7 @@ class _VendorOnboardingScreenState extends State<VendorOnboardingScreen> {
           const SizedBox(height: 16),
 
           TextFormField(
+            key: const Key('address_field'),
             controller: _addressController,
             decoration: const InputDecoration(
               labelText: 'Street Address *',
@@ -505,6 +558,7 @@ class _VendorOnboardingScreenState extends State<VendorOnboardingScreen> {
                   ),
                   const SizedBox(height: 16),
                   CheckboxListTile(
+                    key: const Key('terms_checkbox'),
                     title: const Text('I agree to the terms and conditions'),
                     value: state.onboardingData.termsAccepted,
                     onChanged: (value) {
@@ -696,7 +750,11 @@ class _VendorOnboardingScreenState extends State<VendorOnboardingScreen> {
   }
 
   void _saveProgress() {
-    _bloc.add(OnboardingSaved(onboardingData: _bloc.state.onboardingData));
+    final currentState = _bloc.state;
+    _bloc.add(OnboardingSaved(
+      onboardingData: currentState.onboardingData,
+      currentStep: currentState.currentStep,
+    ));
   }
 
   void _submitOnboarding() {
@@ -729,33 +787,121 @@ class _VendorOnboardingScreenState extends State<VendorOnboardingScreen> {
 
       if (source != null) {
         final XFile? image = await _imagePicker.pickImage(source: source);
-        if (image != null) {
-          // TODO: Upload image and get URL
-          // For now, simulate with a placeholder URL
-          final imageUrl = 'https://placeholder.com/${type}_${image.name}';
+        if (image != null && mounted) {
+          // Show loading indicator
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Uploading image...')),
+          );
 
-          if (type == 'logo') {
-            _bloc.add(DocumentsUpdated(logoUrl: imageUrl));
-          } else if (type == 'license') {
-            _bloc.add(DocumentsUpdated(licenseUrl: imageUrl));
+          try {
+            final imageUrl = await _uploadImageToStorage(image, type);
+            
+            if (!mounted) return;
+            if (type == 'logo') {
+              _bloc.add(DocumentsUpdated(logoUrl: imageUrl));
+            } else if (type == 'license') {
+              _bloc.add(DocumentsUpdated(licenseUrl: imageUrl));
+            }
+
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Image uploaded successfully')),
+            );
+          } catch (e) {
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Failed to upload image: $e')),
+            );
           }
         }
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to pick image: $e')),
       );
     }
   }
 
-  void _selectLocationOnMap() {
-    // TODO: Implement location selection on map
-    // For now, simulate with a location
-    _bloc.add(const LocationUpdated(
-      address: '123 Main St, City, State',
-      latitude: 37.7749,
-      longitude: -122.4194,
-    ));
+  Future<String> _uploadImageToStorage(XFile image, String type) async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) {
+      throw Exception('User not authenticated');
+    }
+
+    // Generate unique filename
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final extension = image.path.split('.').last;
+    final fileName = '${type}_$timestamp.$extension';
+    final filePath = '${user.id}/$fileName';
+
+    // Read file as bytes
+    final bytes = await image.readAsBytes();
+
+    // Upload to Supabase Storage
+    await Supabase.instance.client.storage
+        .from('vendor-images')
+        .uploadBinary(
+          filePath,
+          bytes,
+          fileOptions: const FileOptions(
+            upsert: true,
+          ),
+        );
+
+    // Get public URL
+    final publicUrl = Supabase.instance.client.storage
+        .from('vendor-images')
+        .getPublicUrl(filePath);
+
+    return publicUrl;
+  }
+
+  Future<void> _selectLocationOnMap() async {
+    final currentLocation = _bloc.state.onboardingData.latitude != null &&
+            _bloc.state.onboardingData.longitude != null
+        ? LatLng(
+            _bloc.state.onboardingData.latitude!,
+            _bloc.state.onboardingData.longitude!,
+          )
+        : null;
+
+    final selectedLocation = await showDialog<LatLng>(
+      context: context,
+      builder: (dialogContext) => Dialog.fullscreen(
+        child: Scaffold(
+          appBar: AppBar(
+            title: const Text('Select Location'),
+            leading: IconButton(
+              icon: const Icon(Icons.close),
+              onPressed: () => Navigator.of(dialogContext).pop(),
+            ),
+          ),
+          body: PlacePinMap(
+            initialPosition: currentLocation,
+            onLocationSelected: (location) {
+              Navigator.of(dialogContext).pop(location);
+            },
+          ),
+        ),
+      ),
+    );
+
+    if (selectedLocation != null) {
+      // Extract address from reverse geocoding if needed
+      // For now, just use coordinates with placeholder address
+      final addressText = _addressController.text.isEmpty
+          ? 'Business Location'
+          : _addressController.text;
+
+      _bloc.add(LocationUpdated(
+        address: addressText,
+        addressText: addressText,
+        latitude: selectedLocation.latitude,
+        longitude: selectedLocation.longitude,
+      ));
+    }
   }
 
   void _showExitConfirmation() {
@@ -801,18 +947,26 @@ class _VendorOnboardingScreenState extends State<VendorOnboardingScreen> {
       barrierDismissible: false,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Application Submitted!'),
-        content: const Text(
-          'Your vendor application has been submitted for review. We\'ll notify you once it\'s approved.',
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Your vendor application has been submitted and approved!',
+            ),
+            const SizedBox(height: 16),
+            if (vendorId != null) ...[
+              const CircularProgressIndicator(),
+              const SizedBox(height: 8),
+              const Text(
+                'Setting up your vendor account...',
+                style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
+              ),
+            ],
+          ],
         ),
         actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(dialogContext).pop();
-              // Navigate to vendor dashboard after successful onboarding
-              context.go(VendorRoutes.dashboard);
-            },
-            child: const Text('Done'),
-          ),
+          // Dialog will be dismissed automatically by the RoleBloc listener
+          // when VendorRoleGranted state is received
         ],
       ),
     );
@@ -832,5 +986,47 @@ class _VendorOnboardingScreenState extends State<VendorOnboardingScreen> {
         ],
       ),
     );
+  }
+
+  void _hydrateControllers(VendorOnboardingState state) {
+    final data = state.onboardingData;
+
+    _setControllerText(_businessNameController, data.businessName);
+    _setControllerText(_descriptionController, data.description ?? '');
+    _setControllerText(_cuisineTypeController, data.cuisineType ?? '');
+    _setControllerText(_phoneController, data.phone);
+    _setControllerText(_emailController, data.businessEmail ?? '');
+    _setControllerText(
+      _addressController,
+      data.addressText ?? data.address,
+    );
+
+    _jumpToStep(state.currentStep);
+
+    _lastHydratedData = data;
+    _lastHydratedStep = state.currentStep;
+  }
+
+  void _setControllerText(TextEditingController controller, String value) {
+    if (controller.text != value) {
+      controller.text = value;
+    }
+  }
+
+  void _jumpToStep(VendorOnboardingStep step) {
+    void jump() {
+      if (!_pageController.hasClients) return;
+      _pageController.jumpToPage(step.index);
+    }
+
+    if (_pageController.hasClients) {
+      jump();
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          jump();
+        }
+      });
+    }
   }
 }

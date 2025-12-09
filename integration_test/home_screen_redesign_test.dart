@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:chefleet/core/diagnostics/testing/diagnostic_tester_helpers.dart';
 import 'package:chefleet/main.dart' as app;
 
+import 'diagnostic_harness.dart';
+
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  ensureIntegrationDiagnostics(scenarioName: 'home_screen_redesign');
 
   group('Home Screen Redesign Integration Tests', () {
     testWidgets('Complete user flow: browse, filter, and add to cart',

@@ -1,6 +1,9 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:chefleet/core/diagnostics/diagnostic_domains.dart';
+import 'package:chefleet/core/diagnostics/diagnostic_harness.dart';
+import 'package:chefleet/core/diagnostics/diagnostic_severity.dart';
 
 import '../services/vendor_orders_service.dart';
 
@@ -11,6 +14,7 @@ class VendorDashboardBloc extends Bloc<VendorDashboardEvent, VendorDashboardStat
   final SupabaseClient _supabaseClient;
   final VendorOrdersService _ordersService;
   RealtimeChannel? _ordersChannel;
+  final DiagnosticHarness _diagnostics = DiagnosticHarness.instance;
 
   VendorDashboardBloc({
     required SupabaseClient supabaseClient,
@@ -36,11 +40,34 @@ class VendorDashboardBloc extends Bloc<VendorDashboardEvent, VendorDashboardStat
     return super.close();
   }
 
+  void _logVendor(
+    String event, {
+    DiagnosticSeverity severity = DiagnosticSeverity.info,
+    Map<String, Object?> payload = const <String, Object?>{},
+    String? vendorId,
+    String? orderId,
+  }) {
+    final resolvedVendorId = vendorId ?? state.vendor?['id'] as String?;
+    final correlationId = orderId != null
+        ? 'order-$orderId'
+        : resolvedVendorId != null
+            ? 'vendor-$resolvedVendorId'
+            : null;
+    _diagnostics.log(
+      domain: DiagnosticDomains.vendorDashboard,
+      event: event,
+      severity: severity,
+      payload: payload,
+      correlationId: correlationId,
+    );
+  }
+
   Future<void> _onLoadDashboardData(
     LoadDashboardData event,
     Emitter<VendorDashboardState> emit,
   ) async {
     emit(state.copyWith(isLoading: true));
+    _logVendor('dashboard.load.request', severity: DiagnosticSeverity.debug);
 
     try {
       final currentUser = _supabaseClient.auth.currentUser;
@@ -82,11 +109,21 @@ class VendorDashboardBloc extends Bloc<VendorDashboardEvent, VendorDashboardStat
         isLoading: false,
         vendor: vendorResponse,
       ));
+      _logVendor(
+        'dashboard.load.success',
+        payload: {'vendorId': vendorResponse['id']},
+        vendorId: vendorResponse['id'] as String?,
+      );
     } catch (e) {
       emit(state.copyWith(
         isLoading: false,
         errorMessage: 'Failed to load dashboard data: ${e.toString()}',
       ));
+      _logVendor(
+        'dashboard.load.error',
+        severity: DiagnosticSeverity.error,
+        payload: {'message': e.toString()},
+      );
     }
   }
 
@@ -95,6 +132,11 @@ class VendorDashboardBloc extends Bloc<VendorDashboardEvent, VendorDashboardStat
     Emitter<VendorDashboardState> emit,
   ) async {
     try {
+      _logVendor(
+        'orders.load.request',
+        severity: DiagnosticSeverity.debug,
+        vendorId: event.vendorId,
+      );
       final orders = await _ordersService.fetchRecentOrders(
         vendorId: event.vendorId,
       );
@@ -110,10 +152,21 @@ class VendorDashboardBloc extends Bloc<VendorDashboardEvent, VendorDashboardStat
         statusFilter: event.statusFilter,
         errorMessage: null,
       ));
+      _logVendor(
+        'orders.load.success',
+        payload: {'orders': orders.length},
+        vendorId: event.vendorId,
+      );
     } catch (e) {
       emit(state.copyWith(
         errorMessage: 'Failed to load orders: ${e.toString()}',
       ));
+      _logVendor(
+        'orders.load.error',
+        severity: DiagnosticSeverity.error,
+        payload: {'message': e.toString()},
+        vendorId: event.vendorId,
+      );
     }
   }
 
@@ -122,56 +175,50 @@ class VendorDashboardBloc extends Bloc<VendorDashboardEvent, VendorDashboardStat
     Emitter<VendorDashboardState> emit,
   ) async {
     try {
-      final now = DateTime.now();
-      final today = DateTime(now.year, now.month, now.day);
-      final weekStart = today.subtract(Duration(days: today.weekday - 1));
-      final monthStart = DateTime(now.year, now.month, 1);
+      _logVendor(
+        'stats.load.request',
+        severity: DiagnosticSeverity.debug,
+        vendorId: event.vendorId,
+      );
 
-      // Get order statistics
-      final response = await _supabaseClient
-          .from('orders')
-          .select('status, total_amount, created_at')
-          .eq('vendor_id', event.vendorId)
-          .gte('created_at', monthStart.toIso8601String());
+      // Call the RPC function for efficient server-side stats calculation
+      final response = await _supabaseClient.rpc('get_vendor_stats', params: {
+        'p_vendor_id': event.vendorId,
+      });
 
-      final orders = List<Map<String, dynamic>>.from(response);
-
-      // Calculate stats
-      final todayOrders = orders.where((order) {
-        final orderDate = DateTime.parse(order['created_at']);
-        return orderDate.isAfter(today);
-      }).toList();
-
-      final weekOrders = orders.where((order) {
-        final orderDate = DateTime.parse(order['created_at']);
-        return orderDate.isAfter(weekStart);
-      }).toList();
-
-      final monthOrders = orders;
-
-      final todayRevenue = todayOrders.fold<double>(0, (sum, order) => sum + (order['total_amount'] as num).toDouble());
-      final weekRevenue = weekOrders.fold<double>(0, (sum, order) => sum + (order['total_amount'] as num).toDouble());
-      final monthRevenue = monthOrders.fold<double>(0, (sum, order) => sum + (order['total_amount'] as num).toDouble());
-
-      final pendingOrders = orders.where((order) => order['status'] == 'pending').length;
-      final activeOrders = orders.where((order) => ['accepted', 'preparing', 'ready'].contains(order['status'])).length;
+      final data = response as Map<String, dynamic>;
 
       final stats = VendorStats(
-        todayOrders: todayOrders.length,
-        todayRevenue: todayRevenue,
-        weekOrders: weekOrders.length,
-        weekRevenue: weekRevenue,
-        monthOrders: monthOrders.length,
-        monthRevenue: monthRevenue,
-        pendingOrders: pendingOrders,
-        activeOrders: activeOrders,
+        todayOrders: data['today_orders'] as int? ?? 0,
+        todayRevenue: (data['today_revenue'] as num?)?.toDouble() ?? 0.0,
+        weekOrders: data['week_orders'] as int? ?? 0,
+        weekRevenue: (data['week_revenue'] as num?)?.toDouble() ?? 0.0,
+        monthOrders: data['month_orders'] as int? ?? 0,
+        monthRevenue: (data['month_revenue'] as num?)?.toDouble() ?? 0.0,
+        pendingOrders: data['pending_orders'] as int? ?? 0,
+        activeOrders: data['active_orders'] as int? ?? 0,
       );
 
       emit(state.copyWith(stats: stats));
+      _logVendor(
+        'stats.load.success',
+        vendorId: event.vendorId,
+        payload: {
+          'todayOrders': stats.todayOrders,
+          'weekOrders': stats.weekOrders,
+          'monthOrders': stats.monthOrders,
+        },
+      );
     } catch (e) {
       emit(state.copyWith(
         errorMessage: 'Failed to load order stats: ${e.toString()}',
       ));
+      _logVendor(
+        'stats.load.error',
+        severity: DiagnosticSeverity.error,
+        payload: {'message': e.toString()},
+        vendorId: event.vendorId,
+      );
     }
   }
 
@@ -180,6 +227,12 @@ class VendorDashboardBloc extends Bloc<VendorDashboardEvent, VendorDashboardStat
     Emitter<VendorDashboardState> emit,
   ) async {
     try {
+      _logVendor(
+        'order_status.update.request',
+        severity: DiagnosticSeverity.debug,
+        orderId: event.orderId,
+        payload: {'newStatus': event.newStatus},
+      );
       // Call the Edge function for secure order status updates
       final response = await _supabaseClient.functions.invoke(
         'change_order_status',
@@ -199,10 +252,21 @@ class VendorDashboardBloc extends Bloc<VendorDashboardEvent, VendorDashboardStat
         add(LoadOrders(vendorId: state.vendor!['id']));
         add(LoadOrderStats(vendorId: state.vendor!['id']));
       }
+      _logVendor(
+        'order_status.update.success',
+        orderId: event.orderId,
+        payload: {'newStatus': event.newStatus},
+      );
     } catch (e) {
       emit(state.copyWith(
         errorMessage: 'Failed to update order status: ${e.toString()}',
       ));
+      _logVendor(
+        'order_status.update.error',
+        severity: DiagnosticSeverity.error,
+        orderId: event.orderId,
+        payload: {'message': e.toString()},
+      );
     }
   }
 
@@ -211,6 +275,11 @@ class VendorDashboardBloc extends Bloc<VendorDashboardEvent, VendorDashboardStat
     Emitter<VendorDashboardState> emit,
   ) async {
     try {
+      _logVendor(
+        'menu.load.request',
+        severity: DiagnosticSeverity.debug,
+        vendorId: event.vendorId,
+      );
       final response = await _supabaseClient
           .from('dishes')
           .select('*')
@@ -220,10 +289,21 @@ class VendorDashboardBloc extends Bloc<VendorDashboardEvent, VendorDashboardStat
       final menuItems = List<Map<String, dynamic>>.from(response);
 
       emit(state.copyWith(menuItems: menuItems));
+      _logVendor(
+        'menu.load.success',
+        vendorId: event.vendorId,
+        payload: {'items': menuItems.length},
+      );
     } catch (e) {
       emit(state.copyWith(
         errorMessage: 'Failed to load menu items: ${e.toString()}',
       ));
+      _logVendor(
+        'menu.load.error',
+        severity: DiagnosticSeverity.error,
+        vendorId: event.vendorId,
+        payload: {'message': e.toString()},
+      );
     }
   }
 
@@ -232,6 +312,12 @@ class VendorDashboardBloc extends Bloc<VendorDashboardEvent, VendorDashboardStat
     Emitter<VendorDashboardState> emit,
   ) async {
     try {
+      _logVendor(
+        'menu.availability.request',
+        severity: DiagnosticSeverity.debug,
+        vendorId: state.vendor?['id'] as String?,
+        payload: {'itemId': event.itemId, 'isAvailable': event.isAvailable},
+      );
       await _supabaseClient
           .from('dishes')
           .update({'is_available': event.isAvailable})
@@ -241,10 +327,21 @@ class VendorDashboardBloc extends Bloc<VendorDashboardEvent, VendorDashboardStat
       if (state.vendor != null) {
         add(LoadMenuItems(vendorId: state.vendor!['id']));
       }
+      _logVendor(
+        'menu.availability.success',
+        vendorId: state.vendor?['id'] as String?,
+        payload: {'itemId': event.itemId, 'isAvailable': event.isAvailable},
+      );
     } catch (e) {
       emit(state.copyWith(
         errorMessage: 'Failed to update item availability: ${e.toString()}',
       ));
+      _logVendor(
+        'menu.availability.error',
+        severity: DiagnosticSeverity.error,
+        vendorId: state.vendor?['id'] as String?,
+        payload: {'message': e.toString(), 'itemId': event.itemId},
+      );
     }
   }
 
@@ -253,6 +350,7 @@ class VendorDashboardBloc extends Bloc<VendorDashboardEvent, VendorDashboardStat
     Emitter<VendorDashboardState> emit,
   ) async {
     if (_ordersChannel != null) return;
+    _logVendor('orders.subscribe.request', vendorId: event.vendorId, severity: DiagnosticSeverity.debug);
 
     _ordersChannel = _supabaseClient
         .channel('vendor_orders_${event.vendorId}')
@@ -283,6 +381,7 @@ class VendorDashboardBloc extends Bloc<VendorDashboardEvent, VendorDashboardStat
           },
         )
         .subscribe();
+    _logVendor('orders.subscribe.success', vendorId: event.vendorId);
   }
 
   Future<void> _onUnsubscribeFromOrderUpdates(
@@ -293,6 +392,11 @@ class VendorDashboardBloc extends Bloc<VendorDashboardEvent, VendorDashboardStat
       await _ordersChannel!.unsubscribe();
       _ordersChannel = null;
     }
+    _logVendor(
+      'orders.subscribe.dispose',
+      severity: DiagnosticSeverity.debug,
+      vendorId: state.vendor?['id'] as String?,
+    );
   }
 
   Future<void> _onVerifyPickupCode(
@@ -300,6 +404,11 @@ class VendorDashboardBloc extends Bloc<VendorDashboardEvent, VendorDashboardStat
     Emitter<VendorDashboardState> emit,
   ) async {
     try {
+      _logVendor(
+        'pickup.verify.request',
+        severity: DiagnosticSeverity.debug,
+        orderId: event.orderId,
+      );
       final currentUser = _supabaseClient.auth.currentUser;
       if (currentUser == null) {
         emit(state.copyWith(
@@ -321,6 +430,12 @@ class VendorDashboardBloc extends Bloc<VendorDashboardEvent, VendorDashboardStat
         emit(state.copyWith(
           errorMessage: result['message'] as String? ?? 'Pickup code verification failed',
         ));
+        _logVendor(
+          'pickup.verify.failure',
+          severity: DiagnosticSeverity.warn,
+          orderId: event.orderId,
+          payload: {'message': result['message']},
+        );
         return;
       }
 
@@ -328,6 +443,10 @@ class VendorDashboardBloc extends Bloc<VendorDashboardEvent, VendorDashboardStat
       emit(state.copyWith(
         successMessage: result['message'] as String? ?? 'Pickup code verified successfully',
       ));
+      _logVendor(
+        'pickup.verify.success',
+        orderId: event.orderId,
+      );
 
       // Refresh orders to get latest status
       if (state.vendor != null) {
@@ -337,6 +456,12 @@ class VendorDashboardBloc extends Bloc<VendorDashboardEvent, VendorDashboardStat
       emit(state.copyWith(
         errorMessage: 'Failed to verify pickup code: ${e.toString()}',
       ));
+      _logVendor(
+        'pickup.verify.error',
+        severity: DiagnosticSeverity.error,
+        orderId: event.orderId,
+        payload: {'message': e.toString()},
+      );
     }
   }
 
@@ -344,6 +469,7 @@ class VendorDashboardBloc extends Bloc<VendorDashboardEvent, VendorDashboardStat
     RefreshDashboard event,
     Emitter<VendorDashboardState> emit,
   ) async {
+    _logVendor('dashboard.refresh.trigger');
     if (state.vendor != null) {
       add(LoadDashboardData());
     }

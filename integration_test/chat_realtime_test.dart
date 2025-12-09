@@ -1,53 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:chefleet/core/diagnostics/testing/diagnostic_tester_helpers.dart';
 import 'package:chefleet/main.dart' as app;
 
+import 'diagnostic_harness.dart';
+
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  ensureIntegrationDiagnostics(scenarioName: 'chat_realtime');
 
   group('Chat Realtime Integration Tests', () {
     testWidgets('Chat messages update in realtime', (WidgetTester tester) async {
-      // Start the app
-      app.main();
-      await tester.pumpAndSettle();
+      await _launchAppAndNavigateToChat(tester);
 
-      // Navigate to an order with chat
-      final ordersTab = find.text('Orders');
-      await tester.tap(ordersTab);
-      await tester.pumpAndSettle();
+      await _sendChatMessage(tester, 'Test message 1', description: 'first chat message');
+      await diagnosticPumpAndSettle(
+        tester,
+        duration: const Duration(seconds: 2),
+        description: 'wait for realtime updates',
+      );
+      await _sendChatMessage(tester, 'Test message 2', description: 'second chat message');
 
-      // Open an order
-      final orderCard = find.byType(Card).first;
-      await tester.tap(orderCard);
-      await tester.pumpAndSettle();
-
-      // Open chat
-      final chatButton = find.byIcon(Icons.chat);
-      await tester.tap(chatButton);
-      await tester.pumpAndSettle();
-
-      // Verify chat screen loaded
-      expect(find.byType(TextField), findsOneWidget);
-
-      // Send a message
-      await tester.enterText(find.byType(TextField), 'Test message 1');
-      final sendButton = find.byIcon(Icons.send);
-      await tester.tap(sendButton);
-      await tester.pumpAndSettle();
-
-      // Verify message appears
-      expect(find.text('Test message 1'), findsOneWidget);
-
-      // Wait for potential realtime updates
-      await tester.pumpAndSettle(const Duration(seconds: 2));
-
-      // Send another message
-      await tester.enterText(find.byType(TextField), 'Test message 2');
-      await tester.tap(sendButton);
-      await tester.pumpAndSettle();
-
-      // Verify both messages are visible
       expect(find.text('Test message 1'), findsOneWidget);
       expect(find.text('Test message 2'), findsOneWidget);
 
@@ -55,28 +28,10 @@ void main() {
     });
 
     testWidgets('Chat autoscrolls to latest message', (WidgetTester tester) async {
-      app.main();
-      await tester.pumpAndSettle();
+      await _launchAppAndNavigateToChat(tester);
 
-      // Navigate to chat
-      final ordersTab = find.text('Orders');
-      await tester.tap(ordersTab);
-      await tester.pumpAndSettle();
-
-      final orderCard = find.byType(Card).first;
-      await tester.tap(orderCard);
-      await tester.pumpAndSettle();
-
-      final chatButton = find.byIcon(Icons.chat);
-      await tester.tap(chatButton);
-      await tester.pumpAndSettle();
-
-      // Send multiple messages to test scrolling
       for (int i = 1; i <= 10; i++) {
-        await tester.enterText(find.byType(TextField), 'Message $i');
-        final sendButton = find.byIcon(Icons.send);
-        await tester.tap(sendButton);
-        await tester.pumpAndSettle();
+        await _sendChatMessage(tester, 'Message $i', description: 'bulk message $i');
       }
 
       // Verify latest message is visible (autoscrolled)
@@ -86,26 +41,11 @@ void main() {
     });
 
     testWidgets('Quick replies work correctly', (WidgetTester tester) async {
-      app.main();
-      await tester.pumpAndSettle();
+      await _launchAppAndNavigateToChat(tester);
 
-      // Navigate to chat
-      final ordersTab = find.text('Orders');
-      await tester.tap(ordersTab);
-      await tester.pumpAndSettle();
-
-      final orderCard = find.byType(Card).first;
-      await tester.tap(orderCard);
-      await tester.pumpAndSettle();
-
-      final chatButton = find.byIcon(Icons.chat);
-      await tester.tap(chatButton);
-      await tester.pumpAndSettle();
-
-      // Tap a quick reply
       final quickReply = find.text('On my way');
-      await tester.tap(quickReply);
-      await tester.pumpAndSettle();
+      await diagnosticTap(tester, quickReply, description: 'send quick reply');
+      await diagnosticPumpAndSettle(tester, description: 'settle quick reply send');
 
       // Verify message sent
       expect(find.text('On my way'), findsOneWidget);
@@ -114,21 +54,7 @@ void main() {
     });
 
     testWidgets('Chat shows order status in header', (WidgetTester tester) async {
-      app.main();
-      await tester.pumpAndSettle();
-
-      // Navigate to chat
-      final ordersTab = find.text('Orders');
-      await tester.tap(ordersTab);
-      await tester.pumpAndSettle();
-
-      final orderCard = find.byType(Card).first;
-      await tester.tap(orderCard);
-      await tester.pumpAndSettle();
-
-      final chatButton = find.byIcon(Icons.chat);
-      await tester.tap(chatButton);
-      await tester.pumpAndSettle();
+      await _launchAppAndNavigateToChat(tester);
 
       // Verify header shows order status
       expect(find.byType(AppBar), findsOneWidget);
@@ -138,29 +64,15 @@ void main() {
     });
 
     testWidgets('Chat subscription disposes correctly', (WidgetTester tester) async {
-      app.main();
-      await tester.pumpAndSettle();
-
-      // Navigate to chat
-      final ordersTab = find.text('Orders');
-      await tester.tap(ordersTab);
-      await tester.pumpAndSettle();
-
-      final orderCard = find.byType(Card).first;
-      await tester.tap(orderCard);
-      await tester.pumpAndSettle();
-
-      final chatButton = find.byIcon(Icons.chat);
-      await tester.tap(chatButton);
-      await tester.pumpAndSettle();
+      await _launchAppAndNavigateToChat(tester);
 
       // Verify chat is active
       expect(find.byType(TextField), findsOneWidget);
 
       // Navigate back
       final backButton = find.byIcon(Icons.arrow_back);
-      await tester.tap(backButton);
-      await tester.pumpAndSettle();
+      await diagnosticTap(tester, backButton, description: 'leave chat');
+      await diagnosticPumpAndSettle(tester, description: 'settle back navigation');
 
       // Subscription should be disposed
       // This would be verified by checking that no memory leaks occur
@@ -170,21 +82,7 @@ void main() {
     });
 
     testWidgets('Chat handles connection errors gracefully', (WidgetTester tester) async {
-      app.main();
-      await tester.pumpAndSettle();
-
-      // Navigate to chat
-      final ordersTab = find.text('Orders');
-      await tester.tap(ordersTab);
-      await tester.pumpAndSettle();
-
-      final orderCard = find.byType(Card).first;
-      await tester.tap(orderCard);
-      await tester.pumpAndSettle();
-
-      final chatButton = find.byIcon(Icons.chat);
-      await tester.tap(chatButton);
-      await tester.pumpAndSettle();
+      await _launchAppAndNavigateToChat(tester);
 
       // In a real test, you'd simulate a connection error
       // For now, we just verify error handling UI exists
@@ -196,25 +94,10 @@ void main() {
     });
 
     testWidgets('Chat shows typing indicator', (WidgetTester tester) async {
-      app.main();
-      await tester.pumpAndSettle();
+      await _launchAppAndNavigateToChat(tester);
 
-      // Navigate to chat
-      final ordersTab = find.text('Orders');
-      await tester.tap(ordersTab);
-      await tester.pumpAndSettle();
-
-      final orderCard = find.byType(Card).first;
-      await tester.tap(orderCard);
-      await tester.pumpAndSettle();
-
-      final chatButton = find.byIcon(Icons.chat);
-      await tester.tap(chatButton);
-      await tester.pumpAndSettle();
-
-      // Start typing
-      await tester.enterText(find.byType(TextField), 'Typing...');
-      await tester.pumpAndSettle();
+      await diagnosticEnterText(tester, find.byType(TextField), 'Typing...', description: 'simulate typing');
+      await diagnosticPumpAndSettle(tester, description: 'settle typing state');
 
       // In a real implementation, this would show a typing indicator
       // to the other party via realtime updates
@@ -223,38 +106,23 @@ void main() {
     });
 
     testWidgets('Chat messages persist across sessions', (WidgetTester tester) async {
-      app.main();
-      await tester.pumpAndSettle();
-
-      // Navigate to chat
-      final ordersTab = find.text('Orders');
-      await tester.tap(ordersTab);
-      await tester.pumpAndSettle();
-
-      final orderCard = find.byType(Card).first;
-      await tester.tap(orderCard);
-      await tester.pumpAndSettle();
-
-      final chatButton = find.byIcon(Icons.chat);
-      await tester.tap(chatButton);
-      await tester.pumpAndSettle();
+      await _launchAppAndNavigateToChat(tester);
 
       // Send a message
-      await tester.enterText(find.byType(TextField), 'Persistent message');
-      final sendButton = find.byIcon(Icons.send);
-      await tester.tap(sendButton);
-      await tester.pumpAndSettle();
+      await _sendChatMessage(tester, 'Persistent message', description: 'persistent message');
 
       // Navigate away
       final backButton = find.byIcon(Icons.arrow_back);
-      await tester.tap(backButton);
-      await tester.pumpAndSettle();
+      await diagnosticTap(tester, backButton, description: 'leave chat');
+      await diagnosticPumpAndSettle(tester, description: 'settle back navigation');
 
       // Navigate back to chat
-      await tester.tap(orderCard);
-      await tester.pumpAndSettle();
-      await tester.tap(chatButton);
-      await tester.pumpAndSettle();
+      final orderCard = find.byType(Card).first;
+      await diagnosticTap(tester, orderCard, description: 'reopen order');
+      await diagnosticPumpAndSettle(tester, description: 'settle reopen order');
+      final chatButton = find.byIcon(Icons.chat);
+      await diagnosticTap(tester, chatButton, description: 'reopen chat');
+      await diagnosticPumpAndSettle(tester, description: 'settle reopen chat');
 
       // Verify message is still there
       expect(find.text('Persistent message'), findsOneWidget);
@@ -263,27 +131,9 @@ void main() {
     });
 
     testWidgets('Chat shows message timestamps', (WidgetTester tester) async {
-      app.main();
-      await tester.pumpAndSettle();
+      await _launchAppAndNavigateToChat(tester);
 
-      // Navigate to chat
-      final ordersTab = find.text('Orders');
-      await tester.tap(ordersTab);
-      await tester.pumpAndSettle();
-
-      final orderCard = find.byType(Card).first;
-      await tester.tap(orderCard);
-      await tester.pumpAndSettle();
-
-      final chatButton = find.byIcon(Icons.chat);
-      await tester.tap(chatButton);
-      await tester.pumpAndSettle();
-
-      // Send a message
-      await tester.enterText(find.byType(TextField), 'Timestamped message');
-      final sendButton = find.byIcon(Icons.send);
-      await tester.tap(sendButton);
-      await tester.pumpAndSettle();
+      await _sendChatMessage(tester, 'Timestamped message', description: 'timestamp test message');
 
       // Verify timestamp is displayed
       // This would check for time format like "2:30 PM" or "Just now"
@@ -293,27 +143,9 @@ void main() {
     });
 
     testWidgets('Chat differentiates sender and receiver messages', (WidgetTester tester) async {
-      app.main();
-      await tester.pumpAndSettle();
+      await _launchAppAndNavigateToChat(tester);
 
-      // Navigate to chat
-      final ordersTab = find.text('Orders');
-      await tester.tap(ordersTab);
-      await tester.pumpAndSettle();
-
-      final orderCard = find.byType(Card).first;
-      await tester.tap(orderCard);
-      await tester.pumpAndSettle();
-
-      final chatButton = find.byIcon(Icons.chat);
-      await tester.tap(chatButton);
-      await tester.pumpAndSettle();
-
-      // Send a message (should appear on right/sender side)
-      await tester.enterText(find.byType(TextField), 'My message');
-      final sendButton = find.byIcon(Icons.send);
-      await tester.tap(sendButton);
-      await tester.pumpAndSettle();
+      await _sendChatMessage(tester, 'My message', description: 'sender side message');
 
       // Verify message alignment/styling
       // Sender messages typically align right with different background color
@@ -322,4 +154,29 @@ void main() {
       print('✅ Chat message differentiation test completed successfully');
     });
   });
+}
+
+Future<void> _launchAppAndNavigateToChat(WidgetTester tester) async {
+  app.main();
+  await diagnosticPumpAndSettle(tester, description: 'settle after app launch');
+
+  final ordersTab = find.text('Orders');
+  await diagnosticTap(tester, ordersTab, description: 'open orders tab');
+  await diagnosticPumpAndSettle(tester, description: 'settle orders tab transition');
+
+  final orderCard = find.byType(Card).first;
+  await diagnosticTap(tester, orderCard, description: 'open first order');
+  await diagnosticPumpAndSettle(tester, description: 'settle order modal');
+
+  final chatButton = find.byIcon(Icons.chat);
+  await diagnosticTap(tester, chatButton, description: 'open chat from order');
+  await diagnosticPumpAndSettle(tester, description: 'settle chat screen');
+}
+
+Future<void> _sendChatMessage(WidgetTester tester, String text, {String? description}) async {
+  final chatInput = find.byType(TextField);
+  await diagnosticEnterText(tester, chatInput, text, description: description ?? 'enter chat message');
+  final sendButton = find.byIcon(Icons.send);
+  await diagnosticTap(tester, sendButton, description: 'send chat message');
+  await diagnosticPumpAndSettle(tester, description: 'settle chat message send');
 }

@@ -7,11 +7,16 @@ import '../widgets/dish_card.dart';
 
 /// Screen for vendors to view and manage their dishes.
 ///
-/// Features:
+/// **DEPRECATED**: This screen is deprecated. The "Dishes" bottom navigation
+/// tab now redirects to [VendorDashboardScreen] with the "Menu" tab selected.
+/// Use the Dashboard Menu tab for dish management instead.
+///
+/// Features (now in Dashboard Menu tab):
 /// - List of vendor's dishes
 /// - Add/edit dish forms
 /// - Toggle availability
 /// - Pricing and inventory
+@Deprecated('Use VendorDashboardScreen with initialTab=1 (Menu tab) instead')
 class VendorDishesScreen extends StatelessWidget {
   const VendorDishesScreen({super.key});
 

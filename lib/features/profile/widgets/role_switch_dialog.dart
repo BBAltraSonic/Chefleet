@@ -222,15 +222,11 @@ class _RoleSwitchDialogState extends State<RoleSwitchDialog> {
   Future<void> _handleConfirm() async {
     setState(() => _isLoading = true);
     
-    // Call the confirm callback
+    // Call the confirm callback which triggers role switch
+    // GoRouter will handle navigation and destroy this dialog naturally
+    // DO NOT call Navigator.pop() here - it causes '!_debugLocked' assertion
+    // error because GoRouter is already navigating
     widget.onConfirm();
-    
-    // Close dialog after a short delay to show loading state
-    await Future.delayed(const Duration(milliseconds: 300));
-    
-    if (mounted) {
-      Navigator.of(context).pop();
-    }
   }
 }
 

@@ -1,6 +1,9 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:chefleet/core/diagnostics/diagnostic_domains.dart';
+import 'package:chefleet/core/diagnostics/diagnostic_harness.dart';
+import 'package:chefleet/core/diagnostics/diagnostic_severity.dart';
 import '../../auth/blocs/auth_bloc.dart';
 import '../../../core/services/notification_service.dart';
 
@@ -12,6 +15,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   final AuthBloc _authBloc;
   RealtimeChannel? _chatChannel;
   final Map<String, RealtimeChannel?> _orderChannels = {};
+  final DiagnosticHarness _diagnostics = DiagnosticHarness.instance;
 
   // Rate limiting variables
   final List<DateTime> _messageTimestamps = [];
@@ -36,6 +40,21 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     on<SearchMessages>(_onSearchMessages);
   }
 
+  void _logChat(
+    String event, {
+    DiagnosticSeverity severity = DiagnosticSeverity.info,
+    Map<String, Object?> payload = const <String, Object?>{},
+    String? orderId,
+  }) {
+    _diagnostics.log(
+      domain: DiagnosticDomains.chat,
+      event: event,
+      severity: severity,
+      payload: payload,
+      correlationId: orderId != null ? 'order-$orderId' : null,
+    );
+  }
+
   @override
   Future<void> close() {
     _chatChannel?.unsubscribe();
@@ -51,6 +70,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     Emitter<ChatState> emit,
   ) async {
     emit(state.copyWith(status: ChatStatus.loading));
+    _logChat('orders.load.request', severity: DiagnosticSeverity.debug);
 
     try {
       final authState = _authBloc.state;
@@ -162,12 +182,12 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
             .select('id')
             .eq('order_id', order['id'])
             .eq('is_read', false);
-        
+
         // Only filter by sender_id for authenticated users
         if (currentUser != null) {
           unreadQuery = unreadQuery.neq('sender_id', currentUser.id);
         }
-        
+
         final unreadResponse = await unreadQuery;
 
         order['unread_count'] = (unreadResponse as List).length;
@@ -188,11 +208,20 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         status: ChatStatus.loaded,
         orderChats: orders,
       ));
+      _logChat(
+        'orders.load.success',
+        payload: {'orders': orders.length},
+      );
     } catch (e) {
       emit(state.copyWith(
         status: ChatStatus.error,
         errorMessage: 'Failed to load order chats: ${e.toString()}',
       ));
+      _logChat(
+        'orders.load.error',
+        severity: DiagnosticSeverity.error,
+        payload: {'message': e.toString()},
+      );
     }
   }
 
@@ -204,6 +233,11 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       messagesStatus: ChatStatus.loading,
       currentOrderId: event.orderId,
     ));
+    _logChat(
+      'messages.load.request',
+      severity: DiagnosticSeverity.debug,
+      orderId: event.orderId,
+    );
 
     try {
       final response = await _supabaseClient
@@ -222,11 +256,22 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
 
       // Mark messages as read
       await _markMessagesAsRead(event.orderId);
+      _logChat(
+        'messages.load.success',
+        payload: {'messages': messages.length},
+        orderId: event.orderId,
+      );
     } catch (e) {
       emit(state.copyWith(
         messagesStatus: ChatStatus.error,
         errorMessage: 'Failed to load messages: ${e.toString()}',
       ));
+      _logChat(
+        'messages.load.error',
+        severity: DiagnosticSeverity.error,
+        payload: {'message': e.toString()},
+        orderId: event.orderId,
+      );
     }
   }
 
@@ -237,7 +282,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     try {
       final authState = _authBloc.state;
       final currentUser = _supabaseClient.auth.currentUser;
-      
+
       // Check if user is authenticated or in guest mode
       if (currentUser == null && !authState.isGuest) {
         emit(state.copyWith(
@@ -252,6 +297,11 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
           rateLimitStatus: RateLimitStatus.blocked,
           errorMessage: 'Rate limit exceeded. Please wait before sending more messages.',
         ));
+        _logChat(
+          'send.rate_limited',
+          severity: DiagnosticSeverity.warn,
+          orderId: event.orderId,
+        );
         return;
       }
 
@@ -280,6 +330,12 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
           optimisticMessage['id'] as String,
         ],
       ));
+      _logChat(
+        'send.request',
+        severity: DiagnosticSeverity.debug,
+        orderId: event.orderId,
+        payload: {'senderType': event.senderType, 'messageType': event.messageType ?? 'text'},
+      );
 
       try {
         // Build message data based on auth mode
@@ -291,7 +347,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
           'created_at': DateTime.now().toIso8601String(),
           'is_read': false,
         };
-        
+
         // Add appropriate sender ID
         if (senderId != null) {
           messageData['sender_id'] = senderId;
@@ -318,6 +374,10 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         ));
 
         _messageTimestamps.add(DateTime.now());
+        _logChat(
+          'send.success',
+          orderId: event.orderId,
+        );
       } catch (e) {
         // Mark optimistic message as failed
         final updatedMessages = state.messages.map((msg) {
@@ -337,11 +397,23 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
             optimisticMessage['id'] as String,
           ],
         ));
+        _logChat(
+          'send.error',
+          severity: DiagnosticSeverity.error,
+          payload: {'message': e.toString()},
+          orderId: event.orderId,
+        );
       }
     } catch (e) {
       emit(state.copyWith(
         errorMessage: 'Failed to send message: ${e.toString()}',
       ));
+      _logChat(
+        'send.fatal',
+        severity: DiagnosticSeverity.error,
+        payload: {'message': e.toString()},
+        orderId: event.orderId,
+      );
     }
   }
 
@@ -349,6 +421,11 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     SendQuickReply event,
     Emitter<ChatState> emit,
   ) async {
+    _logChat(
+      'quick_reply.triggered',
+      orderId: event.orderId,
+      payload: {'content': event.content},
+    );
     add(SendMessage(
       orderId: event.orderId,
       content: event.content,
@@ -362,6 +439,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     Emitter<ChatState> emit,
   ) async {
     await _markMessagesAsRead(event.orderId);
+    _logChat('messages.mark_read', orderId: event.orderId);
   }
 
   Future<void> _onSubscribeToOrderChat(
@@ -371,6 +449,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     if (_orderChannels.containsKey(event.orderId)) {
       return; // Already subscribed
     }
+    _logChat('subscribe.request', orderId: event.orderId, severity: DiagnosticSeverity.debug);
 
     final channel = _supabaseClient
         .channel('order_chat_${event.orderId}')
@@ -385,16 +464,12 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
 
               // Only handle messages from other users
               if (currentUser != null && newRecord['sender_id'] != currentUser.id) {
-                // Send push notification for new message
                 await _sendChatNotification(newRecord, event.orderId);
               }
 
-              // Add new message to current messages if we're viewing this order
               if (state.currentOrderId == event.orderId) {
                 final newMessages = [...state.messages, newRecord];
                 emit(state.copyWith(messages: newMessages));
-
-                // Mark messages as read if we're viewing the chat
                 await _markMessagesAsRead(event.orderId);
               }
             }
@@ -403,33 +478,24 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         .subscribe();
 
     _orderChannels[event.orderId] = channel;
+    _logChat('subscribe.success', orderId: event.orderId);
   }
 
   Future<void> _onUnsubscribeFromOrderChat(
     UnsubscribeFromOrderChat event,
     Emitter<ChatState> emit,
   ) async {
-    final channel = _orderChannels[event.orderId];
+    final channel = _orderChannels.remove(event.orderId);
     if (channel != null) {
       await channel.unsubscribe();
-      _orderChannels.remove(event.orderId);
-    }
-  }
-
-  Future<void> _onCheckRateLimit(
-    CheckRateLimit event,
-    Emitter<ChatState> emit,
-  ) async {
-    _cleanupOldTimestamps();
-
-    if (_isRateLimited()) {
-      emit(state.copyWith(
-        rateLimitStatus: RateLimitStatus.blocked,
-      ));
+      _logChat('unsubscribe.success', orderId: event.orderId);
     } else {
-      emit(state.copyWith(
-        rateLimitStatus: RateLimitStatus.allowed,
-      ));
+      _logChat(
+        'unsubscribe.noop',
+        orderId: event.orderId,
+        severity: DiagnosticSeverity.debug,
+        payload: const {'reason': 'channel_not_found'},
+      );
     }
   }
 
@@ -477,6 +543,27 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     final now = DateTime.now();
     _messageTimestamps.removeWhere((timestamp) =>
         now.difference(timestamp) > _rateLimitWindow);
+  }
+
+  Future<void> _onCheckRateLimit(
+    CheckRateLimit event,
+    Emitter<ChatState> emit,
+  ) async {
+    _cleanupOldTimestamps();
+    final isBlocked = _isRateLimited();
+    emit(state.copyWith(
+      rateLimitStatus:
+          isBlocked ? RateLimitStatus.blocked : RateLimitStatus.allowed,
+      clearError: isBlocked ? false : true,
+    ));
+    _logChat(
+      'rate_limit.checked',
+      severity: DiagnosticSeverity.debug,
+      payload: {
+        'blocked': isBlocked,
+        'windowMessages': _messageTimestamps.length,
+      },
+    );
   }
 
   Future<void> _markMessagesAsRead(String orderId) async {

@@ -7,6 +7,9 @@ import 'package:chefleet/core/models/message_model.dart';
 import 'package:chefleet/core/models/dish_model.dart';
 import 'package:chefleet/core/models/vendor_model.dart';
 import 'package:chefleet/core/services/guest_session_service.dart';
+import 'package:chefleet/core/diagnostics/testing/diagnostic_tester_helpers.dart';
+
+import 'diagnostic_harness.dart';
 
 /// Integration tests to validate schema alignment between:
 /// - Flutter models
@@ -15,7 +18,7 @@ import 'package:chefleet/core/services/guest_session_service.dart';
 /// 
 /// These tests verify that all schema mismatches from Phase 1-4 are fixed
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  ensureIntegrationDiagnostics(scenarioName: 'schema_validation');
 
   group('Schema Validation Tests', () {
     late SupabaseClient supabase;

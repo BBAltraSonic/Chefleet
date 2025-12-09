@@ -12,7 +12,10 @@ import 'package:chefleet/core/models/user_role.dart';
 import 'package:chefleet/core/blocs/role_bloc.dart';
 import 'package:chefleet/core/blocs/role_event.dart';
 import 'package:chefleet/core/blocs/role_state.dart';
+import 'package:chefleet/core/diagnostics/testing/diagnostic_tester_helpers.dart';
 import 'package:go_router/go_router.dart';
+
+import 'diagnostic_harness.dart';
 
 // Mocks
 class MockSupabaseClient extends Mock implements SupabaseClient {}
@@ -22,7 +25,7 @@ class MockRoleStorageService extends Mock implements RoleStorageService {}
 class MockRoleSyncService extends Mock implements RoleSyncService {}
 
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  ensureIntegrationDiagnostics(scenarioName: 'role_switching_realtime');
 
   group('Role Switching with Realtime Subscriptions - Integration Tests', () {
     late MockSupabaseClient mockSupabase;
