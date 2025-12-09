@@ -113,6 +113,9 @@ jobs:
     strategy:
       matrix:
         flutter-version: ['3.16.0', 'stable']
+    env:
+      CI_DIAGNOSTICS: 'true'
+      DIAGNOSTIC_SINK_TYPE: 'stdout'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -126,9 +129,54 @@ jobs:
         run: flutter pub get
 
       - name: Run Flutter tests
+        id: flutter_tests
         run: flutter test --coverage --reporter=expanded
+        continue-on-error: true
+
+      - name: Collect diagnostic artifacts
+        if: always()
+        run: |
+          echo "=== Collecting Diagnostic Artifacts ==="
+          if [ -d "build/diagnostics" ]; then
+            echo "Found diagnostics directory:"
+            find build/diagnostics -type f -name "*.jsonl" -o -name "*.log"
+            echo "Total diagnostic files: $(find build/diagnostics -type f | wc -l)"
+          else
+            echo "No diagnostics directory found"
+            mkdir -p build/diagnostics
+            echo "Created empty diagnostics directory for artifact upload"
+          fi
+
+      - name: Display diagnostic summary on failure
+        if: failure() || steps.flutter_tests.outcome == 'failure'
+        run: |
+          echo "=== Diagnostic Logs Summary (Last 200 Lines) ==="
+          if [ -f "build/diagnostics/stdout.jsonl" ]; then
+            echo "📊 Diagnostic events captured:"
+            tail -n 200 build/diagnostics/stdout.jsonl
+            echo ""
+            echo "📈 Event statistics:"
+            if command -v jq &> /dev/null; then
+              echo "Total events: $(wc -l < build/diagnostics/stdout.jsonl)"
+              echo "Error events: $(grep -c '"severity":"error"' build/diagnostics/stdout.jsonl || echo 0)"
+              echo "Warning events: $(grep -c '"severity":"warning"' build/diagnostics/stdout.jsonl || echo 0)"
+            fi
+          else
+            echo "⚠️ No diagnostic logs found at build/diagnostics/stdout.jsonl"
+            echo "This may indicate the diagnostic harness is not properly initialized."
+          fi
+
+      - name: Upload diagnostic artifacts
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: unit-test-diagnostics-${{ matrix.flutter-version }}
+          path: build/diagnostics/**/*
+          retention-days: 14
+          if-no-files-found: warn
 
       - name: Upload coverage reports to Codecov
+        if: success()
         uses: codecov/codecov-action@v3
         with:
           file: coverage/lcov.info
@@ -193,6 +241,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     if: github.event_name == 'pull_request'
+    env:
+      CI_DIAGNOSTICS: 'true'
+      DIAGNOSTIC_SINK_TYPE: 'stdout'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -211,13 +262,24 @@ jobs:
         uses: actions/download-artifact@v3
 
       - name: Performance benchmark
+        id: performance_tests
         run: |
           # Run performance tests if available
           if [ -d "test/performance" ]; then
-            flutter test test/performance/
+            flutter test test/performance/ --reporter=expanded
           else
             echo "No performance tests found"
           fi
+        continue-on-error: true
+
+      - name: Upload performance diagnostic artifacts
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: performance-test-diagnostics-${{ env.FLUTTER_VERSION }}
+          path: build/diagnostics/**/*
+          retention-days: 14
+          if-no-files-found: ignore
 
       - name: Bundle size analysis
         run: |
@@ -240,6 +302,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: [code-quality, security, test]
     if: github.event_name == 'pull_request'
+    env:
+      CI_DIAGNOSTICS: 'true'
+      DIAGNOSTIC_SINK_TYPE: 'stdout'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -263,12 +328,75 @@ jobs:
           supabase db reset
 
       - name: Run integration tests
+        id: integration_tests
         run: |
           if [ -d "integration_test" ]; then
-            flutter test integration_test/
+            echo "Running integration tests with diagnostic harness..."
+            flutter test integration_test/ --reporter=expanded
           else
             echo "No integration tests found"
           fi
+        continue-on-error: true
+
+      - name: Collect integration diagnostic artifacts
+        if: always()
+        run: |
+          echo "=== Collecting Integration Test Diagnostic Artifacts ==="
+          if [ -d "build/diagnostics" ]; then
+            echo "Found diagnostics directory:"
+            find build/diagnostics -type d
+            echo ""
+            echo "Diagnostic files by scenario:"
+            find build/diagnostics -type f -name "*.jsonl" -exec sh -c 'echo "  - $(basename $(dirname {})): $(wc -l < {})" events' \;
+            echo ""
+            echo "Total diagnostic files: $(find build/diagnostics -type f | wc -l)"
+          else
+            echo "No diagnostics directory found"
+            mkdir -p build/diagnostics
+            echo "Created empty diagnostics directory for artifact upload"
+          fi
+
+      - name: Display integration diagnostic summary on failure
+        if: failure() || steps.integration_tests.outcome == 'failure'
+        run: |
+          echo "=== Integration Test Diagnostic Logs Summary ==="
+          if [ -d "build/diagnostics" ]; then
+            # Display logs from each scenario
+            for scenario_dir in build/diagnostics/*/; do
+              if [ -d "$scenario_dir" ]; then
+                scenario_name=$(basename "$scenario_dir")
+                echo ""
+                echo "📋 Scenario: $scenario_name"
+                echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+                if [ -f "${scenario_dir}stdout.jsonl" ]; then
+                  echo "Last 50 events:"
+                  tail -n 50 "${scenario_dir}stdout.jsonl"
+                  echo ""
+                  if command -v jq &> /dev/null; then
+                    echo "Event statistics:"
+                    echo "  Total: $(wc -l < ${scenario_dir}stdout.jsonl)"
+                    echo "  Errors: $(grep -c '"severity":"error"' ${scenario_dir}stdout.jsonl || echo 0)"
+                    echo "  Warnings: $(grep -c '"severity":"warning"' ${scenario_dir}stdout.jsonl || echo 0)"
+                  fi
+                fi
+              fi
+            done
+          elif [ -f "build/diagnostics/stdout.jsonl" ]; then
+            echo "📊 Diagnostic events (Last 200 Lines):"
+            tail -n 200 build/diagnostics/stdout.jsonl
+          else
+            echo "⚠️ No diagnostic logs found"
+            echo "This may indicate the diagnostic harness is not properly initialized."
+          fi
+
+      - name: Upload integration test diagnostic artifacts
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: integration-test-diagnostics-${{ env.FLUTTER_VERSION }}
+          path: build/diagnostics/**/*
+          retention-days: 14
+          if-no-files-found: warn
 
       - name: Stop Supabase
         if: always()

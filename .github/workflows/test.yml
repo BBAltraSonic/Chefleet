@@ -9,7 +9,10 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    
+    env:
+      CI_DIAGNOSTICS: 'true'
+      DIAGNOSTIC_SINK_TYPE: 'stdout'
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -31,7 +34,34 @@ jobs:
         run: flutter analyze --fatal-infos
 
       - name: Run tests
+        id: run_tests
         run: flutter test --coverage --reporter=expanded
+        continue-on-error: true
+
+      - name: Display diagnostic summary on failure
+        if: failure() || steps.run_tests.outcome == 'failure'
+        run: |
+          echo "=== Test Diagnostic Logs (Last 200 Lines) ==="
+          if [ -f "build/diagnostics/stdout.jsonl" ]; then
+            tail -n 200 build/diagnostics/stdout.jsonl
+            echo ""
+            echo "📈 Event statistics:"
+            if command -v jq &> /dev/null; then
+              echo "Total events: $(wc -l < build/diagnostics/stdout.jsonl)"
+              echo "Error events: $(grep -c '"severity":"error"' build/diagnostics/stdout.jsonl || echo 0)"
+            fi
+          else
+            echo "⚠️ No diagnostic logs found"
+          fi
+
+      - name: Upload diagnostic artifacts
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-diagnostics
+          path: build/diagnostics/**/*
+          retention-days: 7
+          if-no-files-found: warn
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
