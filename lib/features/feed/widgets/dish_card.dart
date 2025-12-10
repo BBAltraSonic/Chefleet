@@ -7,7 +7,7 @@ class DishCard extends StatelessWidget {
     super.key,
     required this.dish,
     required this.vendorName,
-    required this.onTap,
+    this.onTap,
     this.onFavorite,
     this.isFavorite = false,
     this.distance,
@@ -15,7 +15,7 @@ class DishCard extends StatelessWidget {
 
   final Dish dish;
   final String vendorName;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final VoidCallback? onFavorite;
   final bool isFavorite;
   final double? distance;
@@ -31,7 +31,7 @@ class DishCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(theme.brightness == Brightness.dark ? 0.3 : 0.06),
+            color: Colors.black.withValues(alpha: theme.brightness == Brightness.dark ? 0.3 : 0.06),
             blurRadius: 12,
             offset: const Offset(0, 4),
             spreadRadius: 0,
@@ -128,7 +128,7 @@ class DishCard extends StatelessWidget {
                               padding: const EdgeInsets.all(6),
                               decoration: BoxDecoration(
                                 color: isFavorite
-                                  ? Colors.red.withOpacity(0.1)
+                                  ? Colors.red.withValues(alpha: 0.1)
                                   : colorScheme.surfaceContainerHighest,
                                 shape: BoxShape.circle,
                               ),
@@ -253,11 +253,11 @@ class DishCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.95),
+                    color: Colors.red.withValues(alpha: 0.95),
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.15),
+                        color: Colors.black.withValues(alpha: 0.15),
                         blurRadius: 6,
                         offset: const Offset(0, 2),
                       ),
@@ -281,7 +281,7 @@ class DishCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.15),
+                        color: Colors.black.withValues(alpha: 0.15),
                         blurRadius: 6,
                         offset: const Offset(0, 2),
                       ),
@@ -320,9 +320,9 @@ class DishCard extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.65),
+                color: Colors.black.withValues(alpha: 0.65),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.white.withOpacity(0.2)),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -350,7 +350,7 @@ class DishCard extends StatelessWidget {
             Icon(
               Icons.restaurant_menu_rounded,
               size: 48,
-              color: AppTheme.primaryColor.withOpacity(0.2),
+              color: AppTheme.primaryColor.withValues(alpha: 0.2),
             ),
           ],
         ),

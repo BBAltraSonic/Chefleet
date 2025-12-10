@@ -58,7 +58,7 @@ dependencies:
 
   # UI & Animation
   flutter_svg: ^2.0.10+1
-  glassmorphism: ^3.0.0
+  google_fonts: ^6.1.0
   cached_network_image: ^3.3.0
   image_picker: ^1.1.2
 

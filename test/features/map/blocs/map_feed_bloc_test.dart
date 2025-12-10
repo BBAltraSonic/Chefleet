@@ -52,8 +52,11 @@ void main() {
         final vendor = Vendor(
           id: 'vendor1',
           name: 'Test Vendor',
+          description: 'Test Description',
           latitude: 37.7749,
           longitude: -122.4194,
+          address: 'Test Address',
+          phoneNumber: '123-456-7890',
           isActive: true,
           dishCount: 5,
         );
@@ -69,8 +72,10 @@ void main() {
         final vendor = Vendor(
           id: 'vendor1',
           name: 'Test Vendor',
+          description: 'Test Description',
           latitude: 37.7749,
           longitude: -122.4194,
+          address: 'Test Address',
           isActive: true,
           dishCount: 5,
         );

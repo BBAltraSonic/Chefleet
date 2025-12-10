@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import '../../core/models/user_role.dart';
 import '../../core/theme/app_theme.dart';
-import '../../core/routes/app_routes.dart';
 import '../order/widgets/active_order_modal.dart';
 import '../order/blocs/active_orders_bloc.dart';
-import '../cart/cart.dart';
 
 /// Customer app shell for the main customer experience.
 ///
@@ -50,36 +48,69 @@ class _CustomerFloatingActionButton extends StatefulWidget {
 
 class __CustomerFloatingActionButtonState
     extends State<_CustomerFloatingActionButton>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
+  late AnimationController _bounceController;
+  late Animation<double> _bounceAnimation;
 
   @override
   void initState() {
     super.initState();
+    
+    // Pulse animation for "ready" state
     _pulseController = AnimationController(
-      duration: const Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 1200),
       vsync: this,
     );
-    _pulseAnimation = Tween<double>(
-      begin: 1.0,
-      end: 1.1,
-    ).animate(CurvedAnimation(
-      parent: _pulseController,
-      curve: Curves.easeInOut,
-    ));
+    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.12).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
     _pulseController.repeat(reverse: true);
+
+    // Bounce animation for status changes
+    _bounceController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+    _bounceAnimation = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.2), weight: 30),
+      TweenSequenceItem(tween: Tween(begin: 1.2, end: 0.9), weight: 20),
+      TweenSequenceItem(tween: Tween(begin: 0.9, end: 1.05), weight: 25),
+      TweenSequenceItem(tween: Tween(begin: 1.05, end: 1.0), weight: 25),
+    ]).animate(CurvedAnimation(
+      parent: _bounceController,
+      curve: Curves.easeOut,
+    ));
+  }
+
+  // Call this when order status changes
+  void _triggerBounce() {
+    HapticFeedback.mediumImpact();
+    _bounceController.forward(from: 0);
   }
 
   @override
   void dispose() {
     _pulseController.dispose();
+    _bounceController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<ActiveOrdersBloc, ActiveOrdersState>(
+    return BlocConsumer<ActiveOrdersBloc, ActiveOrdersState>(
+      listenWhen: (previous, current) {
+        // Trigger bounce when order count or status changes
+        if (previous.orders.length != current.orders.length) return true;
+        if (previous.orders.isNotEmpty && current.orders.isNotEmpty) {
+          return previous.orders.first['status'] != current.orders.first['status'];
+        }
+        return false;
+      },
+      listener: (context, state) {
+        _triggerBounce();
+      },
       builder: (context, activeOrdersState) {
         final activeOrders = activeOrdersState.orders;
         final hasActiveOrders = activeOrders.isNotEmpty;
@@ -133,10 +164,14 @@ class __CustomerFloatingActionButtonState
         }
 
         return AnimatedBuilder(
-          animation: _pulseAnimation,
+          animation: Listenable.merge([_pulseAnimation, _bounceAnimation]),
           builder: (context, child) {
+            final scaleStatus = isOrderMode && status == 'ready' ? _pulseAnimation.value : 1.0;
+             final scaleBounce = _bounceAnimation.value;
+             final scale = scaleStatus * scaleBounce;
+
             return Transform.scale(
-              scale: isOrderMode && status == 'ready' ? _pulseAnimation.value : 1.0,
+              scale: scale,
               child: Container(
                 width: 60,
                 height: 60,

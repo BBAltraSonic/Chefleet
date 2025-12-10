@@ -76,21 +76,5 @@ void main() {
     });
   });
 
-  group('MapHeaderDelegate', () {
-    test('has correct extent values', () {
-      const delegate = MapHeaderDelegate(
-        child: SizedBox(),
-      );
 
-      expect(delegate.minExtent, 200.0);
-      expect(delegate.maxExtent, 400.0);
-    });
-
-    test('shouldRebuild returns false', () {
-      const delegate1 = MapHeaderDelegate(child: SizedBox());
-      const delegate2 = MapHeaderDelegate(child: SizedBox());
-
-      expect(delegate1.shouldRebuild(delegate2), false);
-    });
-  });
 }

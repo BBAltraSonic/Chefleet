@@ -950,9 +950,9 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
     final clusterUpdateDebouncer = _clusterUpdateDebouncer;
     clusterUpdateDebouncer?.cancel();
 
-    _clusterUpdateDebouncer = Timer(const Duration(milliseconds: 200), () {
+    _clusterUpdateDebouncer = Timer(const Duration(milliseconds: 200), () async {
       try {
-        final markers = _clusterManager.getMarkers(
+        final markers = await _clusterManager.getMarkers(
           state.mapBounds!,
           state.zoomLevel,
           state.selectedVendor?.id,

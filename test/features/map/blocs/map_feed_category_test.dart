@@ -180,7 +180,7 @@ void main() {
       ],
     );
 
-    blocTest<MapFeedState>(
+    blocTest<MapFeedBloc, MapFeedState>(
       'emits all dishes when All category is selected',
       build: () => MapFeedBloc(),
       seed: () => MapFeedState(

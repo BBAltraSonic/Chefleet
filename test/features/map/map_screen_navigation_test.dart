@@ -170,17 +170,31 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      // Find the drag handle container
-      final dragHandles = tester.widgetList<Container>(
-        find.byType(Container),
-      ).where((container) {
-        return container.width == 40 && container.height == 4;
-      });
+      // Find the drag handle by checking rendered size
+      final containers = find.byType(Container);
+      bool foundDragHandle = false;
+
+      for (final element in containers.evaluate()) {
+        final widget = element.widget as Container;
+        // Check if it looks like a drag handle (usually has color/decoration)
+        if (widget.decoration != null || widget.color != null) {
+          try {
+            final size = tester.getSize(find.byWidget(widget));
+            if (size.width == 40 && size.height == 4) {
+              foundDragHandle = true;
+              break;
+            }
+          } catch (e) {
+            // Context might not be valid for getting size if not laid out, skip
+            continue;
+          }
+        }
+      }
 
       expect(
-        dragHandles.isNotEmpty,
+        foundDragHandle,
         true,
-        reason: 'Sheet should have drag handle',
+        reason: 'Sheet should have drag handle (40x4)',
       );
     });
 

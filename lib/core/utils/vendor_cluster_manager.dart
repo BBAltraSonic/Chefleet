@@ -4,6 +4,7 @@ import 'cluster_manager.dart' as cm;
 import 'cluster_icon_generator.dart';
 import 'quadtree.dart';
 import '../../features/feed/models/vendor_model.dart';
+import '../../features/map/widgets/animated_vendor_marker.dart';
 
 class VendorClusterManager {
   late cm.ClusterManager<Vendor> _clusterManager;
@@ -27,29 +28,28 @@ class VendorClusterManager {
     _clusterManager.setItems(items);
   }
 
-  Map<String, Marker> getMarkers(LatLngBounds mapBounds, double zoomLevel, String? selectedVendorId) {
+  Future<Map<String, Marker>> getMarkers(LatLngBounds mapBounds, double zoomLevel, String? selectedVendorId) async {
     final clusters = _clusterManager.getClusters(mapBounds, zoomLevel);
     final markers = <String, Marker>{};
 
     for (final cluster in clusters) {
-      final markerId = cluster.id;
+      final markerId = cluster.marker.markerId.value;
 
       // Update selected state for single markers
       if (!cluster.isCluster && cluster.items.isNotEmpty) {
-        final vendor = cluster.items.first.data as Vendor;
+        final vendor = cluster.items.first.data;
         final isSelected = vendor.id == selectedVendorId;
 
-        // Create a new marker with updated icon
-        final newIcon = isSelected
-            ? ClusterIconGenerator.generateSingleVendorIcon(isSelected: true)
-            : ClusterIconGenerator.generateSingleVendorIcon(isSelected: false);
-
-        final updatedMarker = Marker(
-          markerId: cluster.marker.markerId,
-          position: cluster.marker.position,
-          icon: newIcon,
-          infoWindow: cluster.marker.infoWindow,
-          onTap: cluster.marker.onTap,
+        // Create animated marker
+        final state = isSelected ? VendorPinState.selected : VendorPinState.normal;
+        
+        // Use a temporary creator to generate the marker
+        // In a real app, we might want to inject this or keep a reference
+        final creator = VendorMarkerCreator();
+        final updatedMarker = await creator.createAnimatedSingleMarker(
+          cluster.items.first,
+          zoomLevel,
+          state: state,
         );
 
         markers[markerId] = updatedMarker;
@@ -67,7 +67,7 @@ class VendorClusterManager {
 
     for (final cluster in clusters) {
       if (cluster.isCluster && _isSamePosition(cluster.position, clusterPosition)) {
-        return cluster.items.map((item) => item.data as Vendor).toList();
+        return cluster.items.map((item) => item.data).toList();
       }
     }
 
@@ -145,17 +145,51 @@ class VendorMarkerCreator implements cm.ClusterMarkerCreator<Vendor> {
   @override
   Marker createSingleMarker(QuadTreeItem<Vendor> item, double zoomLevel) {
     final vendor = item.data;
+    
+    // Determine pin state based on vendor status
+    VendorPinState pinState = VendorPinState.normal;
+    // Note: Order status would be passed via state in real implementation
+    
+    return Marker(
+      markerId: MarkerId(vendor.id),
+      position: LatLng(vendor.latitude, vendor.longitude),
+      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen), // Fallback
+      infoWindow: InfoWindow(
+        title: vendor.name,
+        snippet: '${vendor.dishCount} dishes • Tap to view',
+      ),
+      anchor: const Offset(0.5, 0.9), // Anchor at pin point
+      onTap: () {
+        // Handled by BLoC
+      },
+    );
+  }
+
+  // Add method to create animated marker asynchronously
+  Future<Marker> createAnimatedSingleMarker(
+    QuadTreeItem<Vendor> item,
+    double zoomLevel, {
+    VendorPinState state = VendorPinState.normal,
+  }) async {
+    final vendor = item.data;
+    final initials = vendor.name.isNotEmpty ? vendor.name[0] : 'V';
+    
+    final icon = await AnimatedVendorMarker.generateVendorPin(
+      state: state,
+      vendorInitials: initials,
+    );
 
     return Marker(
       markerId: MarkerId(vendor.id),
       position: LatLng(vendor.latitude, vendor.longitude),
-      icon: ClusterIconGenerator.generateSingleVendorIcon(),
+      icon: icon,
+      anchor: const Offset(0.5, 0.9),
       infoWindow: InfoWindow(
         title: vendor.name,
         snippet: '${vendor.dishCount} dishes available',
       ),
       onTap: () {
-        // This will be handled by the BLoC
+        // Handled by BLoC via MapVendorSelected event
       },
     );
   }

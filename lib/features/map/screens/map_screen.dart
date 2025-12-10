@@ -1,27 +1,29 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
+
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 
 import '../../../core/theme/app_theme.dart';
-import '../../../core/routes/app_routes.dart';
+
 import '../../../shared/widgets/glass_container.dart';
 import '../utils/map_styles.dart';
 import '../../feed/models/vendor_model.dart';
 import '../../feed/widgets/dish_card.dart';
 import '../../feed/widgets/dish_card_skeleton.dart';
-import '../../feed/widgets/vendor_mini_card.dart';
+
 import '../../dish/widgets/dish_modal.dart';
 import '../blocs/map_feed_bloc.dart';
 import '../widgets/category_filter_bar.dart';
 import '../widgets/location_selector_sheet.dart';
 import '../widgets/map_feed_empty_state.dart';
 import '../widgets/personalized_header.dart';
-import '../../cart/blocs/cart_bloc.dart';
-import '../../cart/blocs/cart_state.dart';
-import '../../cart/blocs/cart_event.dart';
+import '../widgets/animated_map_feed_layout.dart';
+import '../widgets/animated_vendor_info_card.dart';
+
+import '../../../shared/widgets/staggered_sliver_list.dart';
+import '../../feed/widgets/animated_dish_card_wrapper.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -32,7 +34,8 @@ class MapScreen extends StatefulWidget {
 
 class _MapScreenState extends State<MapScreen> {
   GoogleMapController? _mapController;
-  final DraggableScrollableController _sheetController = DraggableScrollableController();
+
+  String? _mapStyle;
 
   @override
   void didChangeDependencies() {
@@ -41,9 +44,10 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _updateMapStyle() {
-    if (_mapController == null) return;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    _mapController!.setMapStyle(isDark ? MapStyles.dark : MapStyles.light);
+    setState(() {
+      _mapStyle = isDark ? MapStyles.dark : MapStyles.light;
+    });
   }
 
   @override
@@ -56,48 +60,55 @@ class _MapScreenState extends State<MapScreen> {
             backgroundColor: AppTheme.backgroundColor,
             body: Stack(
               children: [
-                // 1. Map Layer
-                _buildMapLayer(context, state),
-
-                // 2. Top Search Bar
-                _buildSearchBar(context),
-
-                // 3. Draggable Feed Sheet
-                _buildFeedSheet(context, state),
-                
-                // 4. Location Button
-                Positioned(
-                  right: 16,
-                  bottom: MediaQuery.of(context).size.height * 0.4 + 20,
-                  child: FloatingActionButton(
-                    mini: true,
-                    backgroundColor: Theme.of(context).cardTheme.color,
-                    child: const Icon(Icons.my_location),
-                    onPressed: _centerOnUser,
+                AnimatedMapFeedLayout(
+                  mapBuilder: (opacity, heightPercent) => _buildMapLayer(context, state),
+                  feedBuilder: (scrollController, height) => _buildFeedContent(
+                    context,
+                    state,
+                    scrollController,
                   ),
+                  searchBarBuilder: () => _buildSearchBar(context),
+                  minMapHeightPercent: 0.20,
+                  maxMapHeightPercent: 0.60,
                 ),
-
-                // 5. Vendor Mini Card (if selected)
                 if (state.selectedVendor != null)
-                   Positioned(
-                    bottom: MediaQuery.of(context).size.height * 0.4 + 20, // Position above sheet
-                    left: 16,
-                    right: 16,
-                    child: VendorMiniCard(
+                  Positioned(
+                    bottom: MediaQuery.of(context).size.height * 0.4 + 24,
+                    left: 0,
+                    right: 0,
+                    child: AnimatedVendorInfoCard(
                       vendor: state.selectedVendor!,
-                      onClose: () {
-                        context.read<MapFeedBloc>().add(const MapVendorDeselected());
-                      },
-                      onViewDetails: () {
-                        // TODO: Navigate to vendor details
-                      },
                       dishCount: state.dishes
                           .where((dish) => dish.vendorId == state.selectedVendor!.id)
                           .length,
+                      distance: state.currentPosition != null
+                          ? _calculateDistance(
+                              state.currentPosition!.latitude,
+                              state.currentPosition!.longitude,
+                              state.selectedVendor!.latitude,
+                              state.selectedVendor!.longitude,
+                            )
+                          : null,
+                      onClose: () {
+                        context.read<MapFeedBloc>().add(const MapVendorDeselected());
+                      },
+                      onViewMenu: () {
+                        // TODO: Navigate to vendor details
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Navigate to Vendor Menu')),
+                        );
+                      },
+                      onCall: () {
+                         ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Call Vendor')),
+                        );
+                      },
                     ),
                   ),
               ],
             ),
+            floatingActionButton: _buildLocationButton(context),
+            floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
           );
         },
       ),
@@ -115,9 +126,9 @@ class _MapScreenState extends State<MapScreen> {
             : const LatLng(37.7749, -122.4194),
         zoom: 14,
       ),
+      style: _mapStyle,
       onMapCreated: (controller) {
         _mapController = controller;
-        _updateMapStyle();
       },
       onCameraMove: (position) {
         context.read<MapFeedBloc>().add(MapZoomChanged(position.zoom));
@@ -147,248 +158,232 @@ class _MapScreenState extends State<MapScreen> {
   Widget _buildSearchBar(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Positioned(
-      top: MediaQuery.of(context).padding.top + 12,
-      left: 16,
-      right: 16,
-      child: GlassContainer(
-        height: 56,
-        blur: 18,
-        opacity: 0.8,
-        color: theme.cardTheme.color?.withOpacity(0.9) ?? theme.scaffoldBackgroundColor.withOpacity(0.7),
-        borderRadius: 30,
-        child: Row(
-          children: [
-            // Search Icon
-            Padding(
-              padding: const EdgeInsets.only(left: 16, right: 12),
-              child: Icon(
-                Icons.search_rounded,
-                color: theme.iconTheme.color?.withOpacity(0.7),
-                size: 24,
-              ),
+    return GlassContainer(
+      height: 56,
+      blur: 18,
+      opacity: 0.8,
+      color: theme.cardTheme.color?.withValues(alpha: 0.9) ?? theme.scaffoldBackgroundColor.withValues(alpha: 0.7),
+      borderRadius: 30,
+      child: Row(
+        children: [
+          // Search Icon
+          Padding(
+            padding: const EdgeInsets.only(left: 16, right: 12),
+            child: Icon(
+              Icons.search_rounded,
+              color: theme.iconTheme.color?.withValues(alpha: 0.7),
+              size: 24,
             ),
-            
-            // Text Field
-            Expanded(
-              child: TextField(
-                onChanged: (value) {
-                  context.read<MapFeedBloc>().add(MapSearchQueryChanged(value));
-                },
-                decoration: InputDecoration(
-                  hintText: 'Search dishes, cuisines...',
-                  hintStyle: TextStyle(
-                    color: theme.hintColor,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w400,
-                  ),
-                  border: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  focusedBorder: InputBorder.none,
-                  contentPadding: EdgeInsets.zero,
-                  isDense: true,
-                  filled: false,
-                ),
-                style: TextStyle(
-                  color: theme.textTheme.bodyLarge?.color,
+          ),
+          
+          // Text Field
+          Expanded(
+            child: TextField(
+              onChanged: (value) {
+                context.read<MapFeedBloc>().add(MapSearchQueryChanged(value));
+              },
+              decoration: InputDecoration(
+                hintText: 'Search dishes, cuisines...',
+                hintStyle: TextStyle(
+                  color: theme.hintColor,
                   fontSize: 15,
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w400,
                 ),
-                cursorColor: theme.primaryColor,
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                contentPadding: EdgeInsets.zero,
+                isDense: true,
+                filled: false,
               ),
+              style: TextStyle(
+                color: theme.textTheme.bodyLarge?.color,
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+              ),
+              cursorColor: theme.primaryColor,
             ),
+          ),
 
-            // Location Selector Button
-            Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: _showLocationSelector,
-                borderRadius: BorderRadius.circular(20),
-                child: Container(
-                  padding: const EdgeInsets.all(10),
-                  child: Icon(
-                    Icons.location_on_outlined,
-                    size: 24,
-                    color: AppTheme.primaryGreen,
-                  ),
+          // Location Selector Button
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: _showLocationSelector,
+              borderRadius: const BorderRadius.all(Radius.circular(20)),
+              child: Container(
+                padding: const EdgeInsets.all(10),
+                child: const Icon(
+                  Icons.location_on_outlined,
+                  size: 24,
+                  color: AppTheme.primaryGreen,
                 ),
               ),
             ),
-            const SizedBox(width: 8),
-          ],
-        ),
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
     );
   }
 
-  Widget _buildFeedSheet(BuildContext context, MapFeedState state) {
-    return DraggableScrollableSheet(
-      controller: _sheetController,
-      initialChildSize: 0.4,
-      minChildSize: 0.15,
-      maxChildSize: 0.9,
-      snap: true,
-      snapSizes: const [0.15, 0.4, 0.9],
-      builder: (context, scrollController) {
-        final theme = Theme.of(context);
-        return Container(
-          decoration: BoxDecoration(
-            color: theme.scaffoldBackgroundColor, // Adapted to theme
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(24),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.15),
-                blurRadius: 20,
-                offset: const Offset(0, -4),
-              ),
-            ],
-          ),
-          child: Column(
-            children: [
-              // Drag Handle
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  margin: const EdgeInsets.symmetric(vertical: 12),
-                  decoration: BoxDecoration(
-                    color: theme.dividerColor,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              
-              // Content with personalized header and category filters
-              Expanded(
-                child: CustomScrollView(
-                  controller: scrollController,
-                  slivers: [
-                    // 1. Personalized Header
-                    const SliverToBoxAdapter(
-                      child: PersonalizedHeader(),
-                    ),
+  Widget _buildFeedContent(
+    BuildContext context,
+    MapFeedState state,
+    ScrollController scrollController,
+  ) {
+    final theme = Theme.of(context);
+    
+    return CustomScrollView(
+      controller: scrollController,
+      slivers: [
+        // 1. Personalized Header
+        const SliverToBoxAdapter(
+          child: PersonalizedHeader(),
+        ),
 
-                    // 2. Category Filter Bar
-                    SliverToBoxAdapter(
-                      child: CategoryFilterBar(
-                        selectedCategory: state.selectedCategory,
-                        onCategorySelected: (category) {
-                          context.read<MapFeedBloc>().add(
-                            MapCategorySelected(category),
+        // 2. Category Filter Bar
+        SliverToBoxAdapter(
+          child: CategoryFilterBar(
+            selectedCategory: state.selectedCategory,
+            onCategorySelected: (category) {
+              context.read<MapFeedBloc>().add(
+                MapCategorySelected(category),
+              );
+            },
+          ),
+        ),
+
+        // 3. Section Title
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+          sliver: SliverToBoxAdapter(
+            child: Text(
+              'Recommended for you',
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
+
+        // Dishes list - full width cards
+        if (state.isLoading && state.dishes.isEmpty)
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) => const Padding(
+                  padding: EdgeInsets.only(bottom: 16),
+                  child: DishCardSkeleton(),
+                ),
+                childCount: 3,
+              ),
+            ),
+          )
+        else if (state.dishes.isEmpty)
+          const MapFeedEmptyState(
+            title: 'No dishes found nearby',
+            subtitle: 'Try adjusting your location or check back later',
+          )
+        else
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            sliver: StaggeredSliverList(
+              itemCount: state.dishes.length,
+              itemBuilder: (context, index, animation) {
+                if (index >= state.dishes.length) return const SizedBox.shrink();
+
+                final dish = state.dishes[index];
+                final vendor = state.vendors.firstWhere(
+                  (v) => v.id == dish.vendorId,
+                  orElse: () => Vendor.empty(),
+                );
+                
+                // Calculate distance
+                double? distance;
+                if (state.currentPosition != null) {
+                  distance = _calculateDistance(
+                    state.currentPosition!.latitude,
+                    state.currentPosition!.longitude,
+                    vendor.latitude,
+                    vendor.longitude,
+                  );
+                }
+
+                return FadeTransition(
+                  opacity: animation,
+                  child: SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(0, 0.1),
+                      end: Offset.zero,
+                    ).animate(CurvedAnimation(
+                      parent: animation,
+                      curve: Curves.easeOut,
+                    )),
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: AnimatedDishCardWrapper(
+                        index: index,
+                        enableLoadAnimation: false,
+                        onTap: () {
+                          showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            backgroundColor: Colors.transparent,
+                            builder: (context) => DishModal(
+                              dish: dish,
+                              vendor: vendor,
+                            ),
                           );
                         },
-                      ),
-                    ),
-
-                    // 3. Section Title
-                    SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-                      sliver: SliverToBoxAdapter(
-                        child: Text(
-                          'Recommended for you',
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        child: DishCard(
+                          dish: dish,
+                          vendorName: vendor.displayName,
+                          distance: distance,
+                          onTap: null,
                         ),
                       ),
                     ),
+                  ),
+                );
+              },
+            ),
+          ),
 
-                    // Dishes list - full width cards
-                    if (state.isLoading && state.dishes.isEmpty)
-                      SliverPadding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        sliver: SliverList(
-                          delegate: SliverChildBuilderDelegate(
-                            (context, index) => const Padding(
-                              padding: EdgeInsets.only(bottom: 16),
-                              child: DishCardSkeleton(),
-                            ),
-                            childCount: 3,
-                          ),
-                        ),
-                      )
-                    else if (state.dishes.isEmpty)
-                      const MapFeedEmptyState(
-                        title: 'No dishes found nearby',
-                        subtitle: 'Try adjusting your location or check back later',
-                      )
-                    else
-                      SliverPadding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        sliver: SliverList(
-                          delegate: SliverChildBuilderDelegate(
-                            (context, index) {
-                              if (index >= state.dishes.length) return null;
-
-                              final dish = state.dishes[index];
-                              final vendor = state.vendors.firstWhere(
-                                (v) => v.id == dish.vendorId,
-                                orElse: () => Vendor.empty(),
-                              );
-                              
-                              // Calculate distance
-                              double? distance;
-                              if (state.currentPosition != null) {
-                                distance = _calculateDistance(
-                                  state.currentPosition!.latitude,
-                                  state.currentPosition!.longitude,
-                                  vendor.latitude,
-                                  vendor.longitude,
-                                );
-                              }
-
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 16),
-                                child: DishCard(
-                                  dish: dish,
-                                  vendorName: vendor.displayName,
-                                  distance: distance,
-                                  onTap: () {
-                                    showModalBottomSheet(
-                                      context: context,
-                                      isScrollControlled: true,
-                                      backgroundColor: Colors.transparent,
-                                      builder: (context) => DishModal(
-                                        dish: dish,
-                                        vendor: vendor,
-                                      ),
-                                    );
-                                  },
-                                ),
-                              );
-                            },
-                            childCount: state.dishes.length,
-                          ),
-                        ),
-                      ),
-
-                    // Loading indicator
-                    if (state.isLoadingMore)
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Center(
-                            child: CircularProgressIndicator(
-                              color: theme.primaryColor,
-                            ),
-                          ),
-                        ),
-                      ),
-
-                    // Bottom padding for FAB
-                    const SliverToBoxAdapter(
-                      child: SizedBox(height: 100),
-                    ),
-                  ],
+        // Loading indicator
+        if (state.isLoadingMore)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Center(
+                child: CircularProgressIndicator(
+                  color: theme.primaryColor,
                 ),
               ),
-            ],
+            ),
           ),
-        );
-      },
+
+        // Bottom padding for FAB
+        const SliverToBoxAdapter(
+          child: SizedBox(height: 100),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLocationButton(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).size.height * 0.42,
+      ),
+      child: FloatingActionButton(
+        mini: true,
+        backgroundColor: Theme.of(context).cardTheme.color,
+        onPressed: _centerOnUser,
+        child: const Icon(Icons.my_location),
+      ),
     );
   }
 
