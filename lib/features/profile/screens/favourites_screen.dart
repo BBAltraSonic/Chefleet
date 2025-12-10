@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../shared/utils/currency_formatter.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/glass_container.dart';
 import '../../../core/routes/app_routes.dart';
@@ -380,7 +381,7 @@ class _FavouritesScreenState extends State<FavouritesScreen> {
                           ),
                           const SizedBox(width: AppTheme.spacing12),
                           Text(
-                            '\$${price.toStringAsFixed(2)}',
+                            CurrencyFormatter.format(price),
                             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                               color: AppTheme.primaryGreen,
                               fontWeight: FontWeight.w700,

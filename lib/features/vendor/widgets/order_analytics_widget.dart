@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
+import '../../../../shared/utils/currency_formatter.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -132,7 +134,7 @@ class _OrderAnalyticsWidgetState extends State<OrderAnalyticsWidget>
                   Expanded(
                     child: _buildMetricCard(
                       'Total Revenue',
-                      '\$${(totalRevenue / 100).toStringAsFixed(2)}',
+                      CurrencyFormatter.format(totalRevenue / 100),
                       Icons.attach_money,
                       Colors.green,
                     ),
@@ -147,7 +149,7 @@ class _OrderAnalyticsWidgetState extends State<OrderAnalyticsWidget>
                   Expanded(
                     child: _buildMetricCard(
                       'Avg Order Value',
-                      '\$${averageOrderValue.toStringAsFixed(2)}',
+                      CurrencyFormatter.format(averageOrderValue),
                       Icons.trending_up,
                       Colors.purple,
                     ),
@@ -388,7 +390,7 @@ class _OrderAnalyticsWidgetState extends State<OrderAnalyticsWidget>
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '\$${(revenue / 100).toStringAsFixed(0)}',
+                  CurrencyFormatter.format(revenue / 100),
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
@@ -561,7 +563,7 @@ class _OrderAnalyticsWidgetState extends State<OrderAnalyticsWidget>
                     title: Text(name),
                     subtitle: Text('$orderCount orders'),
                     trailing: Text(
-                      '\$${(revenue / 100).toStringAsFixed(2)}',
+                      CurrencyFormatter.format(revenue / 100),
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                   );
@@ -602,7 +604,7 @@ class _OrderAnalyticsWidgetState extends State<OrderAnalyticsWidget>
                   children: [
                     Expanded(child: Text(entry.key)),
                     Text(
-                      '\$${(entry.value / 100).toStringAsFixed(2)}',
+                      CurrencyFormatter.format(entry.value / 100),
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ],

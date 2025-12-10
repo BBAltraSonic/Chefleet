@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../shared/utils/currency_formatter.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/glass_container.dart';
@@ -156,7 +158,7 @@ class ChatListItem extends StatelessWidget {
                                   maxLines: 1,
                                 )
                               : Text(
-                                  '\$${totalAmount.toStringAsFixed(2)} • ${_formatTimestamp(createdAt)}',
+                                  '${CurrencyFormatter.format(totalAmount)} • ${_formatTimestamp(createdAt)}',
                                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                     color: Colors.grey[600],
                                   ),

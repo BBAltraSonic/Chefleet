@@ -1,4 +1,5 @@
 import 'package:fl_chart/fl_chart.dart';
+import '../../../../shared/utils/currency_formatter.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../blocs/vendor_dashboard_bloc.dart';
@@ -68,7 +69,7 @@ class AnalyticsTab extends StatelessWidget {
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         Text(
-                          '\$${stats.weekRevenue.toStringAsFixed(2)}',
+                          CurrencyFormatter.format(stats.weekRevenue),
                           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                             color: AppTheme.primaryGreen,
                             fontWeight: FontWeight.bold,
@@ -117,7 +118,7 @@ class AnalyticsTab extends StatelessWidget {
                           getTooltipColor: (group) => Colors.blueGrey,
                           getTooltipItem: (group, groupIndex, rod, rodIndex) {
                             return BarTooltipItem(
-                              '\$${rod.toY.toStringAsFixed(2)}',
+                              CurrencyFormatter.format(rod.toY),
                               const TextStyle(color: Colors.white),
                             );
                           },

@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import '../../feed/models/dish_model.dart';
+import '../../../shared/utils/currency_formatter.dart';
 
 /// Represents an item in the shopping cart
 class CartItem extends Equatable {
@@ -17,7 +18,8 @@ class CartItem extends Equatable {
   double get totalPrice => dish.price * quantity;
 
   /// Formatted total price
-  String get formattedTotalPrice => '\$${totalPrice.toStringAsFixed(2)}';
+
+  String get formattedTotalPrice => CurrencyFormatter.format(totalPrice);
 
   CartItem copyWith({
     Dish? dish,

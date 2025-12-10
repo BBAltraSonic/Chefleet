@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import '../../../shared/utils/currency_formatter.dart';
 
 class Dish extends Equatable {
   const Dish({
@@ -100,7 +101,8 @@ class Dish extends Equatable {
   String get displayName => name;
   String get displayDescription => description.isNotEmpty ? description : 'No description available';
   double get priceDollars => priceCents / 100.0;
-  String get formattedPrice => '\$${priceDollars.toStringAsFixed(2)}';
+
+  String get formattedPrice => CurrencyFormatter.format(priceDollars);
   String get formattedPrepTime => '${prepTimeMinutes} min';
 
   // Dietary indicators

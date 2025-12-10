@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../shared/utils/currency_formatter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
 
@@ -299,7 +300,7 @@ class _CheckoutContentState extends State<_CheckoutContent> {
                     ),
                   ),
                   Text(
-                    '\$${item.itemTotal.toStringAsFixed(2)}',
+                    CurrencyFormatter.format(item.itemTotal),
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                     ),
@@ -375,7 +376,7 @@ class _CheckoutContentState extends State<_CheckoutContent> {
                   ),
                 ),
                 Text(
-                  '\$${state.total.toStringAsFixed(2)}',
+                  CurrencyFormatter.format(state.total),
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -402,7 +403,7 @@ class _CheckoutContentState extends State<_CheckoutContent> {
           ),
         ),
         Text(
-          '\$${amount.toStringAsFixed(2)}',
+          CurrencyFormatter.format(amount),
           style: const TextStyle(
             fontWeight: FontWeight.w500,
             fontSize: 16,

@@ -80,9 +80,8 @@ class _VendorQuickTourScreenState extends State<VendorQuickTourScreen> {
   }
 
   void _completeTour() {
-    // Mark tour as completed in preferences
-    // TODO: Save completion state to shared preferences or user profile
-    context.pop();
+    // Navigate to vendor onboarding after completing the tour
+    context.pushReplacement('/vendor/onboarding');
   }
 
   @override

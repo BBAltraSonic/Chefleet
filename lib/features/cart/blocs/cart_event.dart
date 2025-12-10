@@ -68,12 +68,4 @@ class ClearCart extends CartEvent {
   const ClearCart();
 }
 
-/// Load cart from local storage
-class LoadCart extends CartEvent {
-  const LoadCart();
-}
 
-/// Save cart to local storage
-class SaveCart extends CartEvent {
-  const SaveCart();
-}

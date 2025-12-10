@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:geolocator/geolocator.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/routes/app_routes.dart';
@@ -15,6 +16,7 @@ import '../../feed/widgets/vendor_mini_card.dart';
 import '../../dish/widgets/dish_modal.dart';
 import '../blocs/map_feed_bloc.dart';
 import '../widgets/category_filter_bar.dart';
+import '../widgets/location_selector_sheet.dart';
 import '../widgets/map_feed_empty_state.dart';
 import '../widgets/personalized_header.dart';
 import '../../cart/blocs/cart_bloc.dart';
@@ -71,19 +73,7 @@ class _MapScreenState extends State<MapScreen> {
                     mini: true,
                     backgroundColor: Theme.of(context).cardTheme.color,
                     child: const Icon(Icons.my_location),
-                    onPressed: () {
-                      // TODO: Implement location service check
-                      if (state.currentPosition != null && _mapController != null) {
-                        _mapController!.animateCamera(
-                          CameraUpdate.newLatLng(
-                            LatLng(
-                              state.currentPosition!.latitude,
-                              state.currentPosition!.longitude,
-                            ),
-                          ),
-                        );
-                      }
-                    },
+                    onPressed: _centerOnUser,
                   ),
                 ),
 
@@ -208,20 +198,18 @@ class _MapScreenState extends State<MapScreen> {
               ),
             ),
 
-            // Filter Button
+            // Location Selector Button
             Material(
               color: Colors.transparent,
               child: InkWell(
-                onTap: () {
-                  // TODO: Implement filter
-                },
+                onTap: _showLocationSelector,
                 borderRadius: BorderRadius.circular(20),
                 child: Container(
                   padding: const EdgeInsets.all(10),
                   child: Icon(
-                    Icons.tune_rounded,
-                    size: 20,
-                    color: theme.iconTheme.color,
+                    Icons.location_on_outlined,
+                    size: 24,
+                    color: AppTheme.primaryGreen,
                   ),
                 ),
               ),
@@ -428,6 +416,96 @@ class _MapScreenState extends State<MapScreen> {
 
   double _toRadians(double degrees) {
     return degrees * (math.pi / 180.0);
+  }
+
+  void _showLocationSelector() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => LocationSelectorSheet(
+        onLocationSelected: (address, lat, lng) {
+          if (_mapController != null) {
+            _mapController!.animateCamera(
+              CameraUpdate.newLatLngZoom(
+                LatLng(lat, lng),
+                15,
+              ),
+            );
+          }
+        },
+        onUseCurrentLocation: () {
+          _centerOnUser();
+        },
+      ),
+    );
+  }
+
+  Future<void> _centerOnUser() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Location services are disabled. Please enable them.'),
+            action: SnackBarAction(
+              label: 'Settings',
+              onPressed: Geolocator.openLocationSettings,
+            ),
+          ),
+        );
+      }
+      return;
+    }
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Location permissions are denied')),
+          );
+        }
+        return;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Location permissions are permanently denied.'),
+            action: SnackBarAction(
+              label: 'Settings',
+              onPressed: Geolocator.openAppSettings,
+            ),
+          ),
+        );
+      }
+      return;
+    }
+
+    try {
+      final position = await Geolocator.getCurrentPosition();
+      if (mounted && _mapController != null) {
+        await _mapController!.animateCamera(
+          CameraUpdate.newLatLngZoom(
+            LatLng(position.latitude, position.longitude),
+            15,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error getting location: $e')),
+        );
+      }
+    }
   }
 }
 

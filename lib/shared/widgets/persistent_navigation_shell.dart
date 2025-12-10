@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import '../utils/currency_formatter.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/blocs/navigation_bloc.dart';
 import '../../core/theme/app_theme.dart';
@@ -226,7 +228,7 @@ class _OrdersFloatingActionButtonState extends State<OrdersFloatingActionButton>
                                   margin: const EdgeInsets.only(bottom: 12),
                                   child: ListTile(
                                     title: Text(item.dish.displayName),
-                                    subtitle: Text('\$${item.dish.price.toStringAsFixed(2)} × ${item.quantity}'),
+                                    subtitle: Text('${CurrencyFormatter.format(item.dish.price)} × ${item.quantity}'),
                                     trailing: IconButton(
                                       icon: const Icon(Icons.remove_circle_outline),
                                       onPressed: () {
@@ -262,7 +264,7 @@ class _OrdersFloatingActionButtonState extends State<OrdersFloatingActionButton>
                                       ),
                                     ),
                                     Text(
-                                      '\$${cartState.total.toStringAsFixed(2)}',
+                                      CurrencyFormatter.format(cartState.total),
                                       style: const TextStyle(
                                         fontSize: 18,
                                         fontWeight: FontWeight.bold,

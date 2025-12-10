@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
+import '../../../shared/utils/currency_formatter.dart';
 import '../blocs/order_management_bloc.dart';
 
 class OrderDetailsWidget extends StatefulWidget {
@@ -476,7 +476,7 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '\$${(priceCents * quantity / 100).toStringAsFixed(2)}',
+                          CurrencyFormatter.format(priceCents * quantity / 100),
                           style: Theme.of(context).textTheme.titleSmall?.copyWith(
                             fontWeight: FontWeight.bold,
                             color: Theme.of(context).colorScheme.primary,
@@ -499,7 +499,7 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
                   ),
                 ),
                 Text(
-                  '\$${totalAmount.toStringAsFixed(2)}',
+                  CurrencyFormatter.format(totalAmount),
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: Theme.of(context).colorScheme.primary,

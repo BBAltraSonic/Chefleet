@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/routes/app_routes.dart';
+import '../../../shared/utils/currency_formatter.dart';
 import '../blocs/active_orders_bloc.dart';
 import '../widgets/order_skeleton_item.dart';
-import '../../../core/routes/app_routes.dart';
 
-/// Screen displaying the user's active orders
 /// 
 /// Shows a list of all active orders with their status, vendor information,
 /// and total amount. Users can tap on an order to view details and chat
@@ -82,7 +82,7 @@ class OrdersScreen extends StatelessWidget {
                       if (pickupCode != null) Text('Code: $pickupCode'),
                     ],
                   ),
-                  trailing: Text('\$${total.toStringAsFixed(2)}'),
+                  trailing: Text(CurrencyFormatter.format(total)),
                   onTap: () {
                     final orderId = order['id'] as String;
                     final status = order['status'] as String? ?? 'pending';

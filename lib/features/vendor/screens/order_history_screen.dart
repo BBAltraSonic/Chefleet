@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import '../../../shared/utils/currency_formatter.dart';
 import '../blocs/vendor_dashboard_bloc.dart';
 
 class OrderHistoryScreen extends StatefulWidget {
@@ -211,7 +212,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                       ),
                     ),
                     Text(
-                      '\$${totalAmount.toStringAsFixed(2)}',
+                      CurrencyFormatter.format(totalAmount),
                       style: theme.textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.w600,
                         color: colorScheme.primary,
@@ -316,7 +317,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                   ),
                 ),
                 Text(
-                  '\$${(quantity * unitPrice).toStringAsFixed(2)}',
+                  CurrencyFormatter.format(quantity * unitPrice),
                   style: theme.textTheme.bodySmall?.copyWith(
                     fontWeight: FontWeight.w500,
                   ),

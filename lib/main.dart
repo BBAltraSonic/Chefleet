@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:hydrated_bloc/hydrated_bloc.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:go_router/go_router.dart';
@@ -19,6 +21,11 @@ import 'features/cart/blocs/cart_bloc.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
+  // Initialize persistent storage
+  HydratedBloc.storage = await HydratedStorage.build(
+    storageDirectory: await getApplicationDocumentsDirectory(),
+  );
+
   // Configure system UI for full screen edge-to-edge display
   SystemChrome.setEnabledSystemUIMode(
     SystemUiMode.edgeToEdge,
@@ -122,7 +129,7 @@ class _ChefleetAppState extends State<ChefleetApp> {
           _initializeRouter(context);
           
           return MaterialApp.router(
-            title: 'Chefleet',
+            title: 'SmthngTsty',
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
             themeMode: ThemeMode.system,

@@ -156,7 +156,7 @@ class BecomeVendorCard extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () => context.push(VendorRoutes.onboarding),
+              onPressed: () => context.push(VendorRoutes.quickTour),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primaryGreen,
                 foregroundColor: Colors.white,

@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../../shared/utils/currency_formatter.dart';
 import '../../../core/models/order_model.dart';
-import '../../../core/theme/app_theme.dart';
 
-/// Card widget displaying vendor order information.
-///
 /// Shows:
 /// - Order ID and status
 /// - Customer information
@@ -112,7 +110,7 @@ class VendorOrderCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '\$${order.totalAmount.toStringAsFixed(2)}',
+                  CurrencyFormatter.format(order.totalAmount),
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,

@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import '../models/cart_item.dart';
+import '../../../shared/utils/currency_formatter.dart';
 
 /// State for the shopping cart
 class CartState extends Equatable {
@@ -31,10 +32,10 @@ class CartState extends Equatable {
   double get total => subtotal + tax + deliveryFee;
 
   /// Formatted prices
-  String get formattedSubtotal => '\$${subtotal.toStringAsFixed(2)}';
-  String get formattedTax => '\$${tax.toStringAsFixed(2)}';
-  String get formattedDeliveryFee => '\$${deliveryFee.toStringAsFixed(2)}';
-  String get formattedTotal => '\$${total.toStringAsFixed(2)}';
+  String get formattedSubtotal => CurrencyFormatter.format(subtotal);
+  String get formattedTax => CurrencyFormatter.format(tax);
+  String get formattedDeliveryFee => CurrencyFormatter.format(deliveryFee);
+  String get formattedTotal => CurrencyFormatter.format(total);
 
   /// Check if cart is empty
   bool get isEmpty => items.isEmpty;
@@ -84,4 +85,23 @@ class CartState extends Equatable {
 
   @override
   List<Object?> get props => [items, isLoading, error, pickupTime];
+
+  factory CartState.fromJson(Map<String, dynamic> json) {
+    return CartState(
+      items: (json['items'] as List<dynamic>?)
+              ?.map((e) => CartItem.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
+      pickupTime: json['pickupTime'] != null
+          ? DateTime.parse(json['pickupTime'] as String)
+          : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'items': items.map((e) => e.toJson()).toList(),
+      'pickupTime': pickupTime?.toIso8601String(),
+    };
+  }
 }

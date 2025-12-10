@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
-import '../blocs/vendor_dashboard_bloc.dart';
+import '../../../shared/utils/currency_formatter.dart';
 
 class OrderCard extends StatelessWidget {
   const OrderCard({
@@ -61,11 +60,20 @@ class OrderCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Header Status Strip
-              Container(
-                width: double.infinity,
-                height: 4,
-                color: _getStatusColor(status, isDark: theme.brightness == Brightness.dark),
-              ),
+              // Header Status Strip / Progress Bar
+              if (['accepted', 'preparing', 'ready'].contains(status))
+                LinearProgressIndicator(
+                  value: status == 'accepted' ? 0.1 : (status == 'preparing' ? 0.5 : 1.0),
+                  backgroundColor: _getStatusColor(status, isDark: theme.brightness == Brightness.dark).withOpacity(0.2),
+                  valueColor: AlwaysStoppedAnimation<Color>(_getStatusColor(status, isDark: theme.brightness == Brightness.dark)),
+                  minHeight: 4,
+                )
+              else
+                Container(
+                  width: double.infinity,
+                  height: 4,
+                  color: _getStatusColor(status, isDark: theme.brightness == Brightness.dark),
+                ),
               Padding(
                 padding: const EdgeInsets.all(20),
                 child: Column(
@@ -113,7 +121,7 @@ class OrderCard extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             Text(
-                              '\$${totalAmount.toStringAsFixed(2)}',
+                              CurrencyFormatter.format(totalAmount),
                               style: theme.textTheme.titleLarge?.copyWith(
                                 fontWeight: FontWeight.bold,
                                 color: colorScheme.onSurface,
@@ -211,7 +219,7 @@ class OrderCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '\$${(quantity * unitPrice).toStringAsFixed(2)}',
+                  CurrencyFormatter.format(quantity * unitPrice),
                   style: theme.textTheme.bodySmall?.copyWith(
                     fontWeight: FontWeight.w500,
                   ),

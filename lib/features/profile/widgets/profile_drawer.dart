@@ -134,7 +134,14 @@ class ProfileDrawer extends StatelessWidget {
               ),
             ),
 
-            // Logout Button
+            // Become Vendor Card at bottom (above logout)
+    Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacing16),
+      child: const BecomeVendorCard(),
+    ),
+    const SizedBox(height: AppTheme.spacing12),
+
+    // Logout Button
             Padding(
               padding: const EdgeInsets.all(AppTheme.spacing16),
               child: BlocBuilder<AuthBloc, AuthState>(
@@ -488,11 +495,10 @@ class ProfileDrawer extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('About Chefleet'),
+        title: const Text('About SmthngTsty'),
         content: const Text(
-          'Chefleet v1.0.0\n\n'
+          'SmthngTsty v1.0.0\n\n'
           'Connecting food lovers with local home chefs.\n\n'
-          '© 2025 Chefleet. All rights reserved.',
         ),
         actions: [
           TextButton(

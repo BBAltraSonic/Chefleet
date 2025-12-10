@@ -273,20 +273,20 @@ class _SearchFilterBarState extends State<SearchFilterBar>
           children: [
             TextField(
               controller: minPriceController,
-              decoration: InputDecoration(
-                labelText: 'Min Price (\$)',
-                border: OutlineInputBorder(),
-              ),
               keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Min Price',
+                prefixText: '\$',
+              ),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: maxPriceController,
-              decoration: InputDecoration(
-                labelText: 'Max Price (\$)',
-                border: OutlineInputBorder(),
-              ),
               keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Max Price',
+                prefixText: '\$',
+              ),
             ),
           ],
         ),

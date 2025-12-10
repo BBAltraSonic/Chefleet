@@ -1,3 +1,5 @@
+import 'package:intl/intl.dart';
+import '../../../../shared/utils/currency_formatter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -368,7 +370,7 @@ class _OrderManagementScreenState extends State<OrderManagementScreen>
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Text(
-              '\$${totalAmount.toStringAsFixed(2)}',
+              CurrencyFormatter.format(totalAmount),
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 4),

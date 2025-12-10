@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../shared/utils/currency_formatter.dart';
 import 'package:intl/intl.dart';
 
 import '../../cart/blocs/cart_bloc.dart';
@@ -420,7 +421,7 @@ class _DishModalState extends State<DishModal> {
                         ),
                       ),
                       child: Text(
-                        'Check Out - \$${totalPrice.toStringAsFixed(2)}',
+                        'Check Out - ${CurrencyFormatter.format(totalPrice)}',
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,

@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../shared/utils/currency_formatter.dart';
 
 import '../../auth/blocs/auth_bloc.dart';
 import '../blocs/active_orders_bloc.dart';
@@ -256,7 +257,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                             ),
                           ),
                           Text(
-                            '\$${(quantity * unitPrice).toStringAsFixed(2)}',
+                            CurrencyFormatter.format(quantity * unitPrice),
                             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                               fontWeight: FontWeight.w500,
                             ),
@@ -280,7 +281,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                         ),
                       ),
                       Text(
-                        '\$${totalAmount.toStringAsFixed(2)}',
+                        CurrencyFormatter.format(totalAmount),
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.bold,
                           color: AppTheme.primaryGreen,
@@ -497,7 +498,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            '$quantity × \$${unitPrice.toStringAsFixed(2)}',
+                            '$quantity × ${CurrencyFormatter.format(unitPrice)}',
                             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: Colors.grey[600],
                             ),
@@ -506,7 +507,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                       ),
                     ),
                     Text(
-                      '\$${(quantity * unitPrice).toStringAsFixed(2)}',
+                      CurrencyFormatter.format(quantity * unitPrice),
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
@@ -614,7 +615,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
               ),
             ),
             Text(
-              '\$${totalAmount.toStringAsFixed(2)}',
+              CurrencyFormatter.format(totalAmount),
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: Theme.of(context).colorScheme.primary,
@@ -688,7 +689,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
           ),
         ),
         Text(
-          '\$${amount.toStringAsFixed(2)}',
+          CurrencyFormatter.format(amount),
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
             color: AppTheme.darkText,
             fontWeight: FontWeight.w500,

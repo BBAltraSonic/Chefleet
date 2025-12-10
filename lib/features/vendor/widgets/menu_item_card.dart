@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../core/theme/app_theme.dart';
+import '../../../shared/utils/currency_formatter.dart';
 
 class MenuItemCard extends StatelessWidget {
   const MenuItemCard({
@@ -131,7 +131,7 @@ class MenuItemCard extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      '\$${price.toStringAsFixed(2)}',
+                      CurrencyFormatter.format(price),
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w800,
                         color: const Color(0xFF2196F3),

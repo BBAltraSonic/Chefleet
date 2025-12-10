@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../shared/utils/currency_formatter.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../feed/models/dish_model.dart';
@@ -113,7 +115,7 @@ class DishCard extends StatelessWidget {
                       Row(
                         children: [
                           Text(
-                            '\$${(dish.priceCents / 100).toStringAsFixed(2)}',
+                            CurrencyFormatter.format(dish.priceCents / 100),
                             style: Theme.of(context).textTheme.titleSmall?.copyWith(
                               fontWeight: FontWeight.bold,
                               color: Theme.of(context).colorScheme.primary,

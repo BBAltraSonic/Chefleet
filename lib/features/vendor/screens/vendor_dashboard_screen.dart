@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import '../../../shared/utils/currency_formatter.dart';
 import '../../feed/models/dish_model.dart';
 import '../blocs/vendor_dashboard_bloc.dart';
 import '../widgets/order_card.dart';
@@ -250,7 +251,7 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen>
               StatsCard(
                 title: 'Today\'s Orders',
                 value: stats.todayOrders.toString(),
-                subtitle: '\$${stats.todayRevenue.toStringAsFixed(2)}',
+                subtitle: CurrencyFormatter.format(stats.todayRevenue),
                 icon: Icons.shopping_bag_outlined,
                 color: const Color(0xFF2196F3),
               ),
@@ -264,14 +265,14 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen>
               StatsCard(
                 title: 'This Week',
                 value: stats.weekOrders.toString(),
-                subtitle: '\$${stats.weekRevenue.toStringAsFixed(2)}',
+                subtitle: CurrencyFormatter.format(stats.weekRevenue),
                 icon: Icons.calendar_view_week_rounded,
                 color: const Color(0xFF4CAF50), // Green
               ),
               StatsCard(
                 title: 'This Month',
                 value: stats.monthOrders.toString(),
-                subtitle: '\$${stats.monthRevenue.toStringAsFixed(2)}',
+                subtitle: CurrencyFormatter.format(stats.monthRevenue),
                 icon: Icons.calendar_month_rounded,
                 color: const Color(0xFF9C27B0),
               ),

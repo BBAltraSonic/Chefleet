@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-
 import '../../feed/models/dish_model.dart';
+import '../../../shared/utils/currency_formatter.dart';
 import '../blocs/menu_management_bloc.dart';
 import '../widgets/dish_card.dart';
 import '../widgets/dish_form.dart';
@@ -433,7 +432,7 @@ class _MenuManagementScreenState extends State<MenuManagementScreen>
                     child: const Icon(Icons.restaurant),
                   ),
             title: Text(dish.name),
-            subtitle: Text('\$${(dish.priceCents / 100).toStringAsFixed(2)}'),
+            subtitle: Text(CurrencyFormatter.format(dish.priceCents / 100)),
             trailing: Text('${dish.popularityScore ?? 0}'),
           );
         }).toList(),

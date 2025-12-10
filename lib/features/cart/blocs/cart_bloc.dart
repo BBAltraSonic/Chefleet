@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:hydrated_bloc/hydrated_bloc.dart';
 import 'package:chefleet/core/diagnostics/diagnostic_domains.dart';
 import 'package:chefleet/core/diagnostics/diagnostic_harness.dart';
 import 'package:chefleet/core/diagnostics/diagnostic_severity.dart';
@@ -10,7 +10,7 @@ import 'cart_event.dart';
 import 'cart_state.dart';
 
 /// BLoC for managing shopping cart state
-class CartBloc extends Bloc<CartEvent, CartState> {
+class CartBloc extends Bloc<CartEvent, CartState> with HydratedMixin {
   CartBloc() : super(const CartState()) {
     on<AddToCart>(_onAddToCart);
     on<RemoveFromCart>(_onRemoveFromCart);
@@ -18,11 +18,8 @@ class CartBloc extends Bloc<CartEvent, CartState> {
     on<UpdateSpecialInstructions>(_onUpdateSpecialInstructions);
     on<SetPickupTime>(_onSetPickupTime);
     on<ClearCart>(_onClearCart);
-    on<LoadCart>(_onLoadCart);
-    on<SaveCart>(_onSaveCart);
   }
 
-  static const String _cartStorageKey = 'shopping_cart';
   final DiagnosticHarness _diagnostics = DiagnosticHarness.instance;
 
   void _logCart(
@@ -105,7 +102,8 @@ class CartBloc extends Bloc<CartEvent, CartState> {
       }
 
       emit(state.copyWith(items: updatedItems));
-      add(const SaveCart());
+      emit(state.copyWith(items: updatedItems));
+      // add(const SaveCart()); Removed
       _logCart(
         'add_to_cart.success',
         payload: {
@@ -142,7 +140,8 @@ class CartBloc extends Bloc<CartEvent, CartState> {
           .toList();
 
       emit(state.copyWith(items: updatedItems));
-      add(const SaveCart());
+      emit(state.copyWith(items: updatedItems));
+      // add(const SaveCart()); Removed
       _logCart(
         'remove_from_cart.success',
         payload: {'dishId': event.dishId, 'remainingItems': updatedItems.length},
@@ -185,7 +184,8 @@ class CartBloc extends Bloc<CartEvent, CartState> {
       }).toList();
 
       emit(state.copyWith(items: updatedItems));
-      add(const SaveCart());
+      emit(state.copyWith(items: updatedItems));
+      // add(const SaveCart()); Removed
       _logCart(
         'update_quantity.success',
         payload: {'dishId': event.dishId, 'quantity': event.quantity},
@@ -222,7 +222,8 @@ class CartBloc extends Bloc<CartEvent, CartState> {
       }).toList();
 
       emit(state.copyWith(items: updatedItems));
-      add(const SaveCart());
+      emit(state.copyWith(items: updatedItems));
+      // add(const SaveCart()); Removed
       _logCart(
         'update_instructions.success',
         payload: {'dishId': event.dishId},
@@ -258,7 +259,8 @@ class CartBloc extends Bloc<CartEvent, CartState> {
   Future<void> _onClearCart(ClearCart event, Emitter<CartState> emit) async {
     try {
       emit(const CartState(items: []));
-      add(const SaveCart());
+      emit(const CartState(items: []));
+      // add(const SaveCart()); Removed
       _logCart(
         'clear_cart.success',
         severity: DiagnosticSeverity.debug,
@@ -273,69 +275,17 @@ class CartBloc extends Bloc<CartEvent, CartState> {
     }
   }
 
-  /// Load cart from local storage
-  Future<void> _onLoadCart(LoadCart event, Emitter<CartState> emit) async {
+  @override
+  CartState? fromJson(Map<String, dynamic> json) {
     try {
-      _logCart(
-        'load_cart.request',
-        severity: DiagnosticSeverity.debug,
-      );
-      emit(state.copyWith(isLoading: true));
-
-      final prefs = await SharedPreferences.getInstance();
-      final cartJson = prefs.getString(_cartStorageKey);
-
-      if (cartJson != null) {
-        final List<dynamic> itemsJson = json.decode(cartJson) as List<dynamic>;
-        final items = itemsJson
-            .map((itemJson) => CartItem.fromJson(itemJson as Map<String, dynamic>))
-            .toList();
-
-        emit(CartState(items: items, isLoading: false));
-      } else {
-        emit(state.copyWith(isLoading: false));
-      }
-      _logCart(
-        'load_cart.success',
-        payload: {'items': state.items.length},
-      );
-    } catch (e) {
-      emit(CartState(
-        items: state.items,
-        isLoading: false,
-        error: 'Failed to load cart: ${e.toString()}',
-      ));
-      _logCart(
-        'load_cart.error',
-        payload: {'message': e.toString()},
-        severity: DiagnosticSeverity.error,
-      );
+      return CartState.fromJson(json);
+    } catch (_) {
+      return null;
     }
   }
 
-  /// Save cart to local storage
-  Future<void> _onSaveCart(SaveCart event, Emitter<CartState> emit) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final itemsJson = state.items.map((item) => item.toJson()).toList();
-      final cartJson = json.encode(itemsJson);
-
-      await prefs.setString(_cartStorageKey, cartJson);
-      _logCart(
-        'save_cart.success',
-        payload: {'items': state.items.length},
-        severity: DiagnosticSeverity.debug,
-      );
-    } catch (e) {
-      // Silent fail - don't disrupt user experience for storage issues
-      emit(state.copyWith(
-        error: 'Failed to save cart: ${e.toString()}',
-      ));
-      _logCart(
-        'save_cart.error',
-        payload: {'message': e.toString()},
-        severity: DiagnosticSeverity.error,
-      );
-    }
+  @override
+  Map<String, dynamic>? toJson(CartState state) {
+    return state.toJson();
   }
 }

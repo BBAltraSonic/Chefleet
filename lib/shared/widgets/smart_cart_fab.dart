@@ -1,10 +1,3 @@
-import 'package:flutter/material.dart';
-import '../../core/theme/app_theme.dart';
-
-/// Smart expandable FAB for cart that shows item count and total
-class SmartCartFAB extends StatelessWidget {
-  const SmartCartFAB({
-    super.key,
     required this.itemCount,
     required this.total,
     required this.onTap,
@@ -102,7 +95,7 @@ class SmartCartFAB extends StatelessWidget {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          '\$${total.toStringAsFixed(2)}',
+                          CurrencyFormatter.format(total),
                           style: TextStyle(
                             color: Colors.grey[400],
                             fontSize: 10,

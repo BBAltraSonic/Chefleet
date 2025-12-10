@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/theme/app_theme.dart';
-import '../blocs/active_orders_bloc.dart';
 import '../../../core/routes/app_routes.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../shared/utils/currency_formatter.dart';
+import '../blocs/active_orders_bloc.dart';
 
 class ActiveOrderModal extends StatefulWidget {
   const ActiveOrderModal({super.key});
@@ -285,7 +286,7 @@ class _ActiveOrderModalState extends State<ActiveOrderModal> {
                   ),
                 ),
                 Text(
-                  '\$${totalAmount.toStringAsFixed(2)}',
+                  CurrencyFormatter.format(totalAmount),
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: AppTheme.darkText,
                   ),
