@@ -5,6 +5,7 @@ import '../../auth/blocs/auth_bloc.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/glass_container.dart';
 import '../../../core/routes/app_routes.dart';
+import '../../../core/blocs/theme_bloc.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -118,24 +119,74 @@ class SettingsScreen extends StatelessWidget {
                     icon: Icons.language_outlined,
                     title: 'Language',
                     subtitle: 'English',
-                    onTap: () {
-                      // Handle language selection
-                    },
+                    onTap: () => _showLanguageDialog(context),
                   ),
                   const Divider(height: 1, indent: 64),
-                  _buildSettingsTile(
-                    context,
-                    icon: Icons.dark_mode_outlined,
-                    title: 'Dark Mode',
-                    subtitle: 'System default',
-                    onTap: () {
-                      // Handle theme toggle
+                  BlocBuilder<ThemeBloc, ThemeState>(
+                    builder: (context, themeState) {
+                      return _buildSettingsTileWithSwitch(
+                        context,
+                        icon: Icons.dark_mode_outlined,
+                        title: 'Dark Mode',
+                        subtitle: themeState.isDarkMode ? 'Enabled' : 'Disabled',
+                        value: themeState.isDarkMode,
+                        onChanged: (value) {
+                          context.read<ThemeBloc>().add(const ThemeToggled());
+                        },
+                      );
                     },
                   ),
                 ],
               ),
             ),
             const SizedBox(height: AppTheme.spacing16),
+
+            // Account Management Section
+            BlocBuilder<AuthBloc, AuthState>(
+              builder: (context, state) {
+                if (!state.isAuthenticated) {
+                  return const SizedBox.shrink();
+                }
+                return Column(
+                  children: [
+                    GlassContainer(
+                      borderRadius: AppTheme.radiusLarge,
+                      blur: 12,
+                      opacity: 0.6,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.all(AppTheme.spacing16),
+                            child: Text(
+                              'Account Management',
+                              style: Theme.of(context).textTheme.headlineMedium,
+                            ),
+                          ),
+                          const Divider(height: 1, indent: 64),
+                          _buildSettingsTile(
+                            context,
+                            icon: Icons.lock_outline,
+                            title: 'Change Password',
+                            subtitle: 'Update your password',
+                            onTap: () => _showChangePasswordDialog(context),
+                          ),
+                          const Divider(height: 1, indent: 64),
+                          _buildSettingsTile(
+                            context,
+                            icon: Icons.delete_outline,
+                            title: 'Delete Account',
+                            subtitle: 'Permanently delete your account',
+                            onTap: () => _showDeleteAccountDialog(context),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: AppTheme.spacing16),
+                  ],
+                );
+              },
+            ),
 
             // About Section
             GlassContainer(
@@ -280,6 +331,56 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildSettingsTileWithSwitch(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.all(AppTheme.spacing16),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: AppTheme.primaryGreen.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+            ),
+            child: Icon(icon, color: AppTheme.primaryGreen, size: 22),
+          ),
+          const SizedBox(width: AppTheme.spacing16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppTheme.secondaryGreen,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Switch(
+            value: value,
+            onChanged: onChanged,
+            activeColor: AppTheme.primaryGreen,
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showLogoutDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -407,6 +508,191 @@ class SettingsScreen extends StatelessWidget {
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showLanguageDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Select Language'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: const Text('English'),
+              trailing: const Icon(Icons.check, color: AppTheme.primaryGreen),
+              onTap: () => Navigator.of(context).pop(),
+            ),
+            ListTile(
+              title: const Text('Spanish'),
+              subtitle: const Text('Coming soon'),
+              enabled: false,
+              onTap: () {},
+            ),
+            ListTile(
+              title: const Text('French'),
+              subtitle: const Text('Coming soon'),
+              enabled: false,
+              onTap: () {},
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showChangePasswordDialog(BuildContext context) {
+    final currentPasswordController = TextEditingController();
+    final newPasswordController = TextEditingController();
+    final confirmPasswordController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Change Password'),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: currentPasswordController,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: 'Current Password',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter your current password';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: newPasswordController,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: 'New Password',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a new password';
+                  }
+                  if (value.length < 6) {
+                    return 'Password must be at least 6 characters';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: confirmPasswordController,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: 'Confirm New Password',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value != newPasswordController.text) {
+                    return 'Passwords do not match';
+                  }
+                  return null;
+                },
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              if (formKey.currentState!.validate()) {
+                try {
+                  // Update password using Supabase
+                  await context.read<AuthBloc>().updatePassword(
+                    currentPasswordController.text,
+                    newPasswordController.text,
+                  );
+                  
+                  if (dialogContext.mounted) {
+                    Navigator.of(dialogContext).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Password updated successfully'),
+                        backgroundColor: AppTheme.primaryGreen,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (dialogContext.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Error: ${e.toString()}'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
+              }
+            },
+            child: const Text('Update'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteAccountDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete Account'),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Are you sure you want to delete your account?',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 16),
+            Text('This action cannot be undone. All your data will be permanently deleted.'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              // TODO: Implement account deletion
+              Navigator.of(dialogContext).pop();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Account deletion is not yet implemented'),
+                ),
+              );
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
           ),
         ],
       ),

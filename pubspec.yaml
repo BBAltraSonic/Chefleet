@@ -61,6 +61,7 @@ dependencies:
   google_fonts: ^6.1.0
   cached_network_image: ^3.3.0
   image_picker: ^1.1.2
+  file_picker: ^8.3.6
 
   # Utilities
   http: ^1.2.2
@@ -76,6 +77,8 @@ dependencies:
   device_info_plus: ^11.1.0
   flutter_dotenv: ^5.1.0
   fl_chart: ^1.1.1
+  firebase_core: ^3.1.0
+  firebase_messaging: ^15.0.1
 
 dev_dependencies:
   flutter_test:

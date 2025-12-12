@@ -378,11 +378,54 @@ class _MapScreenState extends State<MapScreen> {
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).size.height * 0.42,
       ),
-      child: FloatingActionButton(
-        mini: true,
-        backgroundColor: Theme.of(context).cardTheme.color,
-        onPressed: _centerOnUser,
-        child: const Icon(Icons.my_location),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Zoom In
+          FloatingActionButton(
+            mini: true,
+            heroTag: 'zoom_in',
+            backgroundColor: Theme.of(context).cardTheme.color,
+            onPressed: () {
+              _mapController?.animateCamera(
+                CameraUpdate.zoomIn(),
+              );
+            },
+            child: const Icon(Icons.add, size: 20),
+          ),
+          const SizedBox(height: 8),
+          // Zoom Out
+          FloatingActionButton(
+            mini: true,
+            heroTag: 'zoom_out',
+            backgroundColor: Theme.of(context).cardTheme.color,
+            onPressed: () {
+              _mapController?.animateCamera(
+                CameraUpdate.zoomOut(),
+              );
+            },
+            child: const Icon(Icons.remove, size: 20),
+          ),
+          const SizedBox(height: 8),
+          // Center on user with loading state
+          BlocBuilder<MapFeedBloc, MapFeedState>(
+            builder: (context, state) {
+              return FloatingActionButton(
+                mini: true,
+                heroTag: 'center_user',
+                backgroundColor: Theme.of(context).cardTheme.color,
+                onPressed: state.isLoading ? null : _centerOnUser,
+                child: state.isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.my_location, size: 20),
+              );
+            },
+          ),
+        ],
       ),
     );
   }

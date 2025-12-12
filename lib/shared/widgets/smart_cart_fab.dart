@@ -1,3 +1,12 @@
+import 'package:flutter/material.dart';
+import '../../core/theme/app_theme.dart';
+import '../utils/currency_formatter.dart';
+
+/// A smart floating action button that displays cart information
+/// and expands to show item count and total when items are present.
+class SmartCartFab extends StatelessWidget {
+  const SmartCartFab({
+    super.key,
     required this.itemCount,
     required this.total,
     required this.onTap,

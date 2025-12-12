@@ -52,9 +52,9 @@ void main() {
     setUpAll(() {
       registerFallbackValue(MockMapFeedBloc());
       registerFallbackValue(const MapFeedState());
-      registerFallbackValue(const MapBoundsChanged(LatLngBounds(
-        southwest: LatLng(0, 0),
-        northeast: LatLng(1, 1),
+      registerFallbackValue(MapBoundsChanged(LatLngBounds(
+        southwest: const LatLng(0, 0),
+        northeast: const LatLng(1, 1),
       )));
     });
 
@@ -328,9 +328,9 @@ void main() {
           vendors: [],
           dishes: [],
           markers: clusterMarkersMap,
-          mapBounds: const LatLngBounds(
-            southwest: LatLng(37.7, -122.5),
-            northeast: LatLng(37.8, -122.4),
+          mapBounds: LatLngBounds(
+            southwest: const LatLng(37.7, -122.5),
+            northeast: const LatLng(37.8, -122.4),
           ),
         ));
 
@@ -376,9 +376,9 @@ void main() {
       });
 
       testWidgets('handles pan gestures', (WidgetTester tester) async {
-        final bounds = const LatLngBounds(
-          southwest: LatLng(37.7, -122.5),
-          northeast: LatLng(37.8, -122.4),
+        final bounds = LatLngBounds(
+          southwest: const LatLng(37.7, -122.5),
+          northeast: const LatLng(37.8, -122.4),
         );
 
         when(() => mockMapFeedBloc.state).thenReturn(MapFeedState(
@@ -608,9 +608,9 @@ void main() {
           vendors: vendors,
           dishes: [],
           markers: markers,
-          mapBounds: const LatLngBounds(
-            southwest: LatLng(37.7, -122.5),
-            northeast: LatLng(37.8, -122.4),
+          mapBounds: LatLngBounds(
+            southwest: const LatLng(37.7, -122.5),
+            northeast: const LatLng(37.8, -122.4),
           ),
           zoomLevel: 15.0,
         ));

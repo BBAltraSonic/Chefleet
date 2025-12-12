@@ -45,5 +45,19 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<!-- Deep linking configuration for password reset and OAuth -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>com.chefleet.app</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>chefleet</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

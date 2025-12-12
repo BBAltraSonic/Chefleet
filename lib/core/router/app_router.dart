@@ -12,6 +12,8 @@ import '../../features/auth/screens/role_selection_screen.dart';
 import '../../features/auth/screens/profile_creation_screen.dart';
 import '../../features/auth/screens/guest_conversion_screen.dart';
 import '../../features/auth/screens/profile_management_screen.dart';
+import '../../features/auth/screens/forgot_password_screen.dart';
+import '../../features/auth/screens/reset_password_screen.dart';
 
 // Customer Screens
 import '../../features/map/screens/map_screen.dart';
@@ -127,6 +129,14 @@ class AppRouter {
         GoRoute(
           path: VendorRoutes.onboarding,
           builder: (context, state) => const VendorOnboardingScreen(),
+        ),
+        GoRoute(
+          path: '/forgot-password',
+          builder: (context, state) => const ForgotPasswordScreen(),
+        ),
+        GoRoute(
+          path: '/reset-password',
+          builder: (context, state) => const ResetPasswordScreen(),
         ),
         
         // ============================================================
@@ -379,6 +389,11 @@ class AppRouter {
     
     // Allow splash and auth routes always
     if (currentPath == splash || currentPath == auth) {
+      return null;
+    }
+    
+    // Allow password reset routes without authentication
+    if (currentPath == '/forgot-password' || currentPath == '/reset-password') {
       return null;
     }
     

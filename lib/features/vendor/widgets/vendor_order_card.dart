@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../shared/utils/currency_formatter.dart';
 import '../../../core/models/order_model.dart';
+import '../blocs/vendor_orders_bloc.dart';
 
 /// Shows:
 /// - Order ID and status
@@ -185,7 +187,7 @@ class VendorOrderCard extends StatelessWidget {
           Expanded(
             child: OutlinedButton(
               onPressed: () {
-                // TODO: Reject order
+                _showRejectDialog(context, order.id);
               },
               style: OutlinedButton.styleFrom(
                 foregroundColor: Colors.red,
@@ -198,7 +200,12 @@ class VendorOrderCard extends StatelessWidget {
           Expanded(
             child: ElevatedButton(
               onPressed: () {
-                // TODO: Accept order
+                context.read<VendorOrdersBloc>().add(
+                  UpdateOrderStatus(
+                    orderId: order.id,
+                    newStatus: 'confirmed',
+                  ),
+                );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.orange,
@@ -214,7 +221,12 @@ class VendorOrderCard extends StatelessWidget {
         width: double.infinity,
         child: ElevatedButton(
           onPressed: () {
-            // TODO: Mark as ready
+            context.read<VendorOrdersBloc>().add(
+              UpdateOrderStatus(
+                orderId: order.id,
+                newStatus: 'ready',
+              ),
+            );
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.green,
@@ -228,7 +240,12 @@ class VendorOrderCard extends StatelessWidget {
         width: double.infinity,
         child: ElevatedButton(
           onPressed: () {
-            // TODO: Mark as completed
+            context.read<VendorOrdersBloc>().add(
+              UpdateOrderStatus(
+                orderId: order.id,
+                newStatus: 'completed',
+              ),
+            );
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.grey,
@@ -255,5 +272,53 @@ class VendorOrderCard extends StatelessWidget {
     } else {
       return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
     }
+  }
+  
+  void _showRejectDialog(BuildContext context, String orderId) {
+    final reasonController = TextEditingController();
+    
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Reject Order'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Please provide a reason for rejecting this order:'),
+            const SizedBox(height: 16),
+            TextField(
+              controller: reasonController,
+              maxLines: 3,
+              decoration: const InputDecoration(
+                hintText: 'Reason for rejection',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              if (reasonController.text.trim().isNotEmpty) {
+                context.read<VendorOrdersBloc>().add(
+                  UpdateOrderStatus(
+                    orderId: orderId,
+                    newStatus: 'cancelled',
+                    reason: reasonController.text.trim(),
+                  ),
+                );
+                Navigator.of(dialogContext).pop();
+              }
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Reject'),
+          ),
+        ],
+      ),
+    );
   }
 }

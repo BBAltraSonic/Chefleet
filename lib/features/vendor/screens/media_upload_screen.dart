@@ -21,8 +21,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 
 import '../blocs/media_upload_bloc.dart';
-import '../blocs/media_upload_event.dart';
-import '../blocs/media_upload_state.dart';
 import '../widgets/media_grid_widget.dart';
 import '../widgets/upload_progress_widget.dart';
 import '../widgets/media_details_widget.dart';

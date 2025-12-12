@@ -51,18 +51,21 @@ warning - Dead code - lib\core\router\app_router.dart:433:28 - dead_code
 warning - Dead code - lib\core\router\app_router.dart:433:60 - dead_code
 warning - Dead code - lib\core\router\app_router.dart:433:95 - dead_code
    info - Dangling library doc comment - lib\core\routes\app_routes.dart:4:1 - dangling_library_doc_comments
-   info - Don't invoke 'print' in production code - lib\core\routes\deep_link_handler.dart:61:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\core\routes\deep_link_handler.dart:65:9 - avoid_print
-   info - Don't invoke 'print' in production code - lib\core\routes\deep_link_handler.dart:73:9 - avoid_print
-   info - Don't invoke 'print' in production code - lib\core\routes\deep_link_handler.dart:78:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\core\routes\deep_link_handler.dart:83:9 - avoid_print
-   info - Don't invoke 'print' in production code - lib\core\routes\deep_link_handler.dart:99:11 - avoid_print
-   info - Don't invoke 'print' in production code - lib\core\routes\deep_link_handler.dart:112:7 - avoid_print
-   info - Don't use 'BuildContext's across async gaps - lib\core\routes\deep_link_handler.dart:113:24 - use_build_context_synchronously
-   info - Don't invoke 'print' in production code - lib\core\routes\deep_link_handler.dart:165:7 - avoid_print
-  error - The named parameter 'newRole' is required, but there's no corresponding argument - lib\core\routes\deep_link_handler.dart:234:19 - missing_required_argument
-  error - Too many positional arguments: 0 expected, but 1 found - lib\core\routes\deep_link_handler.dart:234:39 - extra_positional_arguments_could_be_named
-   info - Don't invoke 'print' in production code - lib\core\routes\deep_link_handler.dart:262:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\core\routes\deep_link_handler.dart:59:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\core\routes\deep_link_handler.dart:63:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\core\routes\deep_link_handler.dart:71:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\core\routes\deep_link_handler.dart:76:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\core\routes\deep_link_handler.dart:81:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\core\routes\deep_link_handler.dart:97:11 - avoid_print
+   info - Don't invoke 'print' in production code - lib\core\routes\deep_link_handler.dart:110:7 - avoid_print
+   info - Don't use 'BuildContext's across async gaps - lib\core\routes\deep_link_handler.dart:111:24 - use_build_context_synchronously
+   info - Don't invoke 'print' in production code - lib\core\routes\deep_link_handler.dart:163:7 - avoid_print
+  error - The name 'RoleLoaded' isn't defined, so it can't be used in an 'is' expression - lib\core\routes\deep_link_handler.dart:224:20 - type_test_with_undefined_name
+  error - The getter 'activeRole' isn't defined for the type 'RoleState' - lib\core\routes\deep_link_handler.dart:224:40 - undefined_getter
+  error - The name 'RoleError' isn't defined, so it can't be used in an 'is' expression - lib\core\routes\deep_link_handler.dart:226:27 - type_test_with_undefined_name
+  error - The getter 'message' isn't defined for the type 'RoleState' - lib\core\routes\deep_link_handler.dart:227:39 - undefined_getter
+  error - The method 'RoleSwitchRequested' isn't defined for the type 'DeepLinkHandler' - lib\core\routes\deep_link_handler.dart:232:19 - undefined_method
+   info - Don't invoke 'print' in production code - lib\core\routes\deep_link_handler.dart:260:5 - avoid_print
    info - Don't invoke 'print' in production code - lib\core\services\cache_service.dart:40:7 - avoid_print
    info - Don't invoke 'print' in production code - lib\core\services\cache_service.dart:66:7 - avoid_print
    info - Don't invoke 'print' in production code - lib\core\services\cache_service.dart:85:7 - avoid_print
@@ -86,10 +89,16 @@ warning - Dead code - lib\core\router\app_router.dart:433:95 - dead_code
 warning - Unused import: '../models/user_role.dart' - lib\core\services\deep_link_service.dart:5:8 - unused_import
 warning - The value of the local variable 'deepLink' isn't used - lib\core\services\deep_link_service.dart:62:11 - unused_local_variable
    info - The null check operator shouldn't be used on a variable whose type is a potentially nullable type parameter - lib\core\services\edge_function_service.dart:17:19 - null_check_on_nullable_type_parameter
+   info - The imported package 'firebase_messaging' isn't a dependency of the importing package - lib\core\services\fcm_token_manager.dart:2:8 - depend_on_referenced_packages
+  error - Target of URI doesn't exist: 'package:firebase_messaging/firebase_messaging.dart' - lib\core\services\fcm_token_manager.dart:2:8 - uri_does_not_exist
+  error - Undefined class 'FirebaseMessaging' - lib\core\services\fcm_token_manager.dart:27:14 - undefined_class
+  error - Undefined class 'FirebaseMessaging' - lib\core\services\fcm_token_manager.dart:34:9 - undefined_class
    info - Don't invoke 'print' in production code - lib\core\services\fcm_token_manager.dart:45:5 - avoid_print
    info - Don't invoke 'print' in production code - lib\core\services\fcm_token_manager.dart:62:5 - avoid_print
    info - Don't invoke 'print' in production code - lib\core\services\fcm_token_manager.dart:78:7 - avoid_print
+  error - Undefined name 'AuthorizationStatus' - lib\core\services\fcm_token_manager.dart:80:43 - undefined_identifier
    info - Don't invoke 'print' in production code - lib\core\services\fcm_token_manager.dart:81:9 - avoid_print
+  error - Undefined name 'AuthorizationStatus' - lib\core\services\fcm_token_manager.dart:82:50 - undefined_identifier
    info - Don't invoke 'print' in production code - lib\core\services\fcm_token_manager.dart:83:9 - avoid_print
    info - Don't invoke 'print' in production code - lib\core\services\fcm_token_manager.dart:85:9 - avoid_print
    info - Don't invoke 'print' in production code - lib\core\services\fcm_token_manager.dart:88:7 - avoid_print
@@ -110,6 +119,8 @@ warning - The value of the local variable 'deepLink' isn't used - lib\core\servi
    info - Don't invoke 'print' in production code - lib\core\services\fcm_token_manager.dart:185:7 - avoid_print
    info - Don't invoke 'print' in production code - lib\core\services\fcm_token_manager.dart:194:7 - avoid_print
    info - Don't invoke 'print' in production code - lib\core\services\fcm_token_manager.dart:196:7 - avoid_print
+  error - Undefined name 'AuthorizationStatus' - lib\core\services\fcm_token_manager.dart:212:44 - undefined_identifier
+  error - Undefined name 'AuthorizationStatus' - lib\core\services\fcm_token_manager.dart:213:41 - undefined_identifier
    info - Don't invoke 'print' in production code - lib\core\services\fcm_token_manager.dart:223:5 - avoid_print
    info - Don't invoke 'print' in production code - lib\core\services\fcm_token_manager.dart:228:5 - avoid_print
    info - Don't invoke 'print' in production code - lib\core\services\fcm_token_manager.dart:261:9 - avoid_print
@@ -121,15 +132,18 @@ warning - The value of the local variable 'deepLink' isn't used - lib\core\servi
    info - The referenced name isn't visible in scope - lib\core\services\guest_session_service.dart:25:44 - comment_references
    info - Don't invoke 'print' in production code - lib\core\services\guest_session_service.dart:144:7 - avoid_print
    info - Don't invoke 'print' in production code - lib\core\services\guest_session_service.dart:157:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\core\services\notification_router.dart:48:9 - avoid_print
-   info - Don't invoke 'print' in production code - lib\core\services\notification_router.dart:52:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\core\services\notification_router.dart:57:9 - avoid_print
-   info - Don't invoke 'print' in production code - lib\core\services\notification_router.dart:73:11 - avoid_print
-   info - Don't invoke 'print' in production code - lib\core\services\notification_router.dart:86:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\core\services\notification_router.dart:112:7 - avoid_print
-  error - The named parameter 'newRole' is required, but there's no corresponding argument - lib\core\services\notification_router.dart:164:19 - missing_required_argument
-  error - Too many positional arguments: 0 expected, but 1 found - lib\core\services\notification_router.dart:164:39 - extra_positional_arguments_could_be_named
-   info - Don't invoke 'print' in production code - lib\core\services\notification_router.dart:187:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\core\services\notification_router.dart:46:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\core\services\notification_router.dart:50:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\core\services\notification_router.dart:55:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\core\services\notification_router.dart:71:11 - avoid_print
+   info - Don't invoke 'print' in production code - lib\core\services\notification_router.dart:84:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\core\services\notification_router.dart:110:7 - avoid_print
+  error - The name 'RoleLoaded' isn't defined, so it can't be used in an 'is' expression - lib\core\services\notification_router.dart:154:20 - type_test_with_undefined_name
+  error - The getter 'activeRole' isn't defined for the type 'RoleState' - lib\core\services\notification_router.dart:154:40 - undefined_getter
+  error - The name 'RoleError' isn't defined, so it can't be used in an 'is' expression - lib\core\services\notification_router.dart:156:27 - type_test_with_undefined_name
+  error - The getter 'message' isn't defined for the type 'RoleState' - lib\core\services\notification_router.dart:157:39 - undefined_getter
+  error - The method 'RoleSwitchRequested' isn't defined for the type 'NotificationRouter' - lib\core\services\notification_router.dart:162:19 - undefined_method
+   info - Don't invoke 'print' in production code - lib\core\services\notification_router.dart:185:5 - avoid_print
 warning - The value of the field '_isInitialized' isn't used - lib\core\services\notification_service.dart:14:8 - unused_field
 warning - The value of the local variable 'open' isn't used - lib\core\services\opening_hours_service.dart:36:13 - unused_local_variable
 warning - The value of the local variable 'close' isn't used - lib\core\services\opening_hours_service.dart:37:13 - unused_local_variable
@@ -557,10 +571,10 @@ warning - The declaration '_buildSpecialInstructionsSection' isn't referenced - 
 warning - Unnecessary cast - lib\features\profile\widgets\become_vendor_card.dart:30:52 - unnecessary_cast
    info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\profile\widgets\become_vendor_card.dart:52:48 - deprecated_member_use
    info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\profile\widgets\become_vendor_card.dart:130:48 - deprecated_member_use
-   info - Use 'const' with the constructor to improve performance - lib\features\profile\widgets\profile_drawer.dart:139:5 - prefer_const_constructors
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\profile\widgets\profile_drawer.dart:232:54 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\profile\widgets\profile_drawer.dart:235:56 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\profile\widgets\profile_drawer.dart:407:48 - deprecated_member_use
+  error - The name 'BecomeVendorCard' isn't a class - lib\features\profile\widgets\profile_drawer.dart:140:20 - creation_with_non_type
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\profile\widgets\profile_drawer.dart:231:54 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\profile\widgets\profile_drawer.dart:234:56 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\profile\widgets\profile_drawer.dart:406:48 - deprecated_member_use
    info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\profile\widgets\role_switch_dialog.dart:49:57 - deprecated_member_use
    info - Use 'const' with the constructor to improve performance - lib\features\profile\widgets\role_switch_dialog.dart:116:30 - prefer_const_constructors
    info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\profile\widgets\role_switch_dialog.dart:134:38 - deprecated_member_use
@@ -644,19 +658,31 @@ warning - The left operand can't be null, so the right operand is never executed
    info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\features\vendor\screens\dish_edit_screen.dart:295:30 - use_build_context_synchronously
    info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\features\vendor\screens\dish_edit_screen.dart:405:27 - deprecated_member_use
    info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\screens\dish_edit_screen.dart:550:47 - deprecated_member_use
-   info - Use 'const' with the constructor to improve performance - lib\features\vendor\screens\media_upload_screen.dart:45:41 - prefer_const_constructors
-   info - The 'child' argument should be last in widget constructor invocations - lib\features\vendor\screens\media_upload_screen.dart:138:13 - sort_child_properties_last
-   info - The 'child' argument should be last in widget constructor invocations - lib\features\vendor\screens\media_upload_screen.dart:146:13 - sort_child_properties_last
-   info - Use 'const' with the constructor to improve performance - lib\features\vendor\screens\media_upload_screen.dart:195:57 - prefer_const_constructors
-   info - 'surfaceVariant' is deprecated and shouldn't be used. Use surfaceContainerHighest instead. This feature was deprecated after v3.18.0-0.1.pre - lib\features\vendor\screens\media_upload_screen.dart:214:54 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\screens\media_upload_screen.dart:217:66 - deprecated_member_use
-  error - The getter 'multiple' isn't defined for the type 'Icons' - lib\features\vendor\screens\media_upload_screen.dart:397:31 - undefined_getter
-   info - Don't use 'BuildContext's across async gaps - lib\features\vendor\screens\media_upload_screen.dart:431:9 - use_build_context_synchronously
-   info - Don't use 'BuildContext's across async gaps - lib\features\vendor\screens\media_upload_screen.dart:448:7 - use_build_context_synchronously
-   info - Don't use 'BuildContext's across async gaps - lib\features\vendor\screens\media_upload_screen.dart:465:7 - use_build_context_synchronously
-   info - Don't use 'BuildContext's across async gaps - lib\features\vendor\screens\media_upload_screen.dart:480:7 - use_build_context_synchronously
-   info - Don't use 'BuildContext's across async gaps - lib\features\vendor\screens\media_upload_screen.dart:498:11 - use_build_context_synchronously
-  error - The method '_formatFileSize' isn't defined for the type 'MediaUploadState' - lib\features\vendor\screens\media_upload_screen.dart:597:29 - undefined_method
+   info - The imported package 'file_picker' isn't a dependency of the importing package - lib\features\vendor\screens\media_upload_screen.dart:21:8 - depend_on_referenced_packages
+  error - Target of URI doesn't exist: 'package:file_picker/file_picker.dart' - lib\features\vendor\screens\media_upload_screen.dart:21:8 - uri_does_not_exist
+  error - The imported library '../blocs/media_upload_event.dart' can't have a part-of directive - lib\features\vendor\screens\media_upload_screen.dart:24:8 - import_of_non_library
+  error - The imported library '../blocs/media_upload_state.dart' can't have a part-of directive - lib\features\vendor\screens\media_upload_screen.dart:25:8 - import_of_non_library
+  error - Target of URI doesn't exist: '../widgets/media_grid_widget.dart' - lib\features\vendor\screens\media_upload_screen.dart:26:8 - uri_does_not_exist
+  error - Target of URI doesn't exist: '../widgets/upload_progress_widget.dart' - lib\features\vendor\screens\media_upload_screen.dart:27:8 - uri_does_not_exist
+  error - Target of URI doesn't exist: '../widgets/media_details_widget.dart' - lib\features\vendor\screens\media_upload_screen.dart:28:8 - uri_does_not_exist
+   info - Use 'const' with the constructor to improve performance - lib\features\vendor\screens\media_upload_screen.dart:47:41 - prefer_const_constructors
+  error - The method 'UploadProgressWidget' isn't defined for the type '_MediaUploadScreenState' - lib\features\vendor\screens\media_upload_screen.dart:105:24 - undefined_method
+   info - The 'child' argument should be last in widget constructor invocations - lib\features\vendor\screens\media_upload_screen.dart:140:13 - sort_child_properties_last
+   info - The 'child' argument should be last in widget constructor invocations - lib\features\vendor\screens\media_upload_screen.dart:148:13 - sort_child_properties_last
+   info - Use 'const' with the constructor to improve performance - lib\features\vendor\screens\media_upload_screen.dart:197:57 - prefer_const_constructors
+   info - 'surfaceVariant' is deprecated and shouldn't be used. Use surfaceContainerHighest instead. This feature was deprecated after v3.18.0-0.1.pre - lib\features\vendor\screens\media_upload_screen.dart:216:54 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\vendor\screens\media_upload_screen.dart:219:66 - deprecated_member_use
+  error - The method 'MediaGridWidget' isn't defined for the type '_MediaUploadScreenState' - lib\features\vendor\screens\media_upload_screen.dart:251:22 - undefined_method
+  error - The getter 'multiple' isn't defined for the type 'Icons' - lib\features\vendor\screens\media_upload_screen.dart:399:31 - undefined_getter
+   info - Don't use 'BuildContext's across async gaps - lib\features\vendor\screens\media_upload_screen.dart:433:9 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\features\vendor\screens\media_upload_screen.dart:450:7 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\features\vendor\screens\media_upload_screen.dart:467:7 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\features\vendor\screens\media_upload_screen.dart:482:7 - use_build_context_synchronously
+  error - Undefined name 'FilePicker' - lib\features\vendor\screens\media_upload_screen.dart:490:26 - undefined_identifier
+  error - Undefined name 'FileType' - lib\features\vendor\screens\media_upload_screen.dart:491:13 - undefined_identifier
+   info - Don't use 'BuildContext's across async gaps - lib\features\vendor\screens\media_upload_screen.dart:500:11 - use_build_context_synchronously
+  error - The method 'MediaDetailsWidget' isn't defined for the type '_MediaUploadScreenState' - lib\features\vendor\screens\media_upload_screen.dart:526:16 - undefined_method
+  error - The method '_formatFileSize' isn't defined for the type 'MediaUploadState' - lib\features\vendor\screens\media_upload_screen.dart:599:29 - undefined_method
 warning - Unused import: '../widgets/dish_card.dart' - lib\features\vendor\screens\menu_management_screen.dart:6:8 - unused_import
    info - Use 'const' with the constructor to improve performance - lib\features\vendor\screens\menu_management_screen.dart:28:44 - prefer_const_constructors
 warning - The '!' will have no effect because the receiver can't be null - lib\features\vendor\screens\menu_management_screen.dart:61:80 - unnecessary_non_null_assertion

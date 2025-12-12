@@ -75,79 +75,137 @@ class _OrdersFloatingActionButtonState extends State<OrdersFloatingActionButton>
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<CartBloc, CartState>(
-      builder: (context, cartState) {
-        final hasItems = cartState.totalItems > 0;
-        
-        return AnimatedBuilder(
-          animation: _pulseAnimation,
-          builder: (context, child) {
-            return Transform.scale(
-              scale: _pulseAnimation.value,
-              child: Container(
-                width: 64,
-                height: 64,
-                margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryGreen,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppTheme.primaryGreen.withOpacity(0.3),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Stack(
-                  children: [
-                    Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: () => _handleTap(context, hasItems),
-                        borderRadius: BorderRadius.circular(32),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              hasItems ? Icons.shopping_cart : Icons.shopping_bag_outlined,
-                              size: 24,
-                              color: AppTheme.darkText,
-                            ),
-                            const SizedBox(height: 2),
-                          ],
+    return BlocBuilder<ActiveOrdersBloc, ActiveOrdersState>(
+      builder: (context, ordersState) {
+        return BlocBuilder<CartBloc, CartState>(
+          builder: (context, cartState) {
+            // Determine what to show based on priority
+            final readyOrders = ordersState.orders.where((o) {
+              final order = o as Map<String, dynamic>;
+              return order['status'] == 'ready';
+            }).toList();
+            final preparingOrders = ordersState.orders.where((o) {
+              final order = o as Map<String, dynamic>;
+              return order['status'] == 'preparing';
+            }).toList();
+            final hasCartItems = cartState.totalItems > 0;
+            
+            // Priority: Ready orders > Preparing orders > Cart
+            final showReadyOrder = readyOrders.isNotEmpty;
+            final showPreparingOrder = !showReadyOrder && preparingOrders.isNotEmpty;
+            
+            // Only pulse for ready orders
+            final shouldPulse = showReadyOrder;
+            
+            return AnimatedBuilder(
+              animation: _pulseAnimation,
+              builder: (context, child) {
+                return Transform.scale(
+                  scale: shouldPulse ? _pulseAnimation.value : 1.0,
+                  child: Container(
+                    width: 64,
+                    height: 64,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: showReadyOrder 
+                          ? Colors.orange 
+                          : showPreparingOrder 
+                              ? AppTheme.secondaryGreen 
+                              : AppTheme.primaryGreen,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: (showReadyOrder 
+                              ? Colors.orange 
+                              : AppTheme.primaryGreen).withOpacity(0.3),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
                         ),
-                      ),
+                      ],
                     ),
-                    // Badge for cart item count
-                    if (hasItems)
-                      Positioned(
-                        top: 8,
-                        right: 8,
-                        child: Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: const BoxDecoration(
-                            color: Colors.red,
-                            shape: BoxShape.circle,
-                          ),
-                          constraints: const BoxConstraints(
-                            minWidth: 20,
-                            minHeight: 20,
-                          ),
-                          child: Text(
-                            '${cartState.totalItems}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
+                    child: Stack(
+                      children: [
+                        Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () => _handleTap(context, hasCartItems, ordersState.orders),
+                            borderRadius: BorderRadius.circular(32),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  showReadyOrder 
+                                      ? Icons.restaurant 
+                                      : showPreparingOrder 
+                                          ? Icons.soup_kitchen 
+                                          : hasCartItems 
+                                              ? Icons.shopping_cart 
+                                              : Icons.shopping_bag_outlined,
+                                  size: 24,
+                                  color: AppTheme.darkText,
+                                ),
+                                const SizedBox(height: 2),
+                              ],
                             ),
-                            textAlign: TextAlign.center,
                           ),
                         ),
-                      ),
-                  ],
-                ),
-              ),
+                        // Badge for cart item count or order count
+                        if (hasCartItems && !showReadyOrder && !showPreparingOrder)
+                          Positioned(
+                            top: 8,
+                            right: 8,
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: const BoxDecoration(
+                                color: Colors.red,
+                                shape: BoxShape.circle,
+                              ),
+                              constraints: const BoxConstraints(
+                                minWidth: 20,
+                                minHeight: 20,
+                              ),
+                              child: Text(
+                                '${cartState.totalItems}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ),
+                        // Badge for active orders
+                        if (showReadyOrder || showPreparingOrder)
+                          Positioned(
+                            top: 8,
+                            right: 8,
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: showReadyOrder ? Colors.white : AppTheme.primaryGreen,
+                                shape: BoxShape.circle,
+                              ),
+                              constraints: const BoxConstraints(
+                                minWidth: 20,
+                                minHeight: 20,
+                              ),
+                              child: Text(
+                                '${showReadyOrder ? readyOrders.length : preparingOrders.length}',
+                                style: TextStyle(
+                                  color: showReadyOrder ? Colors.orange : AppTheme.darkText,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                );
+              },
             );
           },
         );
@@ -155,8 +213,21 @@ class _OrdersFloatingActionButtonState extends State<OrdersFloatingActionButton>
     );
   }
 
-  void _handleTap(BuildContext context, bool hasCartItems) {
-    if (hasCartItems) {
+  void _handleTap(BuildContext context, bool hasCartItems, List<dynamic> activeOrders) {
+    // Priority: Show active orders if any exist, otherwise show cart
+    if (activeOrders.isNotEmpty) {
+      // Show active orders modal
+      showDialog(
+        context: context,
+        barrierColor: Colors.black.withOpacity(0.5),
+        builder: (context) {
+          return BlocProvider.value(
+            value: context.read<ActiveOrdersBloc>(),
+            child: const ActiveOrderModal(),
+          );
+        },
+      );
+    } else if (hasCartItems) {
       // Show cart bottom sheet
       showModalBottomSheet(
         context: context,
@@ -279,7 +350,8 @@ class _OrdersFloatingActionButtonState extends State<OrdersFloatingActionButton>
                                   child: ElevatedButton(
                                     onPressed: () {
                                       Navigator.pop(context);
-                                      // TODO: Navigate to checkout
+                                      // Navigate to checkout
+                                      context.push('/customer/checkout');
                                     },
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: AppTheme.primaryGreen,
@@ -312,7 +384,7 @@ class _OrdersFloatingActionButtonState extends State<OrdersFloatingActionButton>
         },
       );
     } else {
-      // Show active orders modal
+      // Show active orders modal (empty state)
       showDialog(
         context: context,
         barrierColor: Colors.black.withOpacity(0.5),

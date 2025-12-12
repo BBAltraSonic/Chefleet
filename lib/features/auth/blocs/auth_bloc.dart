@@ -79,6 +79,10 @@ class AuthGuestToRegisteredRequested extends AuthEvent {
   List<Object?> get props => [email, password, name];
 }
 
+class AuthGoogleSignInRequested extends AuthEvent {
+  const AuthGoogleSignInRequested();
+}
+
 enum AuthMode {
   guest,           // Anonymous user with guest_id
   authenticated,   // Registered user with auth.users record
@@ -139,6 +143,7 @@ class AuthBloc extends AppBloc<AuthEvent, AuthState> {
     on<AuthErrorOccurred>(_onAuthErrorOccurred);
     on<AuthGuestModeStarted>(_onGuestModeStarted);
     on<AuthGuestToRegisteredRequested>(_onGuestToRegisteredRequested);
+    on<AuthGoogleSignInRequested>(_onGoogleSignInRequested);
 
     // Initialize auth state after handlers are registered
     _initializeAuth();
@@ -600,5 +605,90 @@ class AuthBloc extends AppBloc<AuthEvent, AuthState> {
         errorMessage: 'Conversion failed: ${e.toString()}',
       ));
     }
+  }
+
+  Future<void> _onGoogleSignInRequested(
+    AuthGoogleSignInRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    emit(state.copyWith(isLoading: true, errorMessage: null));
+    _logAuth(
+      'google_signin.request',
+      severity: DiagnosticSeverity.debug,
+    );
+
+    try {
+      // Initiate OAuth flow with Google
+      final response = await Supabase.instance.client.auth.signInWithOAuth(
+        OAuthProvider.google,
+        redirectTo: 'chefleet://auth-callback',
+      );
+
+      if (!response) {
+        emit(state.copyWith(
+          isLoading: false,
+          errorMessage: 'Google sign-in was cancelled or failed.',
+        ));
+        _logAuth(
+          'google_signin.cancelled',
+          severity: DiagnosticSeverity.warn,
+        );
+      } else {
+        // The OAuth flow will redirect and trigger AuthStatusChanged
+        // via the auth state listener when the user completes the flow
+        _logAuth(
+          'google_signin.initiated',
+          severity: DiagnosticSeverity.debug,
+        );
+      }
+    } on AuthException catch (e) {
+      emit(state.copyWith(
+        isLoading: false,
+        errorMessage: 'Google sign-in failed: ${e.message}',
+      ));
+      _logAuth(
+        'google_signin.error',
+        severity: DiagnosticSeverity.error,
+        payload: {'message': e.message, 'code': e.code},
+      );
+    } catch (e) {
+      emit(state.copyWith(
+        isLoading: false,
+        errorMessage: 'Google sign-in error: ${e.toString()}',
+      ));
+      _logAuth(
+        'google_signin.error',
+        severity: DiagnosticSeverity.error,
+        payload: {'message': e.toString()},
+      );
+    }
+  }
+  
+  /// Helper method to update user password
+  Future<void> updatePassword(String currentPassword, String newPassword) async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) {
+      throw Exception('No user logged in');
+    }
+    
+    // First verify current password by attempting to sign in
+    try {
+      await Supabase.instance.client.auth.signInWithPassword(
+        email: user.email!,
+        password: currentPassword,
+      );
+    } catch (e) {
+      throw Exception('Current password is incorrect');
+    }
+    
+    // Update to new password
+    await Supabase.instance.client.auth.updateUser(
+      UserAttributes(password: newPassword),
+    );
+    
+    _logAuth(
+      'password.updated',
+      payload: {'userId': user.id},
+    );
   }
 }

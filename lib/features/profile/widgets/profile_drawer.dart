@@ -7,6 +7,7 @@ import '../../auth/utils/conversion_prompt_helper.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/routes/app_routes.dart';
 import '../../../shared/widgets/glass_container.dart';
+import 'become_vendor_card.dart';
 
 class ProfileDrawer extends StatelessWidget {
   const ProfileDrawer({super.key});
