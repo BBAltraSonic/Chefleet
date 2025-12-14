@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_theme.dart';
 
-class LocationSelectorSheet extends StatelessWidget {
+import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:uuid/uuid.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../../../core/services/google_places_service.dart';
+
+class LocationSelectorSheet extends StatefulWidget {
   const LocationSelectorSheet({
     super.key,
     required this.onLocationSelected,
@@ -12,11 +18,119 @@ class LocationSelectorSheet extends StatelessWidget {
   final VoidCallback onUseCurrentLocation;
 
   @override
+  State<LocationSelectorSheet> createState() => _LocationSelectorSheetState();
+}
+
+class _LocationSelectorSheetState extends State<LocationSelectorSheet> {
+  final TextEditingController _searchController = TextEditingController();
+  final GooglePlacesService _placesService = GooglePlacesService();
+  final Uuid _uuid = const Uuid();
+  
+  String? _sessionToken;
+  Timer? _debounce;
+  List<PlacePrediction> _predictions = [];
+  bool _isLoading = false;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _sessionToken = _uuid.v4();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  void _onSearchChanged(String query) {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    
+    if (query.isEmpty) {
+      setState(() {
+        _predictions = [];
+        _errorMessage = null;
+        _isLoading = false;
+      });
+      return;
+    }
+
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      _fetchPredictions(query);
+    });
+  }
+
+  Future<void> _fetchPredictions(String query) async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final predictions = await _placesService.getAutocompletePredictions(
+        query,
+        sessionToken: _sessionToken,
+      );
+      if (mounted) {
+        setState(() {
+          _predictions = predictions;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Failed to load predictions';
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _onPredictionSelected(PlacePrediction prediction) async {
+    try {
+      // Show loading indicator
+      setState(() {
+        _isLoading = true;
+      });
+
+      final details = await _placesService.getPlaceDetails(
+        prediction.placeId,
+        sessionToken: _sessionToken,
+      );
+
+      // Close sheet and return result
+      if (mounted) {
+        Navigator.pop(context); // Close sheet
+        widget.onLocationSelected(
+          details.description,
+          details.lat,
+          details.lng,
+        );
+      }
+      
+      // Reset session token for next session
+      _sessionToken = _uuid.v4();
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error selecting location: $e')),
+        );
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return DraggableScrollableSheet(
-      initialChildSize: 0.5,
-      minChildSize: 0.3,
-      maxChildSize: 0.9,
+      initialChildSize: 0.9, // Expand to almost full screen for search
+      minChildSize: 0.5,
+      maxChildSize: 0.95,
       expand: false,
       builder: (context, scrollController) {
         return Container(
@@ -56,75 +170,98 @@ class LocationSelectorSheet extends StatelessWidget {
                   ],
                 ),
               ),
-              const Divider(),
-              Expanded(
-                child: ListView(
-                  controller: scrollController,
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  children: [
-                    // Current Location Option
-                    ListTile(
-                      leading: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryGreen.withOpacity(0.1),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.my_location,
-                          color: AppTheme.primaryGreen,
-                        ),
-                      ),
-                      title: const Text('Use current location'),
-                      subtitle: const Text('Enable location services'),
-                      onTap: () {
-                        Navigator.pop(context);
-                        onUseCurrentLocation();
-                      },
+              
+              // Search Bar
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                child: TextField(
+                  controller: _searchController,
+                  onChanged: _onSearchChanged,
+                  decoration: InputDecoration(
+                    hintText: 'Search for your address',
+                    prefixIcon: const Icon(Icons.search),
+                    filled: true,
+                    fillColor: Theme.of(context).cardColor,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
                     ),
-                    const SizedBox(height: 20),
-                    
-                    // Saved Addresses Section
-                    Text(
-                      'Saved Addresses',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    // TODO: Replace with actual saved addresses list
-                    _buildAddressItem(
-                      context,
-                      'Home',
-                      '123 Main Street, Cape Town',
-                      Icons.home_outlined,
-                    ),
-                    _buildAddressItem(
-                      context,
-                      'Work',
-                      '45 Office Park, Sandton',
-                      Icons.work_outline,
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    // Recent Locations Section
-                    Text(
-                      'Recent Locations',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    // TODO: Replace with actual recent locations
-                    _buildAddressItem(
-                      context,
-                      'Mall of Africa',
-                      'Lone Creek Cres, Waterfall City',
-                      Icons.history,
-                    ),
-                  ],
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  ),
                 ),
+              ),
+
+              const Divider(),
+              
+              Expanded(
+                child: _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : _errorMessage != null
+                        ? Center(child: Text(_errorMessage!))
+                        : ListView(
+                            controller: scrollController,
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            children: [
+                              // Predictions List
+                              if (_predictions.isNotEmpty) ...[
+                                Text(
+                                  'Search Results',
+                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                ..._predictions.map((p) => _buildPredictionItem(p)),
+                                const SizedBox(height: 20),
+                              ],
+
+                              // Current Location Option (Only show if not searching or few results)
+                              if (_predictions.isEmpty) ...[
+                                ListTile(
+                                  leading: Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.primaryGreen.withValues(alpha: 0.1),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.my_location,
+                                      color: AppTheme.primaryGreen,
+                                    ),
+                                  ),
+                                  title: const Text('Use current location'),
+                                  subtitle: const Text('Enable location services'),
+                                  onTap: () {
+                                    Navigator.pop(context);
+                                    widget.onUseCurrentLocation();
+                                  },
+                                ),
+                                const SizedBox(height: 20),
+                                
+                                // Saved Addresses Section (Placeholder for now)
+                                // Only show when no search is active
+                                if (_searchController.text.isEmpty) ...[
+                                  Text(
+                                    'Saved Addresses',
+                                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  _buildAddressItem(
+                                    'Home',
+                                    '123 Main Street, Cape Town',
+                                    Icons.home_outlined,
+                                  ),
+                                  _buildAddressItem(
+                                    'Work',
+                                    '45 Office Park, Sandton',
+                                    Icons.work_outline,
+                                  ),
+                                ],
+                              ],
+                            ],
+                          ),
               ),
             ],
           ),
@@ -133,8 +270,24 @@ class LocationSelectorSheet extends StatelessWidget {
     );
   }
 
+  Widget _buildPredictionItem(PlacePrediction prediction) {
+    return ListTile(
+      leading: const Icon(Icons.location_on_outlined, color: Colors.grey),
+      title: Text(
+        prediction.mainText,
+        style: const TextStyle(fontWeight: FontWeight.w600),
+      ),
+      subtitle: Text(
+        prediction.secondaryText,
+        style: TextStyle(color: Colors.grey[600]),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+      onTap: () => _onPredictionSelected(prediction),
+    );
+  }
+
   Widget _buildAddressItem(
-    BuildContext context,
     String title,
     String address,
     IconData icon,
@@ -164,9 +317,9 @@ class LocationSelectorSheet extends StatelessWidget {
         overflow: TextOverflow.ellipsis,
       ),
       onTap: () {
-        // TODO: Implement selection
+        // TODO: Implement selection for saved addresses
         Navigator.pop(context);
-        onLocationSelected(address, 0, 0); // Placeholder coords
+        widget.onLocationSelected(address, 0, 0); // Placeholder coords
       },
     );
   }

@@ -5,6 +5,10 @@ import '../../../core/routes/app_routes.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/utils/currency_formatter.dart';
 import '../blocs/active_orders_bloc.dart';
+import '../models/preparation_step_model.dart';
+import '../models/order_preparation_state.dart';
+import 'preparation_timer_widget.dart';
+import 'preparation_steps_list.dart';
 
 class ActiveOrderModal extends StatefulWidget {
   const ActiveOrderModal({super.key});
@@ -14,6 +18,8 @@ class ActiveOrderModal extends StatefulWidget {
 }
 
 class _ActiveOrderModalState extends State<ActiveOrderModal> {
+  final Map<String, bool> _expandedSteps = {};
+
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<ActiveOrdersBloc, ActiveOrdersState>(
@@ -187,6 +193,23 @@ class _ActiveOrderModalState extends State<ActiveOrderModal> {
     final vendorName = order['vendors']?['business_name'] as String? ?? 'Vendor';
     final vendorLogo = order['vendors']?['logo_url'] as String?;
     final pickupCode = order['pickup_code'] as String?;
+    
+    final stepsData = context.read<ActiveOrdersBloc>().state.getPreparationSteps(orderId);
+    final steps = stepsData.map((json) => PreparationStep.fromJson(json)).toList();
+    final preparationState = steps.isNotEmpty
+        ? OrderPreparationState(
+            orderId: orderId,
+            steps: steps,
+            preparationStartedAt: order['preparation_started_at'] != null
+                ? DateTime.parse(order['preparation_started_at'] as String)
+                : null,
+            estimatedReadyAt: order['estimated_ready_at'] != null
+                ? DateTime.parse(order['estimated_ready_at'] as String)
+                : null,
+          )
+        : null;
+    
+    final isExpanded = _expandedSteps[orderId] ?? false;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -244,31 +267,81 @@ class _ActiveOrderModalState extends State<ActiveOrderModal> {
               ],
             ),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 20),
-            decoration: BoxDecoration(
-              border: Border(
-                top: BorderSide(color: AppTheme.borderGreen),
+          if (preparationState != null && steps.isNotEmpty) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              decoration: BoxDecoration(
+                border: Border(
+                  top: BorderSide(color: AppTheme.borderGreen),
+                ),
+              ),
+              child: Column(
+                children: [
+                  PreparationTimerWidget(
+                    currentStep: preparationState.currentStep,
+                    totalSteps: preparationState.totalStepsCount,
+                    completedSteps: preparationState.completedStepsCount,
+                  ),
+                  const SizedBox(height: 12),
+                  InkWell(
+                    onTap: () {
+                      setState(() {
+                        _expandedSteps[orderId] = !isExpanded;
+                      });
+                    },
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          isExpanded ? 'Hide steps' : 'View all steps',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppTheme.primaryGreen,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        Icon(
+                          isExpanded ? Icons.expand_less : Icons.expand_more,
+                          color: AppTheme.primaryGreen,
+                          size: 20,
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (isExpanded) ...[
+                    const SizedBox(height: 12),
+                    PreparationStepsList(steps: steps),
+                  ],
+                ],
               ),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Estimated time',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppTheme.secondaryGreen,
-                  ),
+          ] else
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              decoration: BoxDecoration(
+                border: Border(
+                  top: BorderSide(color: AppTheme.borderGreen),
                 ),
-                Text(
-                  '15 minutes',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppTheme.darkText,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Estimated time',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppTheme.secondaryGreen,
+                    ),
                   ),
-                ),
-              ],
+                  Text(
+                    order['estimated_prep_time_minutes'] != null
+                        ? '${order['estimated_prep_time_minutes']} minutes'
+                        : '15 minutes',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppTheme.darkText,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
           Container(
             padding: const EdgeInsets.symmetric(vertical: 20),
             decoration: BoxDecoration(

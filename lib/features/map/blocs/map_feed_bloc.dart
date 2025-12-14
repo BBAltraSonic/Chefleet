@@ -14,6 +14,8 @@ import '../../../core/utils/vendor_cluster_manager.dart';
 import '../../feed/models/dish_model.dart';
 import '../../feed/models/vendor_model.dart';
 
+const _undefined = Object();
+
 class MapFeedEvent extends AppEvent {
   const MapFeedEvent();
 }
@@ -147,42 +149,42 @@ class MapFeedState extends AppState {
   final String selectedCategory;
 
   MapFeedState copyWith({
-    Position? currentPosition,
-    LatLngBounds? mapBounds,
+    Object? currentPosition = _undefined,
+    Object? mapBounds = _undefined,
     List<Vendor>? vendors,
     List<Dish>? dishes,
     List<Dish>? allDishes,
-    Vendor? selectedVendor,
+    Object? selectedVendor = _undefined,
     Map<String, Marker>? markers,
     bool? isLoading,
     bool? isLoadingMore,
     bool? hasMoreData,
     int? currentPage,
-    String? errorMessage,
-    DateTime? lastUpdated,
+    Object? errorMessage = _undefined,
+    Object? lastUpdated = _undefined,
     bool? isOffline,
     double? zoomLevel,
-    String? searchQuery,
-    String? selectedCategory,
+    Object? searchQuery = _undefined,
+    Object? selectedCategory = _undefined,
   }) {
     return MapFeedState(
-      currentPosition: currentPosition ?? this.currentPosition,
-      mapBounds: mapBounds ?? this.mapBounds,
+      currentPosition: currentPosition == _undefined ? this.currentPosition : currentPosition as Position?,
+      mapBounds: mapBounds == _undefined ? this.mapBounds : mapBounds as LatLngBounds?,
       vendors: vendors ?? this.vendors,
       dishes: dishes ?? this.dishes,
       allDishes: allDishes ?? this.allDishes,
-      selectedVendor: selectedVendor ?? this.selectedVendor,
+      selectedVendor: selectedVendor == _undefined ? this.selectedVendor : selectedVendor as Vendor?,
       markers: markers ?? this.markers,
       isLoading: isLoading ?? this.isLoading,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       hasMoreData: hasMoreData ?? this.hasMoreData,
       currentPage: currentPage ?? this.currentPage,
-      errorMessage: errorMessage ?? this.errorMessage,
-      lastUpdated: lastUpdated ?? this.lastUpdated,
+      errorMessage: errorMessage == _undefined ? this.errorMessage : errorMessage as String?,
+      lastUpdated: lastUpdated == _undefined ? this.lastUpdated : lastUpdated as DateTime?,
       isOffline: isOffline ?? this.isOffline,
       zoomLevel: zoomLevel ?? this.zoomLevel,
-      searchQuery: searchQuery ?? this.searchQuery,
-      selectedCategory: selectedCategory ?? this.selectedCategory,
+      searchQuery: searchQuery == _undefined ? this.searchQuery : searchQuery as String,
+      selectedCategory: selectedCategory == _undefined ? this.selectedCategory : selectedCategory as String,
     );
   }
 
@@ -213,7 +215,12 @@ extension MapFeedStateX on MapFeedState {
 }
 
 class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
-  MapFeedBloc() : super(const MapFeedState()) {
+  MapFeedBloc({
+    SupabaseClient? supabaseClient,
+    VendorClusterManager? clusterManager,
+  })  : _supabaseClient = supabaseClient ?? Supabase.instance.client,
+        _clusterManager = clusterManager ?? VendorClusterManager(),
+        super(const MapFeedState()) {
     on<MapFeedInitialized>(_onInitialized);
     on<MapLocationChanged>(_onLocationChanged);
     on<MapBoundsChanged>(_onBoundsChanged);
@@ -233,10 +240,13 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
   Timer? _debouncer;
   Timer? _searchDebouncer;
   Timer? _clusterUpdateDebouncer;
+  LatLngBounds? _lastRefreshBounds;
   static const double _searchRadiusKm = 5.0;
   static const int _pageSize = 20;
+  static const double _boundsChangeThreshold = 0.1;
   final CacheService _cacheService = CacheService();
-  final VendorClusterManager _clusterManager = VendorClusterManager();
+  final SupabaseClient _supabaseClient;
+  final VendorClusterManager _clusterManager;
   final DiagnosticHarness _diagnostics = DiagnosticHarness.instance;
 
   VendorClusterManager get clusterManager => _clusterManager;
@@ -398,17 +408,71 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
     Emitter<MapFeedState> emit,
   ) {
     emit(state.copyWith(mapBounds: event.bounds));
-    _logMap(
-      'bounds.changed',
-      severity: DiagnosticSeverity.debug,
-      payload: _boundsPayload(event.bounds),
-    );
+    
+    if (kDebugMode) {
+      _logMap(
+        'bounds.changed',
+        severity: DiagnosticSeverity.debug,
+        payload: {
+          ..._boundsPayload(event.bounds),
+          'hasVendors': state.vendors.isNotEmpty,
+          'vendorCount': state.vendors.length,
+        },
+      );
+    }
 
-    // Debounce the feed refresh
+    if (state.vendors.isNotEmpty) {
+      if (kDebugMode) {
+        debugPrint('🎯 MapFeedBloc: Bounds changed, generating markers for ${state.vendors.length} vendors');
+      }
+      _updateClustering(emit);
+    } else {
+      if (kDebugMode) {
+        debugPrint('🔄 MapFeedBloc: Bounds changed but no vendors yet, will trigger data refresh');
+      }
+    }
+
+    final shouldRefresh = _shouldRefreshData(event.bounds);
+    
     _debouncer?.cancel();
-    _debouncer = Timer(const Duration(milliseconds: 600), () {
-      add(const MapFeedRefreshed());
-    });
+    if (shouldRefresh) {
+      _debouncer = Timer(const Duration(milliseconds: 600), () {
+        _lastRefreshBounds = event.bounds;
+        add(const MapFeedRefreshed());
+      });
+    }
+  }
+
+  bool _shouldRefreshData(LatLngBounds newBounds) {
+    if (state.vendors.isEmpty) return true;
+    
+    if (_lastRefreshBounds == null) {
+      return true;
+    }
+
+    final latDelta = (newBounds.northeast.latitude - newBounds.southwest.latitude).abs();
+    final lngDelta = (newBounds.northeast.longitude - newBounds.southwest.longitude).abs();
+    
+    final lastLatDelta = (_lastRefreshBounds!.northeast.latitude - _lastRefreshBounds!.southwest.latitude).abs();
+    final lastLngDelta = (_lastRefreshBounds!.northeast.longitude - _lastRefreshBounds!.southwest.longitude).abs();
+    
+    final latChange = ((latDelta - lastLatDelta) / lastLatDelta).abs();
+    final lngChange = ((lngDelta - lastLngDelta) / lastLngDelta).abs();
+    
+    final centerLat = (newBounds.northeast.latitude + newBounds.southwest.latitude) / 2;
+    final centerLng = (newBounds.northeast.longitude + newBounds.southwest.longitude) / 2;
+    final lastCenterLat = (_lastRefreshBounds!.northeast.latitude + _lastRefreshBounds!.southwest.latitude) / 2;
+    final lastCenterLng = (_lastRefreshBounds!.northeast.longitude + _lastRefreshBounds!.southwest.longitude) / 2;
+    
+    final centerLatChange = ((centerLat - lastCenterLat) / latDelta).abs();
+    final centerLngChange = ((centerLng - lastCenterLng) / lngDelta).abs();
+    
+    final isSignificantChange = latChange > _boundsChangeThreshold || 
+                               lngChange > _boundsChangeThreshold ||
+                               centerLatChange > _boundsChangeThreshold ||
+                               centerLngChange > _boundsChangeThreshold;
+    
+    return isSignificantChange;
   }
 
   Future<void> _onRefreshed(
@@ -663,7 +727,7 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
 
     try {
       debugPrint('🔄 MapFeedBloc: Fetching vendors from Supabase...');
-      final vendorsResponse = await Supabase.instance.client
+      final vendorsResponse = await _supabaseClient
           .from('vendors')
           .select('*')
           .eq('is_active', true);
@@ -676,20 +740,20 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
             // If we have no location context, include all vendors
             if (!hasLocationContext) return true;
             
-            // Prioritize position-based filtering over bounds
-            // This ensures location-based filtering works correctly even with cached bounds
-            if (state.currentPosition != null) {
+            // Prioritize bounds-based filtering to support panning
+            // This ensures users can see vendors by moving the map
+            if (bounds != null) {
+              return _isPointInBounds(
+                LatLng(vendor.latitude, vendor.longitude),
+                bounds,
+              );
+            } else if (state.currentPosition != null) {
               return _isWithinRadius(
                 vendor.latitude,
                 vendor.longitude,
                 state.currentPosition!.latitude,
                 state.currentPosition!.longitude,
                 _searchRadiusKm,
-              );
-            } else if (bounds != null) {
-              return _isPointInBounds(
-                LatLng(vendor.latitude, vendor.longitude),
-                bounds,
               );
             }
             return false;
@@ -706,7 +770,7 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
         final vendorIds = vendors.map((v) => v.id).toList();
 
         debugPrint('🔄 MapFeedBloc: Fetching dishes from ${vendors.length} vendors...');
-        final dishesResponse = await Supabase.instance.client
+        final dishesResponse = await _supabaseClient
             .from('dishes')
             .select('*')
             .inFilter('vendor_id', vendorIds)
@@ -912,7 +976,7 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
     final end = start + _pageSize - 1;
 
     try {
-      final dishesResponse = await Supabase.instance.client
+      final dishesResponse = await _supabaseClient
           .from('dishes')
           .select('*')
           .inFilter('vendor_id', vendorIds)
@@ -941,33 +1005,87 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
 
   
   void _onMarkersUpdated(MapMarkersUpdated event, Emitter<MapFeedState> emit) {
+    if (kDebugMode) {
+      debugPrint('📍 MapFeedBloc: Markers updated, count=${event.markers.length}');
+      _logMap(
+        'markers.updated',
+        severity: DiagnosticSeverity.debug,
+        payload: {'markerCount': event.markers.length},
+      );
+    }
     emit(state.copyWith(markers: {for (var m in event.markers) m.markerId.value: m}));
   }
 
   void _updateClustering(Emitter<MapFeedState> emit) {
-    if (state.vendors.isEmpty || state.mapBounds == null) return;
+    if (state.vendors.isEmpty || state.mapBounds == null) {
+      if (kDebugMode) {
+        debugPrint('⚠️ MapFeedBloc._updateClustering: Early return - vendors=${state.vendors.length}, hasBounds=${state.mapBounds != null}');
+        _logMap(
+          'clustering.skipped',
+          severity: DiagnosticSeverity.warn,
+          payload: {
+            'vendorCount': state.vendors.length,
+            'hasBounds': state.mapBounds != null,
+          },
+        );
+      }
+      return;
+    }
+
+    if (kDebugMode) {
+      debugPrint('🔄 MapFeedBloc._updateClustering: Starting clustering for ${state.vendors.length} vendors at zoom ${state.zoomLevel}');
+      _logMap(
+        'clustering.start',
+        severity: DiagnosticSeverity.debug,
+        payload: {
+          'vendorCount': state.vendors.length,
+          'zoomLevel': state.zoomLevel,
+          'boundsCenter': {
+            'lat': (state.mapBounds!.northeast.latitude + state.mapBounds!.southwest.latitude) / 2,
+            'lng': (state.mapBounds!.northeast.longitude + state.mapBounds!.southwest.longitude) / 2,
+          },
+        },
+      );
+    }
 
     final clusterUpdateDebouncer = _clusterUpdateDebouncer;
     clusterUpdateDebouncer?.cancel();
 
     _clusterUpdateDebouncer = Timer(const Duration(milliseconds: 200), () async {
       try {
+        if (kDebugMode) {
+          debugPrint('🎨 MapFeedBloc: Generating markers...');
+        }
         final markers = await _clusterManager.getMarkers(
           state.mapBounds!,
           state.zoomLevel,
           state.selectedVendor?.id,
         );
 
-        // Log clustering performance for debugging
-        final metrics = _clusterManager.getPerformanceMetrics();
-        if (metrics['totalClusterOperations'] % 10 == 0) {
-          print('Clustering performance: ${metrics['averageClusteringTime']}ms avg, '
-                '${metrics['totalItemsProcessed']} items processed');
+        if (kDebugMode) {
+          debugPrint('✅ MapFeedBloc: Generated ${markers.length} markers');
+          _logMap(
+            'clustering.complete',
+            payload: {'markerCount': markers.length},
+          );
+
+          final metrics = _clusterManager.getPerformanceMetrics();
+          if (metrics['totalClusterOperations'] % 10 == 0) {
+            debugPrint('📊 Clustering performance: ${metrics['averageClusteringTime']}ms avg, '
+                  '${metrics['totalItemsProcessed']} items processed');
+          }
         }
 
         add(MapMarkersUpdated(markers.values.toSet()));
       } catch (e) {
-        // Handle clustering errors gracefully
+        if (kDebugMode) {
+          debugPrint('❌ MapFeedBloc: Clustering error: $e');
+          _logMap(
+            'clustering.error',
+            severity: DiagnosticSeverity.error,
+            payload: {'message': e.toString()},
+          );
+        }
         emit(state.copyWith(
           errorMessage: 'Clustering error: ${e.toString()}',
         ));

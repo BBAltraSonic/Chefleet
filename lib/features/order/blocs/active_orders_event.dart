@@ -22,3 +22,30 @@ class UnsubscribeFromOrderUpdates extends ActiveOrdersEvent {
 class RefreshActiveOrders extends ActiveOrdersEvent {
   const RefreshActiveOrders();
 }
+
+class LoadPreparationSteps extends ActiveOrdersEvent {
+  const LoadPreparationSteps(this.orderId);
+  
+  final String orderId;
+  
+  @override
+  List<Object?> get props => [orderId];
+}
+
+class SubscribeToPreparationUpdates extends ActiveOrdersEvent {
+  const SubscribeToPreparationUpdates();
+}
+
+class UnsubscribeFromPreparationUpdates extends ActiveOrdersEvent {
+  const UnsubscribeFromPreparationUpdates();
+}
+
+class UpdatePreparationSteps extends ActiveOrdersEvent {
+  const UpdatePreparationSteps(this.orderId, this.steps);
+  
+  final String orderId;
+  final List<Map<String, dynamic>> steps;
+  
+  @override
+  List<Object?> get props => [orderId, steps];
+}

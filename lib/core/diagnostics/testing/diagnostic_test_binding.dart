@@ -19,11 +19,17 @@ class DiagnosticTestBinding extends AutomatedTestWidgetsFlutterBinding {
     String runName = 'unit-tests',
     Map<String, String> attributes = const <String, String>{},
   }) {
-    if (WidgetsBinding.instance is! DiagnosticTestBinding) {
+    try {
+      final instance = WidgetsBinding.instance;
+      if (instance is DiagnosticTestBinding) {
+        instance._configureHarness(runName, attributes, ensureOnly: true);
+      } else {
+        // If a binding is already initialized but it's not ours
+        (instance as dynamic)._configureHarness?.call(runName, attributes, ensureOnly: true);
+      }
+    } catch (e) {
+      // Binding not initialized
       DiagnosticTestBinding._(runName: runName, attributes: attributes);
-    } else {
-      (WidgetsBinding.instance as DiagnosticTestBinding)
-          ._configureHarness(runName, attributes, ensureOnly: true);
     }
     return WidgetsBinding.instance as DiagnosticTestBinding;
   }

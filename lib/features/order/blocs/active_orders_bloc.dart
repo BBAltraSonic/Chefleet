@@ -14,6 +14,7 @@ class ActiveOrdersBloc extends Bloc<ActiveOrdersEvent, ActiveOrdersState> {
   final SupabaseClient _supabaseClient;
   final AuthBloc _authBloc;
   RealtimeChannel? _ordersChannel;
+  RealtimeChannel? _preparationStepsChannel;
   StreamSubscription? _authSubscription;
   final DiagnosticHarness _diagnostics = DiagnosticHarness.instance;
 
@@ -27,6 +28,10 @@ class ActiveOrdersBloc extends Bloc<ActiveOrdersEvent, ActiveOrdersState> {
     on<SubscribeToOrderUpdates>(_onSubscribeToOrderUpdates);
     on<UnsubscribeFromOrderUpdates>(_onUnsubscribeFromOrderUpdates);
     on<RefreshActiveOrders>(_onRefreshActiveOrders);
+    on<LoadPreparationSteps>(_onLoadPreparationSteps);
+    on<SubscribeToPreparationUpdates>(_onSubscribeToPreparationUpdates);
+    on<UnsubscribeFromPreparationUpdates>(_onUnsubscribeFromPreparationUpdates);
+    on<UpdatePreparationSteps>(_onUpdatePreparationSteps);
 
     // Listen to auth state changes to load orders when auth is ready
     _authSubscription = _authBloc.stream
@@ -64,6 +69,7 @@ class ActiveOrdersBloc extends Bloc<ActiveOrdersEvent, ActiveOrdersState> {
   @override
   Future<void> close() {
     _ordersChannel?.unsubscribe();
+    _preparationStepsChannel?.unsubscribe();
     _authSubscription?.cancel();
     return super.close();
   }
@@ -122,6 +128,13 @@ class ActiveOrdersBloc extends Bloc<ActiveOrdersEvent, ActiveOrdersState> {
 
       // Subscribe to real-time updates
       add(SubscribeToOrderUpdates());
+      add(SubscribeToPreparationUpdates());
+      
+      // Load preparation steps for each order
+      for (final order in orders) {
+        final orderId = order['id'] as String;
+        add(LoadPreparationSteps(orderId));
+      }
     } catch (e) {
       emit(state.copyWith(
         isLoading: false,
@@ -235,5 +248,114 @@ class ActiveOrdersBloc extends Bloc<ActiveOrdersEvent, ActiveOrdersState> {
   void stopFabPulse() {
     emit(state.copyWith(fabState: FabState.visible));
     _logActive('fab.pulse.stop', severity: DiagnosticSeverity.debug);
+  }
+
+  Future<void> _onLoadPreparationSteps(
+    LoadPreparationSteps event,
+    Emitter<ActiveOrdersState> emit,
+  ) async {
+    _logActive('preparation.load.request', 
+      severity: DiagnosticSeverity.debug,
+      payload: {'orderId': event.orderId},
+    );
+
+    try {
+      final response = await _supabaseClient
+          .from('order_item_preparation_steps')
+          .select('*, order_items!inner(order_id)')
+          .eq('order_items.order_id', event.orderId)
+          .order('step_number');
+
+      final steps = List<Map<String, dynamic>>.from(response);
+      
+      final updatedSteps = Map<String, List<Map<String, dynamic>>>.from(state.preparationSteps);
+      updatedSteps[event.orderId] = steps;
+
+      emit(state.copyWith(preparationSteps: updatedSteps));
+
+      _logActive('preparation.load.success',
+        payload: {'orderId': event.orderId, 'stepCount': steps.length},
+      );
+    } catch (e) {
+      _logActive('preparation.load.error',
+        severity: DiagnosticSeverity.error,
+        payload: {'orderId': event.orderId, 'error': e.toString()},
+      );
+    }
+  }
+
+  Future<void> _onSubscribeToPreparationUpdates(
+    SubscribeToPreparationUpdates event,
+    Emitter<ActiveOrdersState> emit,
+  ) async {
+    if (_preparationStepsChannel != null) return;
+    _logActive('preparation.subscribe.request', severity: DiagnosticSeverity.debug);
+
+    final authState = _authBloc.state;
+    final currentUser = _supabaseClient.auth.currentUser;
+
+    if (currentUser == null && !authState.isGuest) return;
+
+    final channelName = authState.isGuest
+        ? 'guest_prep_steps_${authState.guestId}'
+        : 'user_prep_steps_${currentUser!.id}';
+
+    _preparationStepsChannel = _supabaseClient
+        .channel(channelName)
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'order_item_preparation_steps',
+          callback: (payload) async {
+            try {
+              final orderItemId = payload.newRecord['order_item_id'] ?? 
+                                 payload.oldRecord['order_item_id'];
+              if (orderItemId == null) return;
+
+              final orderItemResponse = await _supabaseClient
+                  .from('order_items')
+                  .select('order_id')
+                  .eq('id', orderItemId)
+                  .single();
+
+              final orderId = orderItemResponse['order_id'] as String;
+              
+              add(LoadPreparationSteps(orderId));
+            } catch (e) {
+              _logActive('preparation.callback.error',
+                severity: DiagnosticSeverity.error,
+                payload: {'error': e.toString()},
+              );
+            }
+          },
+        )
+        .subscribe();
+    
+    _logActive('preparation.subscribe.success');
+  }
+
+  Future<void> _onUnsubscribeFromPreparationUpdates(
+    UnsubscribeFromPreparationUpdates event,
+    Emitter<ActiveOrdersState> emit,
+  ) async {
+    if (_preparationStepsChannel != null) {
+      await _preparationStepsChannel!.unsubscribe();
+      _preparationStepsChannel = null;
+    }
+    _logActive('preparation.subscribe.dispose', severity: DiagnosticSeverity.debug);
+  }
+
+  Future<void> _onUpdatePreparationSteps(
+    UpdatePreparationSteps event,
+    Emitter<ActiveOrdersState> emit,
+  ) async {
+    final updatedSteps = Map<String, List<Map<String, dynamic>>>.from(state.preparationSteps);
+    updatedSteps[event.orderId] = event.steps;
+    
+    emit(state.copyWith(preparationSteps: updatedSteps));
+    
+    _logActive('preparation.update',
+      payload: {'orderId': event.orderId, 'stepCount': event.steps.length},
+    );
   }
 }

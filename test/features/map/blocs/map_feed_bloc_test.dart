@@ -1,4 +1,6 @@
+import 'dart:math' as math;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:bloc_test/bloc_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
@@ -6,14 +8,22 @@ import 'package:chefleet/features/map/blocs/map_feed_bloc.dart';
 import 'package:chefleet/features/feed/models/dish_model.dart';
 import 'package:chefleet/features/feed/models/vendor_model.dart';
 
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 class MockPosition extends Mock implements Position {}
+class MockSupabaseClient extends Mock implements SupabaseClient {}
+class MockSupabaseQueryBuilder extends Mock implements SupabaseQueryBuilder {}
+class MockPostgrestFilterBuilder extends Mock implements PostgrestFilterBuilder {}
+class MockPostgrestTransformBuilder extends Mock implements PostgrestTransformBuilder {}
 
 void main() {
   group('MapFeedBloc', () {
     late MapFeedBloc bloc;
+    late MockSupabaseClient mockSupabaseClient;
 
     setUp(() {
-      bloc = MapFeedBloc();
+      mockSupabaseClient = MockSupabaseClient();
+      bloc = MapFeedBloc(supabaseClient: mockSupabaseClient);
     });
 
     tearDown(() {
@@ -37,18 +47,17 @@ void main() {
 
         bloc.add(MapBoundsChanged(bounds));
         
-        await Future.delayed(const Duration(milliseconds: 300));
-        expect(bloc.state.mapBounds, bounds);
-
-        bloc.add(MapBoundsChanged(bounds));
-        
-        await Future.delayed(const Duration(milliseconds: 700));
-        expect(bloc.state.mapBounds, bounds);
+        await expectLater(
+          bloc.stream,
+          emitsInOrder([
+            predicate<MapFeedState>((state) => state.mapBounds == bounds),
+          ]),
+        );
       });
     });
 
     group('MapVendorSelected', () {
-      test('sets selected vendor in state', () {
+      test('sets selected vendor in state', () async {
         final vendor = Vendor(
           id: 'vendor1',
           name: 'Test Vendor',
@@ -63,12 +72,15 @@ void main() {
 
         bloc.add(MapVendorSelected(vendor));
         
-        expect(bloc.state.selectedVendor, vendor);
+        await expectLater(
+          bloc.stream,
+          emits(predicate<MapFeedState>((state) => state.selectedVendor == vendor)),
+        );
       });
     });
 
     group('MapVendorDeselected', () {
-      test('clears selected vendor from state', () {
+      test('clears selected vendor from state', () async {
         final vendor = Vendor(
           id: 'vendor1',
           name: 'Test Vendor',
@@ -78,13 +90,22 @@ void main() {
           address: 'Test Address',
           isActive: true,
           dishCount: 5,
+          phoneNumber: '123-456-7890',
         );
 
         bloc.add(MapVendorSelected(vendor));
-        expect(bloc.state.selectedVendor, vendor);
+        
+        await expectLater(
+          bloc.stream,
+          emits(predicate<MapFeedState>((state) => state.selectedVendor == vendor)),
+        );
 
         bloc.add(const MapVendorDeselected());
-        expect(bloc.state.selectedVendor, null);
+        
+        await expectLater(
+          bloc.stream,
+          emits(predicate<MapFeedState>((state) => state.selectedVendor == null)),
+        );
       });
     });
 
@@ -149,12 +170,12 @@ void main() {
 }
 
 double _toRadians(double degrees) {
-  return degrees * (3.14159265359 / 180.0);
+  return degrees * (math.pi / 180.0);
 }
 
 extension on double {
-  double sin() => 0.0;
-  double cos() => 1.0;
-  double asin() => this;
-  double sqrt() => this;
+  double sin() => math.sin(this);
+  double cos() => math.cos(this);
+  double asin() => math.asin(this);
+  double sqrt() => math.sqrt(this);
 }

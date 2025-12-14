@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../auth/blocs/auth_bloc.dart';
 import '../blocs/chat_bloc.dart';
 import '../widgets/chat_bubble.dart';
 import '../widgets/chat_input.dart';
@@ -24,6 +25,7 @@ class ChatDetailScreen extends StatefulWidget {
 class _ChatDetailScreenState extends State<ChatDetailScreen> {
   final _scrollController = ScrollController();
   String _currentUserId = '';
+  String? _currentGuestId;
   String _currentUserRole = '';
 
   @override
@@ -42,18 +44,27 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   }
 
   void _initializeUser() {
+    final authState = context.read<AuthBloc>().state;
     final currentUser = Supabase.instance.client.auth.currentUser;
-    if (currentUser != null) {
+    
+    if (authState.isGuest && authState.guestId != null) {
+      _currentGuestId = authState.guestId;
+      _currentUserRole = 'buyer';
+    } else if (currentUser != null) {
       _currentUserId = currentUser.id;
-      // Get user role - this would typically come from user profile
-      // For now, we'll determine it based on what we can access
       _determineUserRole();
     }
   }
 
   Future<void> _determineUserRole() async {
+    if (_currentUserId.isEmpty) {
+      setState(() {
+        _currentUserRole = 'buyer';
+      });
+      return;
+    }
+    
     try {
-      // Try to get vendor record first
       final vendorResponse = await Supabase.instance.client
           .from('vendors')
           .select('id')
@@ -92,6 +103,13 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
         );
       }
     });
+  }
+
+  bool _isMessageFromCurrentUser(Map<String, dynamic> message) {
+    if (_currentGuestId != null) {
+      return message['guest_sender_id'] == _currentGuestId;
+    }
+    return message['sender_id'] == _currentUserId;
   }
 
   @override
@@ -211,7 +229,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                     itemCount: messages.length,
                     itemBuilder: (context, index) {
                       final message = messages[index];
-                      final isFromCurrentUser = message['sender_id'] == _currentUserId;
+                      final isFromCurrentUser = _isMessageFromCurrentUser(message);
                       final senderType = message['sender_type'] as String? ?? 'unknown';
 
                       return ChatBubble(

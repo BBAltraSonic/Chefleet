@@ -12,12 +12,14 @@ class ActiveOrdersState extends Equatable {
     this.orders = const [],
     this.fabState = FabState.hidden,
     this.errorMessage,
+    this.preparationSteps = const {},
   });
 
   final bool isLoading;
   final List<Map<String, dynamic>> orders;
   final FabState fabState;
   final String? errorMessage;
+  final Map<String, List<Map<String, dynamic>>> preparationSteps;
 
   @override
   List<Object?> get props => [
@@ -25,6 +27,7 @@ class ActiveOrdersState extends Equatable {
         orders,
         fabState,
         errorMessage,
+        preparationSteps,
       ];
 
   ActiveOrdersState copyWith({
@@ -32,13 +35,19 @@ class ActiveOrdersState extends Equatable {
     List<Map<String, dynamic>>? orders,
     FabState? fabState,
     String? errorMessage,
+    Map<String, List<Map<String, dynamic>>>? preparationSteps,
   }) {
     return ActiveOrdersState(
       isLoading: isLoading ?? this.isLoading,
       orders: orders ?? this.orders,
       fabState: fabState ?? this.fabState,
       errorMessage: errorMessage,
+      preparationSteps: preparationSteps ?? this.preparationSteps,
     );
+  }
+  
+  List<Map<String, dynamic>> getPreparationSteps(String orderId) {
+    return preparationSteps[orderId] ?? [];
   }
 
   bool get hasActiveOrders => orders.isNotEmpty;
