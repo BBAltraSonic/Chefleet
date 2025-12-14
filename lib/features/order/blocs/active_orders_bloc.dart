@@ -2,9 +2,10 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:chefleet/core/diagnostics/diagnostic_domains.dart';
-import 'package:chefleet/core/diagnostics/diagnostic_harness.dart';
-import 'package:chefleet/core/diagnostics/diagnostic_severity.dart';
+import '../../../core/diagnostics/diagnostic_domains.dart';
+import '../../../core/diagnostics/diagnostic_harness.dart';
+import '../../../core/diagnostics/diagnostic_severity.dart';
+import '../../../core/services/preparation_step_service.dart';
 import '../../auth/blocs/auth_bloc.dart';
 
 part 'active_orders_event.dart';
@@ -13,6 +14,7 @@ part 'active_orders_state.dart';
 class ActiveOrdersBloc extends Bloc<ActiveOrdersEvent, ActiveOrdersState> {
   final SupabaseClient _supabaseClient;
   final AuthBloc _authBloc;
+  final PreparationStepService _preparationStepService;
   RealtimeChannel? _ordersChannel;
   RealtimeChannel? _preparationStepsChannel;
   StreamSubscription? _authSubscription;
@@ -21,8 +23,10 @@ class ActiveOrdersBloc extends Bloc<ActiveOrdersEvent, ActiveOrdersState> {
   ActiveOrdersBloc({
     required SupabaseClient supabaseClient,
     required AuthBloc authBloc,
+    required PreparationStepService preparationStepService,
   })  : _supabaseClient = supabaseClient,
         _authBloc = authBloc,
+        _preparationStepService = preparationStepService,
         super(const ActiveOrdersState()) {
     on<LoadActiveOrders>(_onLoadActiveOrders);
     on<SubscribeToOrderUpdates>(_onSubscribeToOrderUpdates);
@@ -41,7 +45,7 @@ class ActiveOrdersBloc extends Bloc<ActiveOrdersEvent, ActiveOrdersState> {
             prev.mode == next.mode)
         .listen((authState) {
       if (authState.isAuthenticated || authState.isGuest) {
-        add(LoadActiveOrders());
+        add(const LoadActiveOrders());
       }
     });
   }
@@ -127,8 +131,8 @@ class ActiveOrdersBloc extends Bloc<ActiveOrdersEvent, ActiveOrdersState> {
       );
 
       // Subscribe to real-time updates
-      add(SubscribeToOrderUpdates());
-      add(SubscribeToPreparationUpdates());
+      add(const SubscribeToOrderUpdates());
+      add(const SubscribeToPreparationUpdates());
       
       // Load preparation steps for each order
       for (final order in orders) {
@@ -185,7 +189,7 @@ class ActiveOrdersBloc extends Bloc<ActiveOrdersEvent, ActiveOrdersState> {
             }
 
             if (isMyOrder) {
-              add(LoadActiveOrders());
+              add(const LoadActiveOrders());
             }
           },
         )
@@ -209,24 +213,24 @@ class ActiveOrdersBloc extends Bloc<ActiveOrdersEvent, ActiveOrdersState> {
     Emitter<ActiveOrdersState> emit,
   ) async {
     _logActive('refresh.trigger', severity: DiagnosticSeverity.debug);
-    add(LoadActiveOrders());
+    add(const LoadActiveOrders());
   }
 
   // Public methods
   void loadActiveOrders() {
-    add(LoadActiveOrders());
+    add(const LoadActiveOrders());
   }
 
   void refresh() {
-    add(RefreshActiveOrders());
+    add(const RefreshActiveOrders());
   }
 
   void subscribeToUpdates() {
-    add(SubscribeToOrderUpdates());
+    add(const SubscribeToOrderUpdates());
   }
 
   void unsubscribeFromUpdates() {
-    add(UnsubscribeFromOrderUpdates());
+    add(const UnsubscribeFromOrderUpdates());
   }
 
   // FAB state management
@@ -268,6 +272,86 @@ class ActiveOrdersBloc extends Bloc<ActiveOrdersEvent, ActiveOrdersState> {
 
       final steps = List<Map<String, dynamic>>.from(response);
       
+      // If no steps found, try to generate them lazily
+      if (steps.isEmpty) {
+        _logActive('preparation.load.empty',
+          severity: DiagnosticSeverity.info,
+          payload: {'orderId': event.orderId, 'message': 'Generating default steps'},
+        );
+        
+        // Fetch order items with dish details to generate steps
+        final orderItemsResponse = await _supabaseClient
+            .from('order_items')
+            .select('*, dishes(*)')
+            .eq('order_id', event.orderId);
+            
+        final orderItems = List<Map<String, dynamic>>.from(orderItemsResponse);
+        final generatedSteps = <Map<String, dynamic>>[];
+        
+        for (final item in orderItems) {
+          final dish = item['dishes'] as Map<String, dynamic>?;
+          if (dish != null) {
+            final newSteps = await _preparationStepService.generateDefaultStepsForOrderItem(
+              orderItemId: item['id'] as String,
+              dishName: dish['name'] as String,
+              dishCategory: dish['category'] as String?,
+              dishPrepTimeMinutes: dish['preparation_time_minutes'] as int?,
+            );
+            generatedSteps.addAll(newSteps);
+          }
+        }
+        
+        if (generatedSteps.isNotEmpty) {
+           final updatedSteps = Map<String, List<Map<String, dynamic>>>.from(state.preparationSteps);
+           updatedSteps[event.orderId] = generatedSteps;
+           emit(state.copyWith(preparationSteps: updatedSteps));
+           
+           // Update order estimated times
+           await _preparationStepService.updateOrderPreparationTimes(event.orderId);
+
+           // Automatically start the first step
+           if (generatedSteps.isNotEmpty) {
+             final firstStepId = generatedSteps.first['id'] as String;
+             await _preparationStepService.startStep(stepId: firstStepId);
+           }
+           
+           _logActive('preparation.generation.success',
+             payload: {'orderId': event.orderId, 'stepCount': generatedSteps.length},
+           );
+           return;
+        }
+      } else {
+        // Steps exist, check if any are active or completed
+        // If all are pending, auto-start the first one (simulation/demo mode)
+        final anyActiveOrCompleted = steps.any((step) => 
+          step['status'] == 'in_progress' || 
+          step['status'] == 'completed' || 
+          step['status'] == 'skipped'
+        );
+
+        if (!anyActiveOrCompleted && steps.isNotEmpty) {
+          final firstStepId = steps.first['id'] as String;
+          await _preparationStepService.startStep(stepId: firstStepId);
+          
+          // Optimistic update for UI responsiveness
+          final updatedStepsList = List<Map<String, dynamic>>.from(steps);
+          updatedStepsList[0] = {
+            ...updatedStepsList[0],
+            'status': 'in_progress',
+            'started_at': DateTime.now().toIso8601String(),
+          };
+          
+          final updatedStepsMap = Map<String, List<Map<String, dynamic>>>.from(state.preparationSteps);
+          updatedStepsMap[event.orderId] = updatedStepsList;
+          emit(state.copyWith(preparationSteps: updatedStepsMap));
+          
+          _logActive('preparation.autostart',
+            payload: {'orderId': event.orderId, 'stepId': firstStepId},
+          );
+          return;
+        }
+      }
+
       final updatedSteps = Map<String, List<Map<String, dynamic>>>.from(state.preparationSteps);
       updatedSteps[event.orderId] = steps;
 

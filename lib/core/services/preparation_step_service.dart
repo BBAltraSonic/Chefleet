@@ -141,51 +141,24 @@ class PreparationStepService {
     String category,
     int totalPrepTimeMinutes,
   ) {
+    // Total duration in seconds
     final totalSeconds = totalPrepTimeMinutes * 60;
     
-    switch (category.toLowerCase()) {
-      case 'appetizer':
-        return [
-          {'name': 'Gather ingredients', 'duration': (totalSeconds * 0.2).round()},
-          {'name': 'Prepare & cook', 'duration': (totalSeconds * 0.6).round()},
-          {'name': 'Plate & garnish', 'duration': (totalSeconds * 0.2).round()},
-        ];
-      
-      case 'main':
-        return [
-          {'name': 'Prep ingredients', 'duration': (totalSeconds * 0.25).round()},
-          {'name': 'Cook protein', 'duration': (totalSeconds * 0.35).round()},
-          {'name': 'Prepare sides', 'duration': (totalSeconds * 0.25).round()},
-          {'name': 'Final plating', 'duration': (totalSeconds * 0.15).round()},
-        ];
-      
-      case 'dessert':
-        return [
-          {'name': 'Prepare base', 'duration': (totalSeconds * 0.3).round()},
-          {'name': 'Bake/chill', 'duration': (totalSeconds * 0.5).round()},
-          {'name': 'Decorate', 'duration': (totalSeconds * 0.2).round()},
-        ];
-      
-      case 'beverage':
-        return [
-          {'name': 'Prepare ingredients', 'duration': (totalSeconds * 0.4).round()},
-          {'name': 'Mix/brew', 'duration': (totalSeconds * 0.6).round()},
-        ];
-      
-      case 'snack':
-      case 'side':
-        return [
-          {'name': 'Prepare', 'duration': (totalSeconds * 0.5).round()},
-          {'name': 'Cook/assemble', 'duration': (totalSeconds * 0.5).round()},
-        ];
-      
-      default:
-        return [
-          {'name': 'Prepare ingredients', 'duration': (totalSeconds * 0.3).round()},
-          {'name': 'Cook', 'duration': (totalSeconds * 0.5).round()},
-          {'name': 'Finish & plate', 'duration': (totalSeconds * 0.2).round()},
-        ];
-    }
+    // We strictly use these 3 steps irrespective of category
+    return [
+      {
+        'name': 'Order confirmed',
+        'duration': 0, // Instantaneous
+      },
+      {
+        'name': 'Food preparation',
+        'duration': totalSeconds, // Takes the full estimated prep time
+      },
+      {
+        'name': 'Done waiting for collection',
+        'duration': 0, // Until pickup
+      },
+    ];
   }
 
   Future<List<Map<String, dynamic>>> getStepsForOrder(String orderId) async {

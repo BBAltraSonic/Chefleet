@@ -119,7 +119,7 @@ void main() {
 
       // Verify Active Orders modal appears
       expect(
-        find.text('Active Order'),
+        find.text('Active Orders'),
         findsOneWidget,
         reason: 'Active Orders modal should open',
       );

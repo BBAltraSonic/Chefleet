@@ -115,7 +115,7 @@ class MenuManagementBloc
         'price': event.dish.price,
         'category': event.dish.category,
         'image_url': event.dish.imageUrl,
-        'available': event.dish.available,
+        'is_available': event.dish.available,
         'description_long': event.dish.descriptionLong,
         'ingredients': event.dish.ingredients,
         'allergens': event.dish.allergens,
@@ -164,7 +164,7 @@ class MenuManagementBloc
         'price': event.dish.price,
         'category': event.dish.category,
         'image_url': event.dish.imageUrl,
-        'available': event.dish.available,
+        'is_available': event.dish.available,
         'description_long': event.dish.descriptionLong,
         'ingredients': event.dish.ingredients,
         'allergens': event.dish.allergens,
@@ -243,7 +243,7 @@ class MenuManagementBloc
       final updatedDish = event.dish.copyWith(available: !event.dish.available);
 
       final dishData = {
-        'available': updatedDish.available,
+        'is_available': updatedDish.available,
         'updated_at': DateTime.now().toIso8601String(),
       };
 

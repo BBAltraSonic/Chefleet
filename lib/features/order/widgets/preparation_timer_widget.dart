@@ -58,7 +58,11 @@ class _PreparationTimerWidgetState extends State<PreparationTimerWidget>
       return _buildNoActiveStepView();
     }
 
-    final remainingSeconds = step.remainingSeconds ?? 0;
+    // If step is pending (not started), use estimated duration
+    final remainingSeconds = step.startedAt != null 
+        ? (step.remainingSeconds ?? 0)
+        : step.estimatedDurationSeconds;
+        
     final progress = step.progressPercentage ?? 0.0;
 
     return Container(
@@ -137,7 +141,7 @@ class _PreparationTimerWidgetState extends State<PreparationTimerWidget>
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
+          const Icon(
             Icons.check_circle_outline,
             size: 64,
             color: AppTheme.primaryGreen,
@@ -159,7 +163,7 @@ class _PreparationTimerWidgetState extends State<PreparationTimerWidget>
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(
+        const Icon(
           Icons.check_circle,
           size: 16,
           color: AppTheme.secondaryGreen,

@@ -45,7 +45,7 @@ class Dish extends Equatable {
       description: json['description'] as String? ?? '',
       priceCents: priceCents,
       prepTimeMinutes: json['preparation_time_minutes'] as int? ?? 15,
-      available: json['available'] as bool? ?? true,
+      available: json['is_available'] as bool? ?? json['available'] as bool? ?? true,
       imageUrl: json['image_url'] as String?,
       category: json['category'] as String?,
       tags: (json['tags'] as List<dynamic>?)?.cast<String>() ?? [],
@@ -151,7 +151,7 @@ class Dish extends Equatable {
       'price': price, // DB uses numeric 'price' as primary (NOT NULL)
       'price_cents': priceCents,
       'preparation_time_minutes': prepTimeMinutes,
-      'available': available,
+      'is_available': available,
       'image_url': imageUrl,
       'category': category,
       'tags': tags,

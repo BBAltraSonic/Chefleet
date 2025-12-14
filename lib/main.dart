@@ -17,6 +17,7 @@ import 'features/auth/blocs/auth_bloc.dart';
 import 'features/auth/blocs/user_profile_bloc.dart';
 import 'features/order/blocs/active_orders_bloc.dart';
 import 'features/cart/blocs/cart_bloc.dart';
+import 'core/services/preparation_step_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -117,6 +118,9 @@ class _ChefleetAppState extends State<ChefleetApp> {
           create: (context) => ActiveOrdersBloc(
             supabaseClient: Supabase.instance.client,
             authBloc: context.read<AuthBloc>(),
+            preparationStepService: PreparationStepService(
+              supabaseClient: Supabase.instance.client,
+            ),
           )..loadActiveOrders(),
         ),
         BlocProvider(

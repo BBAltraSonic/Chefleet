@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import '../utils/currency_formatter.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/blocs/navigation_bloc.dart';
 import '../../core/theme/app_theme.dart';
@@ -81,11 +79,11 @@ class _OrdersFloatingActionButtonState extends State<OrdersFloatingActionButton>
           builder: (context, cartState) {
             // Determine what to show based on priority
             final readyOrders = ordersState.orders.where((o) {
-              final order = o as Map<String, dynamic>;
+              final order = o;
               return order['status'] == 'ready';
             }).toList();
             final preparingOrders = ordersState.orders.where((o) {
-              final order = o as Map<String, dynamic>;
+              final order = o;
               return order['status'] == 'preparing';
             }).toList();
             final hasCartItems = cartState.totalItems > 0;
@@ -128,7 +126,7 @@ class _OrdersFloatingActionButtonState extends State<OrdersFloatingActionButton>
                         Material(
                           color: Colors.transparent,
                           child: InkWell(
-                            onTap: () => _handleTap(context, hasCartItems, ordersState.orders),
+                            onTap: () => _handleTap(context),
                             borderRadius: BorderRadius.circular(32),
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -213,188 +211,17 @@ class _OrdersFloatingActionButtonState extends State<OrdersFloatingActionButton>
     );
   }
 
-  void _handleTap(BuildContext context, bool hasCartItems, List<dynamic> activeOrders) {
-    // Priority: Show active orders if any exist, otherwise show cart
-    if (activeOrders.isNotEmpty) {
-      // Show active orders modal
-      showDialog(
-        context: context,
-        barrierColor: Colors.black.withOpacity(0.5),
-        builder: (context) {
-          return BlocProvider.value(
-            value: context.read<ActiveOrdersBloc>(),
-            child: const ActiveOrderModal(),
-          );
-        },
-      );
-    } else if (hasCartItems) {
-      // Show cart bottom sheet
-      showModalBottomSheet(
-        context: context,
-        backgroundColor: Colors.transparent,
-        isScrollControlled: true,
-        builder: (context) {
-          return BlocProvider.value(
-            value: context.read<CartBloc>(),
-            child: DraggableScrollableSheet(
-              initialChildSize: 0.7,
-              minChildSize: 0.5,
-              maxChildSize: 0.9,
-              builder: (context, scrollController) {
-                return Container(
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-                  ),
-                  child: Column(
-                    children: [
-                      // Handle
-                      Container(
-                        width: 40,
-                        height: 4,
-                        margin: const EdgeInsets.symmetric(vertical: 12),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[300],
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                      // Title
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              'Your Cart',
-                              style: TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black87,
-                              ),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.close),
-                              onPressed: () => Navigator.pop(context),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const Divider(height: 1),
-                      // Cart items
-                      Expanded(
-                        child: BlocBuilder<CartBloc, CartState>(
-                          builder: (context, cartState) {
-                            if (cartState.items.isEmpty) {
-                              return const Center(
-                                child: Text('Your cart is empty'),
-                              );
-                            }
-                            return ListView.builder(
-                              controller: scrollController,
-                              padding: const EdgeInsets.all(20),
-                              itemCount: cartState.items.length,
-                              itemBuilder: (context, index) {
-                                final item = cartState.items[index];
-                                return Card(
-                                  margin: const EdgeInsets.only(bottom: 12),
-                                  child: ListTile(
-                                    title: Text(item.dish.displayName),
-                                    subtitle: Text('${CurrencyFormatter.format(item.dish.price)} × ${item.quantity}'),
-                                    trailing: IconButton(
-                                      icon: const Icon(Icons.remove_circle_outline),
-                                      onPressed: () {
-                                        context.read<CartBloc>().add(RemoveFromCart(item.dish.id));
-                                      },
-                                    ),
-                                  ),
-                                );
-                              },
-                            );
-                          },
-                        ),
-                      ),
-                      // Total and checkout
-                      BlocBuilder<CartBloc, CartState>(
-                        builder: (context, cartState) {
-                          return Container(
-                            padding: const EdgeInsets.all(20),
-                            decoration: BoxDecoration(
-                              color: Colors.grey[50],
-                              border: Border(top: BorderSide(color: Colors.grey[300]!)),
-                            ),
-                            child: Column(
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text(
-                                      'Total',
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    Text(
-                                      CurrencyFormatter.format(cartState.total),
-                                      style: const TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                        color: AppTheme.primaryGreen,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 16),
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: ElevatedButton(
-                                    onPressed: () {
-                                      Navigator.pop(context);
-                                      // Navigate to checkout
-                                      context.push('/customer/checkout');
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: AppTheme.primaryGreen,
-                                      foregroundColor: AppTheme.darkText,
-                                      padding: const EdgeInsets.symmetric(vertical: 16),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                    ),
-                                    child: const Text(
-                                      'Checkout',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          );
-        },
-      );
-    } else {
-      // Show active orders modal (empty state)
-      showDialog(
-        context: context,
-        barrierColor: Colors.black.withOpacity(0.5),
-        builder: (context) {
-          return BlocProvider.value(
-            value: context.read<ActiveOrdersBloc>(),
-            child: const ActiveOrderModal(),
-          );
-        },
-      );
-    }
+  void _handleTap(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return BlocProvider.value(
+          value: context.read<ActiveOrdersBloc>(),
+          child: const ActiveOrderModal(),
+        );
+      },
+    );
   }
 }

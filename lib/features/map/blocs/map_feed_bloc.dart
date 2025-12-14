@@ -774,7 +774,7 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
             .from('dishes')
             .select('*')
             .inFilter('vendor_id', vendorIds)
-            .eq('available', true)
+            .eq('is_available', true)
             .order('created_at', ascending: false)
             .range(0, _pageSize - 1);
 

@@ -380,7 +380,7 @@ class DatabaseOptimizer {
           'name': 'Dish $i',
           'vendor_id': 'vendor_${i % 10}',
           'price': 10.0 + (i % 50),
-          'available': (i % 10) != 0,
+          'is_available': (i % 10) != 0,
         });
       }
     }
