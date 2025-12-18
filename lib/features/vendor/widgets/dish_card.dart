@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import '../../../../shared/utils/currency_formatter.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../shared/utils/currency_formatter.dart';
 import '../../feed/models/dish_model.dart';
-import '../blocs/menu_management_bloc.dart';
 
 class DishCard extends StatelessWidget {
   final Dish dish;
@@ -48,7 +45,7 @@ class DishCard extends StatelessWidget {
                           return Container(
                             width: 100,
                             height: 100,
-                            color: Theme.of(context).colorScheme.surfaceVariant,
+                            color: Theme.of(context).colorScheme.surfaceContainerHighest,
                             child: const Icon(
                               Icons.restaurant,
                               size: 32,
@@ -59,7 +56,7 @@ class DishCard extends StatelessWidget {
                     : Container(
                         width: 100,
                         height: 100,
-                        color: Theme.of(context).colorScheme.surfaceVariant,
+                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
                         child: const Icon(
                           Icons.restaurant,
                           size: 32,
@@ -101,21 +98,21 @@ class DishCard extends StatelessWidget {
                       const SizedBox(height: 4),
 
                       // Description
-                      if (dish.description != null) ...[
-                        Text(
-                          dish.description!,
-                          style: Theme.of(context).textTheme.bodySmall,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 8),
-                      ],
+                      ...[
+                      Text(
+                        dish.description,
+                        style: Theme.of(context).textTheme.bodySmall,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 8),
+                    ],
 
                       // Price and Category
                       Row(
                         children: [
                           Text(
-                            CurrencyFormatter.format(dish.priceCents / 100),
+                            CurrencyFormatter.formatCents(dish.priceCents),
                             style: Theme.of(context).textTheme.titleSmall?.copyWith(
                               fontWeight: FontWeight.bold,
                               color: Theme.of(context).colorScheme.primary,
@@ -194,36 +191,36 @@ class DishCard extends StatelessWidget {
               padding: const EdgeInsets.all(12),
               child: Row(
                 children: [
-                  if (dish.preparationTimeMinutes != null) ...[
-                    Icon(
-                      Icons.schedule,
-                      size: 16,
+                  ...[
+                  Icon(
+                    Icons.schedule,
+                    size: 16,
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${dish.preparationTimeMinutes} min',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: Theme.of(context).colorScheme.outline,
                     ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${dish.preparationTimeMinutes} min',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.outline,
-                      ),
+                  ),
+                  const SizedBox(width: 16),
+                ],
+                  ...[
+                  const Icon(
+                    Icons.local_fire_department,
+                    size: 16,
+                    color: Colors.orange,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Spice: ${dish.spiceLevel}/5',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.outline,
                     ),
-                    const SizedBox(width: 16),
-                  ],
-                  if (dish.spiceLevel != null) ...[
-                    Icon(
-                      Icons.local_fire_department,
-                      size: 16,
-                      color: Colors.orange,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Spice: ${dish.spiceLevel}/5',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.outline,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                  ],
+                  ),
+                  const SizedBox(width: 16),
+                ],
                   if (dish.dietaryRestrictions?.isNotEmpty ?? false)
                     Expanded(
                       child: Wrap(
@@ -255,7 +252,7 @@ class DishCard extends StatelessWidget {
           ],
 
           // Action Buttons
-          ButtonBar(
+          OverflowBar(
             children: [
               // Toggle Availability
               TextButton.icon(

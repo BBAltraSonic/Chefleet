@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../feed/models/dish_model.dart';
+
 import '../../../shared/utils/currency_formatter.dart';
+import '../../feed/models/dish_model.dart';
 import '../blocs/menu_management_bloc.dart';
-import '../widgets/dish_card.dart';
 import '../widgets/dish_form.dart';
 import '../widgets/search_filter_bar.dart';
 import '../widgets/dish_list_view.dart';
@@ -25,7 +25,7 @@ class _MenuManagementScreenState extends State<MenuManagementScreen>
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     // Load dishes when screen initializes
-    context.read<MenuManagementBloc>().add(LoadDishes());
+    context.read<MenuManagementBloc>().add(const LoadDishes());
   }
 
   @override
@@ -58,7 +58,7 @@ class _MenuManagementScreenState extends State<MenuManagementScreen>
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
-              context.read<MenuManagementBloc>().add(DeleteDish(dishId: dish.id!));
+              context.read<MenuManagementBloc>().add(DeleteDish(dishId: dish.id));
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('Delete'),
@@ -91,7 +91,7 @@ class _MenuManagementScreenState extends State<MenuManagementScreen>
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () {
-              context.read<MenuManagementBloc>().add(RefreshDishes());
+              context.read<MenuManagementBloc>().add(const RefreshDishes());
             },
             tooltip: 'Refresh',
           ),
@@ -106,8 +106,8 @@ class _MenuManagementScreenState extends State<MenuManagementScreen>
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showDishForm(),
-        child: const Icon(Icons.add),
         tooltip: 'Add New Dish',
+        child: const Icon(Icons.add),
       ),
     );
   }
@@ -166,7 +166,7 @@ class _MenuManagementScreenState extends State<MenuManagementScreen>
                       const SizedBox(height: 24),
                       ElevatedButton(
                         onPressed: () {
-                          context.read<MenuManagementBloc>().add(LoadDishes());
+                          context.read<MenuManagementBloc>().add(const LoadDishes());
                         },
                         child: const Text('Try Again'),
                       ),
@@ -213,7 +213,7 @@ class _MenuManagementScreenState extends State<MenuManagementScreen>
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      color: Theme.of(context).colorScheme.surfaceVariant,
+                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
                       child: Text(
                         '${state.filteredDishCount} of ${state.dishCount} dishes',
                         style: Theme.of(context).textTheme.bodySmall,
@@ -381,7 +381,7 @@ class _MenuManagementScreenState extends State<MenuManagementScreen>
                     width: 100,
                     child: LinearProgressIndicator(
                       value: entry.value / dishes.length,
-                      backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
+                      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                     ),
                   ),
                 ],
@@ -420,7 +420,7 @@ class _MenuManagementScreenState extends State<MenuManagementScreen>
                       return Container(
                         width: 48,
                         height: 48,
-                        color: Theme.of(context).colorScheme.surfaceVariant,
+                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
                         child: const Icon(Icons.restaurant),
                       );
                     },
@@ -428,11 +428,11 @@ class _MenuManagementScreenState extends State<MenuManagementScreen>
                 : Container(
                     width: 48,
                     height: 48,
-                    color: Theme.of(context).colorScheme.surfaceVariant,
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
                     child: const Icon(Icons.restaurant),
                   ),
             title: Text(dish.name),
-            subtitle: Text(CurrencyFormatter.format(dish.priceCents / 100)),
+            subtitle: Text(CurrencyFormatter.formatCents(dish.priceCents)),
             trailing: Text('${dish.popularityScore ?? 0}'),
           );
         }).toList(),

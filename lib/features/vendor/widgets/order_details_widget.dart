@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '../../../shared/utils/currency_formatter.dart';
 import '../blocs/order_management_bloc.dart';
 
@@ -126,7 +127,7 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceVariant,
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
               border: Border(
                 bottom: BorderSide(
                   color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
@@ -196,7 +197,7 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
   }
 
   Widget _buildStatusSection(BuildContext context) {
-    final status = _order!['status'] as String? ?? 'pending';
+    final status = _order!['status'] as String;
     final statusColor = Color(
       int.parse(
         OrderManagementState.getStatusColor(status).substring(1),
@@ -408,7 +409,7 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
                                 return Container(
                                   width: 60,
                                   height: 60,
-                                  color: Theme.of(context).colorScheme.surfaceVariant,
+                                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
                                   child: const Icon(Icons.restaurant),
                                 );
                               },
@@ -416,7 +417,7 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
                           : Container(
                               width: 60,
                               height: 60,
-                              color: Theme.of(context).colorScheme.surfaceVariant,
+                              color: Theme.of(context).colorScheme.surfaceContainerHighest,
                               child: const Icon(Icons.restaurant),
                             ),
                     ),
@@ -499,7 +500,7 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
                   ),
                 ),
                 Text(
-                  CurrencyFormatter.format(totalAmount),
+                  '\$${totalAmount.toStringAsFixed(2)}',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: Theme.of(context).colorScheme.primary,
@@ -576,7 +577,7 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceVariant,
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(vendorNotes),
@@ -604,7 +605,7 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
   }
 
   Widget _buildActionButtons(BuildContext context) {
-    final status = _order!['status'] as String? ?? 'pending';
+    final status = _order!['status'] as String;
 
     return Container(
       padding: const EdgeInsets.all(16),
