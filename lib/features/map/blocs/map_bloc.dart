@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../../core/blocs/base_bloc.dart';
+import '../../../core/constants/app_constants.dart';
 
 class MapEvent extends AppEvent {
   const MapEvent();
@@ -47,7 +48,7 @@ class MapState extends AppState {
   const MapState({
     this.controller,
     this.bounds,
-    this.center = const LatLng(37.7749, -122.4194), // San Francisco default
+    this.center = AppConstants.defaultLocationSouthAfrica, // Johannesburg, South Africa default
     this.zoom = 14.0,
     this.markers = const {},
     this.isLoading = false,

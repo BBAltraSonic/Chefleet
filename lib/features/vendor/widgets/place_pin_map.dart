@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/glass_container.dart';
 
@@ -24,7 +25,7 @@ class _PlacePinMapState extends State<PlacePinMap> {
   @override
   void initState() {
     super.initState();
-    _currentPosition = widget.initialPosition ?? const LatLng(37.7749, -122.4194); // Default to SF
+    _currentPosition = widget.initialPosition ?? AppConstants.defaultLocationSouthAfrica; // Default to Johannesburg
   }
 
   @override
