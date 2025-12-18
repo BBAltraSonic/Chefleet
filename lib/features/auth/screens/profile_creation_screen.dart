@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -49,6 +50,34 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
 
   Future<void> _pickAvatar() async {
     try {
+      // Request storage/photos permission
+      PermissionStatus status;
+      if (Platform.isAndroid) {
+        // Android 13+ uses photos permission
+        if (await Permission.photos.isGranted) {
+          status = PermissionStatus.granted;
+        } else {
+          status = await Permission.photos.request();
+        }
+      } else {
+        status = await Permission.photos.request();
+      }
+      
+      if (!status.isGranted) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Storage permission is required to select images'),
+              action: SnackBarAction(
+                label: 'Settings',
+                onPressed: openAppSettings,
+              ),
+            ),
+          );
+        }
+        return;
+      }
+
       final picker = ImagePicker();
       final pickedFile = await picker.pickImage(
         source: ImageSource.gallery,
@@ -490,7 +519,7 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: const Color(0xFF4CAF50),
+            activeThumbColor: const Color(0xFF4CAF50),
           ),
         ],
       ),

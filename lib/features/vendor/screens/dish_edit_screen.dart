@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../feed/models/dish_model.dart';
@@ -73,9 +74,9 @@ class _DishEditScreenState extends State<DishEditScreen> {
     _descriptionController.text = dish.description ?? '';
     _longDescriptionController.text = dish.descriptionLong ?? '';
     _priceController.text = (dish.priceCents / 100).toStringAsFixed(2);
-    _prepTimeController.text = dish.preparationTimeMinutes?.toString() ?? '';
+    _prepTimeController.text = dish.preparationTimeMinutes.toString() ?? '';
     _ingredientsController.text = dish.ingredients?.join(', ') ?? '';
-    _allergensController.text = dish.allergens?.join(', ') ?? '';
+    _allergensController.text = dish.allergens.join(', ') ?? '';
     _selectedCategory = dish.categoryEnum;
     _imageUrl = dish.imageUrl;
     _available = dish.available;
@@ -98,6 +99,34 @@ class _DishEditScreenState extends State<DishEditScreen> {
 
   Future<void> _pickImage() async {
     try {
+      // Request storage/photos permission
+      PermissionStatus status;
+      if (Platform.isAndroid) {
+        // Android 13+ uses photos permission
+        if (await Permission.photos.isGranted) {
+          status = PermissionStatus.granted;
+        } else {
+          status = await Permission.photos.request();
+        }
+      } else {
+        status = await Permission.photos.request();
+      }
+      
+      if (!status.isGranted) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Storage permission is required to select images'),
+              action: SnackBarAction(
+                label: 'Settings',
+                onPressed: openAppSettings,
+              ),
+            ),
+          );
+        }
+        return;
+      }
+
       final picker = ImagePicker();
       final pickedFile = await picker.pickImage(
         source: ImageSource.gallery,
@@ -313,7 +342,7 @@ class _DishEditScreenState extends State<DishEditScreen> {
           .eq('owner_id', user.id)
           .single();
 
-      final vendorId = vendorResponse['id'] as String? ?? '';
+      final vendorId = vendorResponse['id'] as String;
       final fileExt = imageFile.path.split('.').last;
       final fileName = '${vendorId}_${DateTime.now().millisecondsSinceEpoch}.$fileExt';
 
@@ -402,7 +431,7 @@ class _DishEditScreenState extends State<DishEditScreen> {
                       Expanded(
                         flex: 2,
                         child: DropdownButtonFormField<String>(
-                          value: _selectedCategory,
+                          initialValue: _selectedCategory,
                           decoration: const InputDecoration(
                             labelText: 'Category',
                             border: OutlineInputBorder(),
@@ -466,29 +495,25 @@ class _DishEditScreenState extends State<DishEditScreen> {
                               'Spice Level',
                               style: Theme.of(context).textTheme.bodyMedium,
                             ),
-                            SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: List.generate(5, (index) {
-                                  return IconButton(
-                                    onPressed: () {
-                                      setState(() {
-                                        _spiceLevel = index + 1;
-                                      });
-                                    },
-                                    icon: Icon(
-                                      index < _spiceLevel
-                                          ? Icons.local_fire_department
-                                          : Icons.local_fire_department_outlined,
-                                      color: index < _spiceLevel ? Colors.orange : null,
-                                      size: 18,
-                                    ),
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                                  );
-                                }),
-                              ),
+                            Row(
+                              children: List.generate(5, (index) {
+                                return IconButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      _spiceLevel = index + 1;
+                                    });
+                                  },
+                                  icon: Icon(
+                                    index < _spiceLevel
+                                        ? Icons.local_fire_department
+                                        : Icons.local_fire_department_outlined,
+                                    color: index < _spiceLevel ? Colors.orange : null,
+                                    size: 20,
+                                  ),
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+                                );
+                              }),
                             ),
                           ],
                         ),
