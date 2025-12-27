@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/constants/app_strings.dart';
 
 class QuickReplyWidget extends StatelessWidget {
   final List<Map<String, dynamic>> quickReplies;
@@ -37,7 +38,7 @@ class QuickReplyWidget extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  'Quick Replies (${quickReplies.length})',
+                  '${AppStrings.quickReplies} (${quickReplies.length})',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -46,7 +47,7 @@ class QuickReplyWidget extends StatelessWidget {
               ElevatedButton.icon(
                 onPressed: onAddQuickReply,
                 icon: const Icon(Icons.add),
-                label: const Text('Add Reply'),
+                label: const Text(AppStrings.addReply),
               ),
             ],
           ),
@@ -83,12 +84,12 @@ class QuickReplyWidget extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'No quick replies yet',
+            AppStrings.noQuickReplies,
             style: Theme.of(context).textTheme.headlineSmall,
           ),
           const SizedBox(height: 8),
           Text(
-            'Create quick replies for common customer questions',
+            AppStrings.noQuickRepliesHint,
             style: Theme.of(context).textTheme.bodyMedium,
             textAlign: TextAlign.center,
           ),
@@ -96,7 +97,7 @@ class QuickReplyWidget extends StatelessWidget {
           ElevatedButton.icon(
             onPressed: onAddQuickReply,
             icon: const Icon(Icons.add),
-            label: const Text('Create Your First Quick Reply'),
+            label: const Text(AppStrings.createFirstReply),
           ),
         ],
       ),
@@ -144,7 +145,7 @@ class QuickReplyWidget extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    '${replies.length} replies',
+                    '${replies.length}${AppStrings.repliesSuffix}',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: _getCategoryColor(category),
                       fontWeight: FontWeight.w600,
@@ -224,7 +225,7 @@ class QuickReplyWidget extends StatelessWidget {
               ),
               const SizedBox(width: 4),
               Text(
-                isActive ? 'Active' : 'Inactive',
+                isActive ? AppStrings.statusActive : AppStrings.statusInactive,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: isActive ? Colors.green : Theme.of(context).colorScheme.outline,
                   fontWeight: FontWeight.w500,
@@ -255,7 +256,7 @@ class QuickReplyWidget extends StatelessWidget {
               children: [
                 const Icon(Icons.edit, size: 16),
                 const SizedBox(width: 8),
-                const Text('Edit'),
+                const Text(AppStrings.editAction),
               ],
             ),
           ),
@@ -268,7 +269,7 @@ class QuickReplyWidget extends StatelessWidget {
                   size: 16,
                 ),
                 const SizedBox(width: 8),
-                Text(isActive ? 'Deactivate' : 'Activate'),
+                Text(isActive ? AppStrings.deactivate : AppStrings.activate),
               ],
             ),
           ),
@@ -278,7 +279,7 @@ class QuickReplyWidget extends StatelessWidget {
               children: [
                 const Icon(Icons.delete, size: 16, color: Colors.red),
                 const SizedBox(width: 8),
-                const Text('Delete', style: TextStyle(color: Colors.red)),
+                const Text(AppStrings.deleteAction, style: TextStyle(color: Colors.red)),
               ],
             ),
           ),
@@ -294,12 +295,12 @@ class QuickReplyWidget extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Quick Reply'),
-        content: Text('Are you sure you want to delete "$title"? This action cannot be undone.'),
+        title: const Text(AppStrings.deleteReplyTitle),
+        content: Text('${AppStrings.deleteReplyConfirm}"$title"${AppStrings.cannotUndo}'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+            child: const Text(AppStrings.cancel),
           ),
           TextButton(
             onPressed: () {
@@ -307,7 +308,7 @@ class QuickReplyWidget extends StatelessWidget {
               onDeleteQuickReply(quickReply['id'] as String? ?? '');
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
+            child: const Text(AppStrings.deleteAction),
           ),
         ],
       ),

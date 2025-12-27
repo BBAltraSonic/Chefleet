@@ -5,6 +5,7 @@ import '../../auth/blocs/auth_bloc.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/glass_container.dart';
 import '../../../core/routes/app_routes.dart';
+import '../../../core/constants/app_strings.dart';
 import '../../../core/blocs/theme_bloc.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -15,7 +16,7 @@ class SettingsScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
-        title: const Text('Settings'),
+        title: const Text(AppStrings.settings),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
@@ -33,14 +34,14 @@ class SettingsScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Account',
+                    AppStrings.account,
                     style: Theme.of(context).textTheme.headlineMedium,
                   ),
                   const SizedBox(height: AppTheme.spacing16),
                   BlocBuilder<AuthBloc, AuthState>(
                     builder: (context, state) {
                       if (state.user == null) {
-                        return const Text('Not logged in');
+                        return const Text(AppStrings.notLoggedIn);
                       }
                       return Row(
                         children: [
@@ -75,7 +76,7 @@ class SettingsScreen extends StatelessWidget {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  'Manage your account',
+                                  AppStrings.manageAccount,
                                   style: Theme.of(context).textTheme.bodyMedium,
                                 ),
                               ],
@@ -101,7 +102,7 @@ class SettingsScreen extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.all(AppTheme.spacing16),
                     child: Text(
-                      'App Settings',
+                      AppStrings.appSettings,
                       style: Theme.of(context).textTheme.headlineMedium,
                     ),
                   ),
@@ -109,16 +110,16 @@ class SettingsScreen extends StatelessWidget {
                   _buildSettingsTile(
                     context,
                     icon: Icons.notifications_outlined,
-                    title: 'Notifications',
-                    subtitle: 'Manage notification preferences',
+                    title: AppStrings.notifications,
+                    subtitle: AppStrings.manageNotificationPrefs,
                     onTap: () => context.push(CustomerRoutes.notifications),
                   ),
                   const Divider(height: 1, indent: 64),
                   _buildSettingsTile(
                     context,
                     icon: Icons.language_outlined,
-                    title: 'Language',
-                    subtitle: 'English',
+                    title: AppStrings.language,
+                    subtitle: AppStrings.english,
                     onTap: () => _showLanguageDialog(context),
                   ),
                   const Divider(height: 1, indent: 64),
@@ -127,8 +128,8 @@ class SettingsScreen extends StatelessWidget {
                       return _buildSettingsTileWithSwitch(
                         context,
                         icon: Icons.dark_mode_outlined,
-                        title: 'Dark Mode',
-                        subtitle: themeState.isDarkMode ? 'Enabled' : 'Disabled',
+                        title: AppStrings.darkMode,
+                        subtitle: themeState.isDarkMode ? AppStrings.enabled : AppStrings.disabled,
                         value: themeState.isDarkMode,
                         onChanged: (value) {
                           context.read<ThemeBloc>().add(const ThemeToggled());
@@ -159,7 +160,7 @@ class SettingsScreen extends StatelessWidget {
                           Padding(
                             padding: const EdgeInsets.all(AppTheme.spacing16),
                             child: Text(
-                              'Account Management',
+                              AppStrings.accountManagement,
                               style: Theme.of(context).textTheme.headlineMedium,
                             ),
                           ),
@@ -167,16 +168,16 @@ class SettingsScreen extends StatelessWidget {
                           _buildSettingsTile(
                             context,
                             icon: Icons.lock_outline,
-                            title: 'Change Password',
-                            subtitle: 'Update your password',
+                            title: AppStrings.changePassword,
+                            subtitle: AppStrings.updatePassword,
                             onTap: () => _showChangePasswordDialog(context),
                           ),
                           const Divider(height: 1, indent: 64),
                           _buildSettingsTile(
                             context,
                             icon: Icons.delete_outline,
-                            title: 'Delete Account',
-                            subtitle: 'Permanently delete your account',
+                            title: AppStrings.deleteAccount,
+                            subtitle: AppStrings.deleteAccountSubtitle,
                             onTap: () => _showDeleteAccountDialog(context),
                           ),
                         ],
@@ -199,7 +200,7 @@ class SettingsScreen extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.all(AppTheme.spacing16),
                     child: Text(
-                      'About',
+                      AppStrings.about,
                       style: Theme.of(context).textTheme.headlineMedium,
                     ),
                   ),
@@ -207,16 +208,16 @@ class SettingsScreen extends StatelessWidget {
                   _buildSettingsTile(
                     context,
                     icon: Icons.info_outline,
-                    title: 'App Version',
-                    subtitle: '1.0.0',
+                    title: AppStrings.appVersionTitle,
+                    subtitle: AppStrings.appVersion,
                     onTap: null,
                   ),
                   const Divider(height: 1, indent: 64),
                   _buildSettingsTile(
                     context,
                     icon: Icons.privacy_tip_outlined,
-                    title: 'Privacy Policy',
-                    subtitle: 'Learn how we protect your data',
+                    title: AppStrings.privacyPolicy,
+                    subtitle: AppStrings.privacyPolicySubtitle,
                     onTap: () {
                       _showPrivacyPolicy(context);
                     },
@@ -225,8 +226,8 @@ class SettingsScreen extends StatelessWidget {
                   _buildSettingsTile(
                     context,
                     icon: Icons.description_outlined,
-                    title: 'Terms of Service',
-                    subtitle: 'Read our terms and conditions',
+                    title: AppStrings.termsOfService,
+                    subtitle: AppStrings.termsOfServiceSubtitle,
                     onTap: () {
                       _showTermsOfService(context);
                     },
@@ -235,8 +236,8 @@ class SettingsScreen extends StatelessWidget {
                   _buildSettingsTile(
                     context,
                     icon: Icons.help_outline,
-                    title: 'Help & Support',
-                    subtitle: 'Get assistance',
+                    title: AppStrings.helpSupport,
+                    subtitle: AppStrings.helpSupportSubtitle,
                     onTap: () {
                       _showHelp(context);
                     },
@@ -256,7 +257,7 @@ class SettingsScreen extends StatelessWidget {
                       onPressed: () => _showLogoutDialog(context),
                       icon: const Icon(Icons.logout, color: Colors.red),
                       label: const Text(
-                        'Logout',
+                        AppStrings.logout,
                         style: TextStyle(
                           color: Colors.red,
                           fontWeight: FontWeight.w600,
@@ -385,12 +386,12 @@ class SettingsScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Logout'),
-        content: const Text('Are you sure you want to logout?'),
+        title: const Text(AppStrings.logout),
+        content: const Text(AppStrings.logoutConfirmation),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Cancel'),
+            child: const Text(AppStrings.cancel),
           ),
           TextButton(
             onPressed: () {
@@ -398,7 +399,7 @@ class SettingsScreen extends StatelessWidget {
               context.read<AuthBloc>().add(const AuthLogoutRequested());
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Logout'),
+            child: const Text(AppStrings.logout),
           ),
         ],
       ),
@@ -409,28 +410,16 @@ class SettingsScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Privacy Policy'),
+        title: const Text(AppStrings.privacyPolicy),
         content: const SingleChildScrollView(
           child: Text(
-            'At Chefleet, we take your privacy seriously. This Privacy Policy explains how we collect, use, and protect your personal information.\n\n'
-            '1. Information We Collect\n'
-            '- Account information (email, name)\n'
-            '- Location data (for finding nearby chefs)\n'
-            '- Order history and preferences\n\n'
-            '2. How We Use Your Information\n'
-            '- To process your orders\n'
-            '- To connect you with local chefs\n'
-            '- To improve our services\n\n'
-            '3. Data Protection\n'
-            '- We use industry-standard encryption\n'
-            '- Your data is never sold to third parties\n'
-            '- You can request data deletion at any time',
+            AppStrings.privacyPolicyContent,
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
+            child: const Text(AppStrings.close),
           ),
         ],
       ),
@@ -441,32 +430,16 @@ class SettingsScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Terms of Service'),
+        title: const Text(AppStrings.termsOfService),
         content: const SingleChildScrollView(
           child: Text(
-            'Welcome to Chefleet. By using our services, you agree to these terms.\n\n'
-            '1. Service Use\n'
-            '- You must be 18+ to use Chefleet\n'
-            '- You are responsible for your account security\n'
-            '- You agree to provide accurate information\n\n'
-            '2. Orders\n'
-            '- Orders are binding once confirmed\n'
-            '- Payment is cash-only at pickup\n'
-            '- Refund policy applies to eligible orders\n\n'
-            '3. User Conduct\n'
-            '- Be respectful to chefs and other users\n'
-            '- Do not misuse the platform\n'
-            '- Report any issues to support\n\n'
-            '4. Liability\n'
-            '- Chefleet connects buyers and sellers\n'
-            '- Food safety is the responsibility of vendors\n'
-            '- We are not liable for vendor actions',
+            AppStrings.termsContent,
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
+            child: const Text(AppStrings.close),
           ),
         ],
       ),
@@ -477,37 +450,37 @@ class SettingsScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Help & Support'),
+        title: const Text(AppStrings.helpSupport),
         content: const Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Need help? We\'re here for you!',
+              AppStrings.helpContentTitle,
               style: TextStyle(fontWeight: FontWeight.w600),
             ),
             SizedBox(height: 16),
-            Text('Email: support@chefleet.com'),
+            Text(AppStrings.helpEmail),
             SizedBox(height: 8),
-            Text('Phone: 1-800-CHEFLEET'),
+            Text(AppStrings.helpPhone),
             SizedBox(height: 8),
-            Text('Hours: Mon-Fri, 9AM-5PM'),
+            Text(AppStrings.helpHours),
             SizedBox(height: 16),
             Text(
-              'Common Issues:',
+              AppStrings.commonIssues,
               style: TextStyle(fontWeight: FontWeight.w600),
             ),
             SizedBox(height: 8),
-            Text('• Order not showing up'),
-            Text('• Cash payment questions'),
-            Text('• Account access'),
-            Text('• Location services'),
+            Text(AppStrings.issueOrder),
+            Text(AppStrings.issuePayment),
+            Text(AppStrings.issueAccess),
+            Text(AppStrings.issueLocation),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
+            child: const Text(AppStrings.close),
           ),
         ],
       ),
@@ -518,24 +491,24 @@ class SettingsScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Select Language'),
+        title: const Text(AppStrings.selectLanguage),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              title: const Text('English'),
+              title: const Text(AppStrings.english),
               trailing: const Icon(Icons.check, color: AppTheme.primaryGreen),
               onTap: () => Navigator.of(context).pop(),
             ),
             ListTile(
-              title: const Text('Spanish'),
-              subtitle: const Text('Coming soon'),
+              title: const Text(AppStrings.spanish),
+              subtitle: const Text(AppStrings.comingSoon),
               enabled: false,
               onTap: () {},
             ),
             ListTile(
-              title: const Text('French'),
-              subtitle: const Text('Coming soon'),
+              title: const Text(AppStrings.french),
+              subtitle: const Text(AppStrings.comingSoon),
               enabled: false,
               onTap: () {},
             ),
@@ -544,7 +517,7 @@ class SettingsScreen extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
+            child: const Text(AppStrings.close),
           ),
         ],
       ),
@@ -560,7 +533,7 @@ class SettingsScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Change Password'),
+        title: const Text(AppStrings.changePassword),
         content: Form(
           key: formKey,
           child: Column(
@@ -570,12 +543,12 @@ class SettingsScreen extends StatelessWidget {
                 controller: currentPasswordController,
                 obscureText: true,
                 decoration: const InputDecoration(
-                  labelText: 'Current Password',
+                  labelText: AppStrings.currentPassword,
                   border: OutlineInputBorder(),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please enter your current password';
+                    return AppStrings.enterCurrentPassword;
                   }
                   return null;
                 },
@@ -585,15 +558,15 @@ class SettingsScreen extends StatelessWidget {
                 controller: newPasswordController,
                 obscureText: true,
                 decoration: const InputDecoration(
-                  labelText: 'New Password',
+                  labelText: AppStrings.newPassword,
                   border: OutlineInputBorder(),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please enter a new password';
+                    return AppStrings.enterNewPassword;
                   }
                   if (value.length < 6) {
-                    return 'Password must be at least 6 characters';
+                    return AppStrings.passwordMinLength;
                   }
                   return null;
                 },
@@ -603,12 +576,12 @@ class SettingsScreen extends StatelessWidget {
                 controller: confirmPasswordController,
                 obscureText: true,
                 decoration: const InputDecoration(
-                  labelText: 'Confirm New Password',
+                  labelText: AppStrings.confirmNewPassword,
                   border: OutlineInputBorder(),
                 ),
                 validator: (value) {
                   if (value != newPasswordController.text) {
-                    return 'Passwords do not match';
+                    return AppStrings.passwordMismatch;
                   }
                   return null;
                 },
@@ -619,7 +592,7 @@ class SettingsScreen extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Cancel'),
+            child: const Text(AppStrings.cancel),
           ),
           TextButton(
             onPressed: () async {
@@ -635,7 +608,7 @@ class SettingsScreen extends StatelessWidget {
                     Navigator.of(dialogContext).pop();
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('Password updated successfully'),
+                        content: Text(AppStrings.passwordUpdateSuccess),
                         backgroundColor: AppTheme.primaryGreen,
                       ),
                     );
@@ -652,7 +625,7 @@ class SettingsScreen extends StatelessWidget {
                 }
               }
             },
-            child: const Text('Update'),
+            child: const Text(AppStrings.update),
           ),
         ],
       ),
@@ -663,23 +636,23 @@ class SettingsScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete Account'),
+        title: const Text(AppStrings.deleteAccountTitle),
         content: const Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Are you sure you want to delete your account?',
+              AppStrings.deleteAccountConfirmation,
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 16),
-            Text('This action cannot be undone. All your data will be permanently deleted.'),
+            Text(AppStrings.deleteAccountWarning),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Cancel'),
+            child: const Text(AppStrings.cancel),
           ),
           TextButton(
             onPressed: () {
@@ -687,12 +660,12 @@ class SettingsScreen extends StatelessWidget {
               Navigator.of(dialogContext).pop();
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('Account deletion is not yet implemented'),
+                  content: Text(AppStrings.deleteAccountNotImplemented),
                 ),
               );
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
+            child: const Text(AppStrings.deleteAction),
           ),
         ],
       ),

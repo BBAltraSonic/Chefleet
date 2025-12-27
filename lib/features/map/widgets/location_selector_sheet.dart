@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_theme.dart';
 
 import 'dart:async';
-import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
-import '../../../../core/theme/app_theme.dart';
 import '../../../../core/services/google_places_service.dart';
 
 class LocationSelectorSheet extends StatefulWidget {
@@ -57,7 +55,7 @@ class _LocationSelectorSheetState extends State<LocationSelectorSheet> {
       return;
     }
 
-    _debounce = Timer(const Duration(milliseconds: 500), () {
+    _debounce = Timer(const Duration(milliseconds: 300), () {
       _fetchPredictions(query);
     });
   }

@@ -7,6 +7,7 @@ import '../../../core/diagnostics/diagnostic_harness.dart';
 import '../../../core/diagnostics/diagnostic_severity.dart';
 import '../../../core/services/preparation_step_service.dart';
 import '../../auth/blocs/auth_bloc.dart';
+import '../../../core/utils/date_time_utils.dart';
 
 part 'active_orders_event.dart';
 part 'active_orders_state.dart';
@@ -338,7 +339,7 @@ class ActiveOrdersBloc extends Bloc<ActiveOrdersEvent, ActiveOrdersState> {
           updatedStepsList[0] = {
             ...updatedStepsList[0],
             'status': 'in_progress',
-            'started_at': DateTime.now().toIso8601String(),
+            'started_at': DateTimeUtils.nowUtcIso(),
           };
           
           final updatedStepsMap = Map<String, List<Map<String, dynamic>>>.from(state.preparationSteps);

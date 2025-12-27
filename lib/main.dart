@@ -6,6 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'core/theme/app_theme.dart';
 import 'core/blocs/app_bloc_observer.dart';
 import 'core/blocs/navigation_bloc.dart';
@@ -13,11 +14,15 @@ import 'core/blocs/role_bloc.dart';
 import 'core/router/app_router.dart';
 import 'core/services/role_storage_service.dart';
 import 'core/services/role_sync_service.dart';
+import 'core/services/preparation_step_service.dart';
+import 'core/services/supabase_service.dart';
+import 'core/services/edge_function_service.dart';
+import 'core/bootstrap/bootstrap_gate.dart';
 import 'features/auth/blocs/auth_bloc.dart';
 import 'features/auth/blocs/user_profile_bloc.dart';
 import 'features/order/blocs/active_orders_bloc.dart';
 import 'features/cart/blocs/cart_bloc.dart';
-import 'core/services/preparation_step_service.dart';
+import 'features/orders/services/order_realtime_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -77,7 +82,8 @@ class _ChefleetAppState extends State<ChefleetApp> {
   // Initialize role services
   late final RoleStorageService _roleStorageService;
   late final RoleSyncService _roleSyncService;
-  late final GoRouter _router;
+  late GoRouter _router;
+  String? _initialRoute;
 
   @override
   void initState() {
@@ -86,59 +92,98 @@ class _ChefleetAppState extends State<ChefleetApp> {
     _roleSyncService = RoleSyncService();
   }
 
-  void _initializeRouter(BuildContext context) {
+  void _initializeRouter(BuildContext context, {String? initialLocation}) {
     _router = AppRouter.createRouter(
       authBloc: context.read<AuthBloc>(),
       profileBloc: context.read<UserProfileBloc>(),
       roleBloc: context.read<RoleBloc>(),
+      initialLocation: initialLocation,
     );
+  }
+
+  void _onBootstrapComplete(String initialRoute) {
+    setState(() {
+      _initialRoute = initialRoute;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
+    return MultiProvider(
       providers: [
-        BlocProvider(
-          create: (context) => AuthBloc(),
+        // Services (non-BLoC)
+        Provider<SupabaseService>(
+          create: (_) => SupabaseService(),
         ),
-        BlocProvider(
-          create: (context) => UserProfileBloc()..add(const UserProfileLoaded()),
+        Provider<EdgeFunctionService>(
+          create: (_) => EdgeFunctionService(),
         ),
-        BlocProvider(
-          create: (context) => NavigationBloc(),
-        ),
-        // RoleBloc - manages user role state and switching
-        BlocProvider(
-          create: (context) => RoleBloc(
-            storageService: _roleStorageService,
-            syncService: _roleSyncService,
+        Provider<OrderRealtimeService>(
+          create: (context) => OrderRealtimeService(
+            context.read<SupabaseService>(),
           ),
         ),
-        BlocProvider(
-          create: (context) => ActiveOrdersBloc(
-            supabaseClient: Supabase.instance.client,
-            authBloc: context.read<AuthBloc>(),
-            preparationStepService: PreparationStepService(
-              supabaseClient: Supabase.instance.client,
-            ),
-          )..loadActiveOrders(),
-        ),
-        BlocProvider(
-          create: (context) => CartBloc(),
-        ),
       ],
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider(
+            create: (context) => AuthBloc(),
+          ),
+          BlocProvider(
+            create: (context) => UserProfileBloc()..add(const UserProfileLoaded()),
+          ),
+          BlocProvider(
+            create: (context) => NavigationBloc(),
+          ),
+          // RoleBloc - manages user role state and switching
+          BlocProvider(
+            create: (context) => RoleBloc(
+              storageService: _roleStorageService,
+              syncService: _roleSyncService,
+            ),
+          ),
+          // ActiveOrdersBloc auto-loads via auth listener (non-blocking)
+          // See active_orders_bloc.dart lines 28-37 for auth state subscription
+          BlocProvider(
+            create: (context) => ActiveOrdersBloc(
+              supabaseClient: Supabase.instance.client,
+              authBloc: context.read<AuthBloc>(),
+              preparationStepService: PreparationStepService(
+                supabaseClient: Supabase.instance.client,
+              ),
+            ),
+          ),
+          BlocProvider(
+            create: (context) => CartBloc(),
+          ),
+        ],
       child: Builder(
         builder: (context) {
-          // Initialize router with bloc instances
-          _initializeRouter(context);
-          
-          return MaterialApp.router(
-            title: 'SmthngTsty',
-            theme: AppTheme.lightTheme,
-            darkTheme: AppTheme.darkTheme,
-            themeMode: ThemeMode.system,
-            debugShowCheckedModeBanner: false,
-            routerConfig: _router,
+          // Use BootstrapGate to resolve auth state before navigation
+          return BootstrapGate(
+            onBootstrapComplete: (result) {
+              // Initialize router with resolved initial route
+              _initializeRouter(context, initialLocation: result.initialRoute);
+              _onBootstrapComplete(result.initialRoute);
+            },
+            child: Builder(
+              builder: (context) {
+                // Only build MaterialApp after bootstrap completes
+                if (_initialRoute == null) {
+                  // Still bootstrapping - gate will show loading UI
+                  return const SizedBox.shrink();
+                }
+                
+                return MaterialApp.router(
+                  title: 'SmthngTsty',
+                  theme: AppTheme.lightTheme,
+                  darkTheme: AppTheme.darkTheme,
+                  themeMode: ThemeMode.system,
+                  debugShowCheckedModeBanner: false,
+                  routerConfig: _router,
+                );
+              },
+            ),
           );
         },
       ),

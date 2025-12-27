@@ -31,7 +31,7 @@ void main() {
       await guestSessionService.clearGuestSession();
     });
 
-    tearDown() async {
+    tearDown(() async {
       await guestSessionService.clearGuestSession();
     });
 

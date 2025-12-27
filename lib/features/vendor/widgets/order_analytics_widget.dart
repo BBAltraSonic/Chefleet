@@ -3,8 +3,9 @@ import 'package:fl_chart/fl_chart.dart';
 import '../../../../shared/utils/currency_formatter.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
-import '../blocs/order_management_bloc.dart';
+import '../../../../core/constants/app_strings.dart';
+import '../blocs/vendor_dashboard_bloc.dart';
+import '../blocs/order_management_bloc.dart'; // Keep for status colors/names
 
 class OrderAnalyticsWidget extends StatefulWidget {
   const OrderAnalyticsWidget({super.key});
@@ -53,7 +54,7 @@ class _OrderAnalyticsWidgetState extends State<OrderAnalyticsWidget>
             children: [
               Expanded(
                 child: Text(
-                  'Order Analytics',
+                  AppStrings.analyticsTitle,
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -72,179 +73,165 @@ class _OrderAnalyticsWidgetState extends State<OrderAnalyticsWidget>
         TabBar(
           controller: _tabController,
           tabs: const [
-            Tab(text: 'Overview'),
-            Tab(text: 'Performance'),
-            Tab(text: 'Items'),
+            Tab(text: AppStrings.overviewTab),
+            Tab(text: AppStrings.performanceTab),
+            Tab(text: AppStrings.itemsTab),
           ],
         ),
 
         // Tab Content
         Expanded(
-          child: TabBarView(
-            controller: _tabController,
-            children: [
-              _buildOverviewTab(),
-              _buildPerformanceTab(),
-              _buildItemsTab(),
-            ],
+          child: BlocBuilder<VendorDashboardBloc, VendorDashboardState>(
+            builder: (context, state) {
+              if (state.isLoading && state.detailedAnalytics == null) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              return TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildOverviewTab(context, state),
+                  _buildPerformanceTab(context, state),
+                  _buildItemsTab(context, state),
+                ],
+              );
+            },
           ),
         ),
       ],
     );
   }
 
-  Widget _buildOverviewTab() {
-    return FutureBuilder<Map<String, dynamic>>(
-      future: _loadAnalyticsData(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
+  Widget _buildOverviewTab(BuildContext context, VendorDashboardState state) {
+    if (state.detailedAnalytics == null) {
+      return Center(child: Text(AppStrings.noDataAvailable));
+    }
 
-        if (snapshot.hasError) {
-          return Center(
-            child: Text('Error loading analytics: ${snapshot.error}'),
-          );
-        }
+    final analytics = state.detailedAnalytics!;
+    final totalOrders = analytics['total_orders'] as int? ?? 0;
+    final totalRevenue = analytics['total_revenue'] as int? ?? 0;
+    final averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0.0;
+    final completedOrders = analytics['completed_orders'] as int? ?? 0;
+    final completionRate = totalOrders > 0 ? (completedOrders / totalOrders * 100) : 0.0;
 
-        final analytics = snapshot.data ?? {};
-        final totalOrders = analytics['total_orders'] as int? ?? 0;
-        final totalRevenue = analytics['total_revenue'] as int? ?? 0;
-        final averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0.0;
-        final completedOrders = analytics['completed_orders'] as int? ?? 0;
-        final cancelledOrders = analytics['cancelled_orders'] as int? ?? 0;
-        final completionRate = totalOrders > 0 ? (completedOrders / totalOrders * 100) : 0.0;
-
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          // Key Metrics
+          Row(
             children: [
-              // Key Metrics
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildMetricCard(
-                      'Total Orders',
-                      totalOrders.toString(),
-                      Icons.receipt_long,
-                      Colors.blue,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _buildMetricCard(
-                      'Total Revenue',
-                      CurrencyFormatter.format(totalRevenue / 100),
-                      Icons.attach_money,
-                      Colors.green,
-                    ),
-                  ),
-                ],
+              Expanded(
+                child: _buildMetricCard(
+                  AppStrings.totalOrders,
+                  totalOrders.toString(),
+                  Icons.receipt_long,
+                  Colors.blue,
+                ),
               ),
-
-              const SizedBox(height: 16),
-
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildMetricCard(
-                      'Avg Order Value',
-                      CurrencyFormatter.format(averageOrderValue),
-                      Icons.trending_up,
-                      Colors.purple,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _buildMetricCard(
-                      'Completion Rate',
-                      '${completionRate.toStringAsFixed(1)}%',
-                      Icons.check_circle,
-                      Colors.orange,
-                    ),
-                  ),
-                ],
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildMetricCard(
+                  AppStrings.totalRevenue,
+                  CurrencyFormatter.format(totalRevenue / 100),
+                  Icons.attach_money,
+                  Colors.green,
+                ),
               ),
-
-              const SizedBox(height: 24),
-
-              // Order Status Breakdown
-              _buildStatusBreakdownCard(context, analytics),
-
-              const SizedBox(height: 16),
-
-              // Revenue Chart
-              _buildRevenueChartCard(context, analytics),
-
-              const SizedBox(height: 16),
-
-              // Peak Hours Analysis
-              _buildPeakHoursCard(context, analytics),
             ],
           ),
-        );
-      },
+
+          const SizedBox(height: 16),
+
+          Row(
+            children: [
+              Expanded(
+                child: _buildMetricCard(
+                  AppStrings.avgOrderValue,
+                  CurrencyFormatter.format(averageOrderValue / 100), // Should divide by 100? Assuming stored in cents
+                  Icons.trending_up,
+                  Colors.purple,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildMetricCard(
+                  AppStrings.completionRate,
+                  '${completionRate.toStringAsFixed(1)}%',
+                  Icons.check_circle,
+                  Colors.orange,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 24),
+
+          // Order Status Breakdown
+          _buildStatusBreakdownCard(context, analytics),
+
+          const SizedBox(height: 16),
+
+          // Revenue Chart
+          _buildRevenueChartCard(context, analytics),
+
+          const SizedBox(height: 16),
+
+          // Peak Hours Analysis
+          _buildPeakHoursCard(context, analytics),
+        ],
+      ),
     );
   }
 
-  Widget _buildPerformanceTab() {
-    return FutureBuilder<Map<String, dynamic>>(
-      future: _loadPerformanceData(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
+  Widget _buildPerformanceTab(BuildContext context, VendorDashboardState state) {
+    if (state.performanceMetrics == null) {
+      return Center(child: Text(AppStrings.noDataAvailable));
+    }
 
-        final performance = snapshot.data ?? {};
+    final performance = state.performanceMetrics!;
 
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              // Performance Metrics
-              _buildPerformanceMetrics(context, performance),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          // Performance Metrics
+          _buildPerformanceMetrics(context, performance),
 
-              const SizedBox(height: 16),
+          const SizedBox(height: 16),
 
-              // Preparation Time Analysis
-              _buildPreparationTimeCard(context, performance),
+          // Preparation Time Analysis
+          _buildPreparationTimeCard(context, performance),
 
-              const SizedBox(height: 16),
+          const SizedBox(height: 16),
 
-              // Customer Satisfaction
-              _buildCustomerSatisfactionCard(context, performance),
-            ],
-          ),
-        );
-      },
+          // Customer Satisfaction
+          _buildCustomerSatisfactionCard(context, performance),
+        ],
+      ),
     );
   }
 
-  Widget _buildItemsTab() {
-    return FutureBuilder<List<Map<String, dynamic>>>(
-      future: _loadPopularItems(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
+  Widget _buildItemsTab(BuildContext context, VendorDashboardState state) {
+    if (state.popularItems == null) {
+      return Center(child: Text(AppStrings.noDataAvailable));
+    }
 
-        final popularItems = snapshot.data ?? [];
+    final popularItems = state.popularItems!;
 
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              // Popular Items
-              _buildPopularItemsCard(context, popularItems),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          // Popular Items
+          _buildPopularItemsCard(context, popularItems),
 
-              const SizedBox(height: 16),
+          const SizedBox(height: 16),
 
-              // Category Performance
-              _buildCategoryPerformanceCard(context, popularItems),
-            ],
-          ),
-        );
-      },
+          // Category Performance
+          _buildCategoryPerformanceCard(context, popularItems),
+        ],
+      ),
     );
   }
 
@@ -283,7 +270,7 @@ class _OrderAnalyticsWidgetState extends State<OrderAnalyticsWidget>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Order Status Breakdown',
+              AppStrings.orderStatusBreakdown,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -339,7 +326,7 @@ class _OrderAnalyticsWidgetState extends State<OrderAnalyticsWidget>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Revenue Trend',
+              AppStrings.revenueTrend,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -348,7 +335,7 @@ class _OrderAnalyticsWidgetState extends State<OrderAnalyticsWidget>
             Container(
               height: 200,
               child: dailyRevenue.isEmpty
-                  ? const Center(child: Text('No data available'))
+                  ? Center(child: Text(AppStrings.noDataAvailable))
                   : _buildSimpleRevenueChart(dailyRevenue),
             ),
           ],
@@ -411,14 +398,14 @@ class _OrderAnalyticsWidgetState extends State<OrderAnalyticsWidget>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Peak Hours',
+              AppStrings.peakHours,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 16),
             if (peakHours.isEmpty)
-              const Text('No peak hour data available')
+              Text(AppStrings.noPeakHourData)
             else
               Wrap(
                 spacing: 8,
@@ -447,24 +434,24 @@ class _OrderAnalyticsWidgetState extends State<OrderAnalyticsWidget>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Performance Metrics',
+              AppStrings.performanceMetrics,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 16),
             _buildPerformanceRow(
-              'Average Prep Time',
+              AppStrings.avgPrepTime,
               '${performance['avg_prep_time'] ?? 'N/A'} min',
               Icons.timer,
             ),
             _buildPerformanceRow(
-              'On-Time Rate',
+              AppStrings.onTimeRate,
               '${performance['on_time_rate'] ?? 'N/A'}%',
               Icons.schedule,
             ),
             _buildPerformanceRow(
-              'Daily Average',
+              AppStrings.dailyAverage,
               '${performance['daily_average'] ?? 'N/A'} orders',
               Icons.trending_up,
             ),
@@ -499,14 +486,13 @@ class _OrderAnalyticsWidgetState extends State<OrderAnalyticsWidget>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Preparation Time Analysis',
+              AppStrings.prepTimeDistribution,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 16),
             const Text('Preparation time distribution will be shown here'),
-            // Placeholder for preparation time chart
           ],
         ),
       ),
@@ -521,14 +507,13 @@ class _OrderAnalyticsWidgetState extends State<OrderAnalyticsWidget>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Customer Satisfaction',
+              AppStrings.customerFeedback,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 16),
             const Text('Customer ratings and feedback will be shown here'),
-            // Placeholder for customer satisfaction metrics
           ],
         ),
       ),
@@ -543,14 +528,14 @@ class _OrderAnalyticsWidgetState extends State<OrderAnalyticsWidget>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Popular Items',
+              AppStrings.popularItems,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 16),
             if (popularItems.isEmpty)
-              const Text('No item data available')
+              Text(AppStrings.noItemData)
             else
               Column(
                 children: popularItems.take(10).map((item) {
@@ -591,7 +576,7 @@ class _OrderAnalyticsWidgetState extends State<OrderAnalyticsWidget>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Category Performance',
+              AppStrings.categoryPerformance,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -615,52 +600,6 @@ class _OrderAnalyticsWidgetState extends State<OrderAnalyticsWidget>
         ),
       ),
     );
-  }
-
-  Future<Map<String, dynamic>> _loadAnalyticsData() async {
-    // This would be replaced with actual analytics queries
-    return {
-      'total_orders': 150,
-      'total_revenue': 15000, // in cents
-      'completed_orders': 140,
-      'cancelled_orders': 10,
-      'status_counts': {
-        'completed': 140,
-        'cancelled': 8,
-        'rejected': 2,
-      },
-      'daily_revenue': [
-        {'date': '2024-01-01', 'revenue': 1200},
-        {'date': '2024-01-02', 'revenue': 1500},
-        {'date': '2024-01-03', 'revenue': 900},
-        // ... more days
-      ],
-      'peak_hours': [
-        {'hour': 12, 'order_count': 25},
-        {'hour': 13, 'order_count': 30},
-        {'hour': 18, 'order_count': 35},
-        {'hour': 19, 'order_count': 28},
-      ],
-    };
-  }
-
-  Future<Map<String, dynamic>> _loadPerformanceData() async {
-    // Placeholder for performance data
-    return {
-      'avg_prep_time': 15,
-      'on_time_rate': 95.5,
-      'daily_average': 12.5,
-    };
-  }
-
-  Future<List<Map<String, dynamic>>> _loadPopularItems() async {
-    // Placeholder for popular items data
-    return [
-      {'dish_name': 'Burger', 'order_count': 45, 'total_revenue': 4500, 'category': 'Main Course'},
-      {'dish_name': 'Pizza', 'order_count': 38, 'total_revenue': 3800, 'category': 'Main Course'},
-      {'dish_name': 'Salad', 'order_count': 25, 'total_revenue': 1250, 'category': 'Salads'},
-      // ... more items
-    ];
   }
 
   Future<void> _selectDateRange() async {

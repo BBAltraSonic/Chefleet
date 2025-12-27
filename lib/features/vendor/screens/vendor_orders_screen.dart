@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../core/constants/app_strings.dart';
 import '../../../core/theme/app_theme.dart';
 import '../blocs/vendor_orders_bloc.dart';
+import '../blocs/order_management_bloc.dart' show OrderSortOption, SortOrder;
 import '../widgets/order_filter_bar.dart';
 import '../widgets/vendor_order_card.dart';
 
@@ -34,10 +36,28 @@ class _VendorOrdersView extends StatelessWidget {
         // Filter bar
         OrderFilterBar(
           onFilterChanged: (filters) {
-            // TODO: Implement filter logic
+            context.read<VendorOrdersBloc>().add(
+              FilterOrdersByStatus(filters.status ?? 'all'),
+            );
           },
           onSortChanged: (sortOption, sortOrder) {
-            // TODO: Implement sort logic
+            String option = 'date';
+            switch (sortOption) {
+              case OrderSortOption.totalAmount:
+                option = 'amount';
+                break;
+              case OrderSortOption.priority:
+                option = 'status';
+                break;
+              default:
+                option = 'date';
+            }
+            context.read<VendorOrdersBloc>().add(
+              SortOrders(
+                option: option,
+                ascending: sortOrder == SortOrder.ascending,
+              ),
+            );
           },
         ),
         // Orders list
@@ -73,7 +93,7 @@ class _VendorOrdersView extends StatelessWidget {
                               .read<VendorOrdersBloc>()
                               .add(const LoadVendorOrders());
                         },
-                        child: const Text('Retry'),
+                        child: Text(AppStrings.retry),
                       ),
                     ],
                   ),
@@ -93,7 +113,7 @@ class _VendorOrdersView extends StatelessWidget {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          'No orders yet',
+                          AppStrings.noOrders,
                           style: TextStyle(
                             fontSize: 18,
                             color: Colors.grey[600],
@@ -102,7 +122,7 @@ class _VendorOrdersView extends StatelessWidget {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Orders will appear here when customers place them',
+                          AppStrings.ordersEmptyState,
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.grey[500],

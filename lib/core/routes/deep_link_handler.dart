@@ -231,7 +231,7 @@ class DeepLinkHandler {
     });
 
     // Request role switch
-    _roleBloc.add(RoleSwitchRequested(targetRole));
+    _roleBloc.add(RoleSwitchRequested(newRole: targetRole));
 
     // Wait for completion with timeout
     try {

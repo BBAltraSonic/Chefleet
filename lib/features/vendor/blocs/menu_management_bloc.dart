@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -10,6 +11,7 @@ part 'menu_management_state.dart';
 class MenuManagementBloc
     extends Bloc<MenuManagementEvent, MenuManagementState> {
   final SupabaseClient _supabaseClient;
+  Timer? _searchDebouncer;
 
   MenuManagementBloc({required SupabaseClient supabaseClient})
       : _supabaseClient = supabaseClient,
@@ -25,7 +27,7 @@ class MenuManagementBloc
     on<RefreshDishes>(_onRefreshDishes);
   }
 
-  void _onLoadDishes(
+  Future<void> _onLoadDishes(
     LoadDishes event,
     Emitter<MenuManagementState> emit,
   ) async {
@@ -50,7 +52,7 @@ class MenuManagementBloc
           .eq('owner_id', currentUser.id)
           .single();
 
-      final vendorId = vendorResponse['id'] as String? ?? '';
+      final vendorId = vendorResponse['id'] as String;
 
       final response = await _supabaseClient
           .from('dishes')
@@ -81,7 +83,7 @@ class MenuManagementBloc
     }
   }
 
-  void _onCreateDish(
+  Future<void> _onCreateDish(
     CreateDish event,
     Emitter<MenuManagementState> emit,
   ) async {
@@ -106,7 +108,7 @@ class MenuManagementBloc
           .eq('owner_id', currentUser.id)
           .single();
 
-      final vendorId = vendorResponse['id'] as String? ?? '';
+      final vendorId = vendorResponse['id'] as String;
 
       final dishData = {
         'vendor_id': vendorId,
@@ -115,7 +117,7 @@ class MenuManagementBloc
         'price': event.dish.price,
         'category': event.dish.category,
         'image_url': event.dish.imageUrl,
-        'is_available': event.dish.available,
+        'available': event.dish.available,
         'description_long': event.dish.descriptionLong,
         'ingredients': event.dish.ingredients,
         'allergens': event.dish.allergens,
@@ -149,7 +151,7 @@ class MenuManagementBloc
     }
   }
 
-  void _onUpdateDish(
+  Future<void> _onUpdateDish(
     UpdateDish event,
     Emitter<MenuManagementState> emit,
   ) async {
@@ -164,7 +166,7 @@ class MenuManagementBloc
         'price': event.dish.price,
         'category': event.dish.category,
         'image_url': event.dish.imageUrl,
-        'is_available': event.dish.available,
+        'available': event.dish.available,
         'description_long': event.dish.descriptionLong,
         'ingredients': event.dish.ingredients,
         'allergens': event.dish.allergens,
@@ -203,7 +205,7 @@ class MenuManagementBloc
     }
   }
 
-  void _onDeleteDish(
+  Future<void> _onDeleteDish(
     DeleteDish event,
     Emitter<MenuManagementState> emit,
   ) async {
@@ -235,7 +237,7 @@ class MenuManagementBloc
     }
   }
 
-  void _onToggleDishAvailability(
+  Future<void> _onToggleDishAvailability(
     ToggleDishAvailability event,
     Emitter<MenuManagementState> emit,
   ) async {
@@ -243,7 +245,7 @@ class MenuManagementBloc
       final updatedDish = event.dish.copyWith(available: !event.dish.available);
 
       final dishData = {
-        'is_available': updatedDish.available,
+        'available': updatedDish.available,
         'updated_at': DateTime.now().toIso8601String(),
       };
 
@@ -272,15 +274,19 @@ class MenuManagementBloc
     SearchDishes event,
     Emitter<MenuManagementState> emit,
   ) {
-    final filteredDishes = state.dishes.where((dish) {
-      return dish.name.toLowerCase().contains(event.query.toLowerCase()) ||
-          (dish.description?.toLowerCase().contains(event.query.toLowerCase()) ?? false);
-    }).toList();
+    // Debounce search to avoid excessive filtering during typing
+    _searchDebouncer?.cancel();
+    _searchDebouncer = Timer(const Duration(milliseconds: 300), () {
+      final filteredDishes = state.dishes.where((dish) {
+        return dish.name.toLowerCase().contains(event.query.toLowerCase()) ||
+            (dish.description.toLowerCase().contains(event.query.toLowerCase()) ?? false);
+      }).toList();
 
-    emit(state.copyWith(
-      filteredDishes: filteredDishes,
-      searchQuery: event.query,
-    ));
+      emit(state.copyWith(
+        filteredDishes: filteredDishes,
+        searchQuery: event.query,
+      ));
+    });
   }
 
   void _onFilterDishes(
@@ -308,7 +314,7 @@ class MenuManagementBloc
     RefreshDishes event,
     Emitter<MenuManagementState> emit,
   ) {
-    add(LoadDishes());
+    add(const LoadDishes());
   }
 
   List<Dish> _applyFiltersAndSorting(List<Dish> dishes) {
@@ -341,7 +347,7 @@ class MenuManagementBloc
     if (state.searchQuery.isNotEmpty) {
       filteredDishes = filteredDishes.where((dish) {
         return dish.name.toLowerCase().contains(state.searchQuery.toLowerCase()) ||
-            (dish.description?.toLowerCase().contains(state.searchQuery.toLowerCase()) ?? false);
+            (dish.description.toLowerCase().contains(state.searchQuery.toLowerCase()) ?? false);
       }).toList();
     }
 
@@ -371,5 +377,11 @@ class MenuManagementBloc
     });
 
     return filteredDishes;
+  }
+
+  @override
+  Future<void> close() {
+    _searchDebouncer?.cancel();
+    return super.close();
   }
 }

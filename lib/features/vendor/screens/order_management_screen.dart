@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../core/constants/app_strings.dart';
 import '../blocs/order_management_bloc.dart';
 import '../widgets/order_queue_widget.dart';
 import '../widgets/order_details_widget.dart';
@@ -52,25 +53,49 @@ class _OrderManagementScreenState extends State<OrderManagementScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Order Management'),
+        title: const Text(AppStrings.orderManagement),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
             Tab(
               icon: Icon(Icons.pending_actions),
-              text: 'Queue',
+              text: AppStrings.queue,
             ),
             Tab(
               icon: Icon(Icons.history),
-              text: 'History',
+              text: AppStrings.history,
             ),
             Tab(
               icon: Icon(Icons.analytics),
-              text: 'Analytics',
+              text: AppStrings.analytics,
             ),
           ],
         ),
+// ...
+          Text(
+            AppStrings.unknownCustomer,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+            ),
+// ...
+            onPressed: () {
+              context.read<OrderManagementBloc>().add(LoadOrders());
+            },
+            child: Text(AppStrings.tryAgain),
+          ),
+// ...
+            Text(
+              AppStrings.noHistory,
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              AppStrings.historyEmptyState,
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
         actions: [
           BlocBuilder<OrderManagementBloc, OrderManagementState>(
             builder: (context, state) {

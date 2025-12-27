@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../../../core/constants/app_strings.dart';
 
 class ChatInputWidget extends StatefulWidget {
   final String conversationId;
@@ -52,7 +53,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
     final messageType = _selectedFile != null ? _getFileType() : 'text';
 
     widget.onSendMessage(
-      content.isNotEmpty ? content : (_selectedFile != null ? 'Shared a file' : ''),
+      content.isNotEmpty ? content : (_selectedFile != null ? AppStrings.sharedFile : ''),
       messageType,
       _mediaUrl,
     );
@@ -115,7 +116,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
     // Note: file_picker package would be needed for actual file picking
     // For now, we'll just show a placeholder
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('File picker not implemented yet')),
+      const SnackBar(content: Text(AppStrings.filePickerNotImplemented)),
     );
   }
 
@@ -144,7 +145,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to upload file: ${e.toString()}'),
+            content: Text('${AppStrings.uploadFileError}${e.toString()}'),
             backgroundColor: Colors.red,
           ),
         );
@@ -173,7 +174,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Share Media',
+              AppStrings.shareMedia,
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 20),
@@ -182,7 +183,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
               children: [
                 _MediaOption(
                   icon: Icons.photo_library,
-                  label: 'Gallery',
+                  label: AppStrings.gallery,
                   onTap: () {
                     Navigator.of(context).pop();
                     _pickImage();
@@ -190,7 +191,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                 ),
                 _MediaOption(
                   icon: Icons.camera_alt,
-                  label: 'Camera',
+                  label: AppStrings.camera,
                   onTap: () {
                     Navigator.of(context).pop();
                     _takePhoto();
@@ -198,7 +199,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                 ),
                 _MediaOption(
                   icon: Icons.attach_file,
-                  label: 'File',
+                  label: AppStrings.file,
                   onTap: () {
                     Navigator.of(context).pop();
                     _pickFile();
@@ -254,7 +255,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                         ),
                         if (_isUploading)
                           Text(
-                            'Uploading...',
+                            AppStrings.uploading,
                             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: Theme.of(context).colorScheme.primary,
                             ),
@@ -266,7 +267,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                     IconButton(
                       onPressed: _removeFile,
                       icon: const Icon(Icons.close),
-                      tooltip: 'Remove file',
+                      tooltip: AppStrings.tooltipRemoveFile,
                     ),
                   if (_isUploading)
                     const SizedBox(
@@ -287,7 +288,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
               IconButton(
                 onPressed: _showMediaOptions,
                 icon: const Icon(Icons.add_circle_outline),
-                tooltip: 'Add media',
+                tooltip: AppStrings.tooltipAddMedia,
               ),
 
               // Text input
@@ -296,7 +297,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                   controller: _messageController,
                   focusNode: _focusNode,
                   decoration: InputDecoration(
-                    hintText: 'Type a message...',
+                    hintText: AppStrings.typeMessage,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(24),
                       borderSide: BorderSide.none,
@@ -344,7 +345,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                         ? Theme.of(context).colorScheme.onPrimary
                         : Theme.of(context).colorScheme.outline,
                   ),
-                  tooltip: 'Send message',
+                  tooltip: AppStrings.tooltipSendMessage,
                 ),
               ),
             ],

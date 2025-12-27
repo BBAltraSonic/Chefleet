@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'dart:async';
 
 import '../../../shared/utils/currency_formatter.dart';
 import '../blocs/order_management_bloc.dart';
+import '../../orders/services/order_realtime_service.dart';
+import '../../orders/widgets/pickup_code_qr_widget.dart';
+import '../../../core/services/edge_function_service.dart';
 
 class OrderDetailsWidget extends StatefulWidget {
   final String orderId;
@@ -22,11 +26,49 @@ class OrderDetailsWidget extends StatefulWidget {
 class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
   Map<String, dynamic>? _order;
   bool _isLoading = true;
+  bool _isUpdatingStatus = false;
+  StreamSubscription? _realtimeSubscription;
+  String? _pickupCode;
+  DateTime? _pickupCodeExpiresAt;
 
   @override
   void initState() {
     super.initState();
     _loadOrderDetails();
+    _subscribeToRealtimeUpdates();
+  }
+
+  @override
+  void dispose() {
+    _realtimeSubscription?.cancel();
+    super.dispose();
+  }
+
+  /// Subscribe to real-time order updates
+  void _subscribeToRealtimeUpdates() {
+    final realtimeService = context.read<OrderRealtimeService>();
+    _realtimeSubscription = realtimeService
+        .subscribeToOrder(widget.orderId)
+        .listen(
+      (order) {
+        if (mounted) {
+          setState(() {
+            _order = order.toJson(); // Convert Order model to Map
+            _isLoading = false;
+          });
+        }
+      },
+      onError: (error) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Real-time update error: $error'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      },
+    );
   }
 
   Future<void> _loadOrderDetails() async {
@@ -620,81 +662,237 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Status-specific action buttons
-          if (status == 'pending') ...[
-            Row(
-              children: [
-                Expanded(
+          // QR Code Display (if pickup code exists and order is ready)
+          if (_pickupCode != null && _pickupCodeExpiresAt != null && status == 'ready') ...[
+            PickupCodeQrWidget(
+              pickupCode: _pickupCode!,
+              expiresAt: _pickupCodeExpiresAt!,
+              onExpired: () {
+                setState(() {
+                  _pickupCode = null;
+                  _pickupCodeExpiresAt = null;
+                });
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Pickup code expired. Generate a new one.'),
+                  ),
+                );
+              },
+              onRefresh: () => _generatePickupCode(context),
+            ),
+            const SizedBox(height: 16),
+          ],
+
+          // Status-specific action buttons with optimistic updates
+          if (_isUpdatingStatus)
+            const CircularProgressIndicator()
+          else ...[
+            if (status == 'pending') ...[
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => _updateStatusOptimistically(context, 'confirmed'),
+                      icon: const Icon(Icons.check),
+                      label: const Text('Accept Order'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _showRejectOrderDialog(context),
+                      icon: const Icon(Icons.close),
+                      label: const Text('Reject'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.red,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ] else if (status == 'confirmed') ...[
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () => _updateStatusOptimistically(context, 'preparing'),
+                  icon: const Icon(Icons.restaurant),
+                  label: const Text('Start Preparation'),
+                ),
+              ),
+            ] else if (status == 'preparing') ...[
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () => _updateStatusOptimistically(context, 'ready'),
+                  icon: const Icon(Icons.notifications_active),
+                  label: const Text('Mark Ready for Pickup'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              ),
+            ] else if (status == 'ready') ...[
+              if (_pickupCode == null)
+                SizedBox(
+                  width: double.infinity,
                   child: ElevatedButton.icon(
-                    onPressed: () => _showAcceptOrderDialog(context),
-                    icon: const Icon(Icons.check),
-                    label: const Text('Accept Order'),
+                    onPressed: () => _generatePickupCode(context),
+                    icon: const Icon(Icons.qr_code),
+                    label: const Text('Generate Pickup Code'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
+                      backgroundColor: Colors.blue,
                       foregroundColor: Colors.white,
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => _showRejectOrderDialog(context),
-                    icon: const Icon(Icons.close),
-                    label: const Text('Reject'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.red,
-                    ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () => _updateStatusOptimistically(context, 'picked_up'),
+                  icon: const Icon(Icons.done_all),
+                  label: const Text('Mark as Picked Up'),
+                ),
+              ),
+            ] else if (status == 'picked_up') ...[
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () => _updateStatusOptimistically(context, 'completed'),
+                  icon: const Icon(Icons.check_circle),
+                  label: const Text('Complete Order'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
                   ),
                 ),
-              ],
-            ),
-          ] else if (status == 'confirmed') ...[
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  context.read<OrderManagementBloc>().add(
-                    StartOrderPreparation(orderId: widget.orderId),
-                  );
-                },
-                icon: const Icon(Icons.restaurant),
-                label: const Text('Start Preparation'),
               ),
-            ),
-          ] else if (status == 'preparing') ...[
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  context.read<OrderManagementBloc>().add(
-                    MarkOrderReady(orderId: widget.orderId),
-                  );
-                },
-                icon: const Icon(Icons.notifications_active),
-                label: const Text('Mark Ready for Pickup'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white,
-                ),
-              ),
-            ),
-          ] else if (status == 'ready') ...[
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  context.read<OrderManagementBloc>().add(
-                    CompleteOrder(orderId: widget.orderId),
-                  );
-                },
-                icon: const Icon(Icons.done_all),
-                label: const Text('Complete Order'),
-              ),
-            ),
+            ],
           ],
         ],
       ),
     );
+  }
+
+  /// Update order status with optimistic UI update
+  Future<void> _updateStatusOptimistically(BuildContext context, String newStatus) async {
+    final previousStatus = _order!['status'];
+    
+    // Apply optimistic update
+    setState(() {
+      _order!['status'] = newStatus;
+      _isUpdatingStatus = true;
+    });
+
+    try {
+      final edgeFunctionService = context.read<EdgeFunctionService>();
+      final result = await edgeFunctionService.changeOrderStatus(
+        orderId: widget.orderId,
+        newStatus: newStatus,
+      );
+
+      result.fold(
+        (error) {
+          // Rollback on error
+          if (mounted) {
+            setState(() {
+              _order!['status'] = previousStatus;
+              _isUpdatingStatus = false;
+            });
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Failed to update status: $error'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        },
+        (response) {
+          // Success - realtime will handle the update
+          if (mounted) {
+            setState(() {
+              _isUpdatingStatus = false;
+            });
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Order status updated to $newStatus'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          }
+        },
+      );
+    } catch (e) {
+      // Rollback on exception
+      if (mounted) {
+        setState(() {
+          _order!['status'] = previousStatus;
+          _isUpdatingStatus = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Generate pickup code
+  Future<void> _generatePickupCode(BuildContext context) async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final edgeFunctionService = context.read<EdgeFunctionService>();
+      final result = await edgeFunctionService.generatePickupCode(
+        orderId: widget.orderId,
+      );
+
+      result.fold(
+        (error) {
+          if (mounted) {
+            setState(() {
+              _isLoading = false;
+            });
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Failed to generate pickup code: $error'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        },
+        (response) {
+          if (mounted) {
+            setState(() {
+              _pickupCode = response['pickup_code'] as String;
+              _pickupCodeExpiresAt = DateTime.parse(response['expires_at'] as String);
+              _isLoading = false;
+            });
+          }
+        },
+      );
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   void _showAcceptOrderDialog(BuildContext context) {

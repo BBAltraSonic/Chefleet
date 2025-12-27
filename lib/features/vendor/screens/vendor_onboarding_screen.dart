@@ -13,6 +13,7 @@ import '../widgets/opening_hours_selector_widget.dart';
 import '../../../core/blocs/role_bloc.dart';
 import '../../../core/blocs/role_event.dart';
 import '../../../core/routes/app_routes.dart';
+import '../../../core/services/location_service.dart';
 
 class VendorOnboardingScreen extends StatefulWidget {
   const VendorOnboardingScreen({super.key});
@@ -738,8 +739,8 @@ class _VendorOnboardingScreenState extends State<VendorOnboardingScreen> {
           if (!status.isGranted) {
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('Camera permission is required to take photos'),
+                const SnackBar(
+                  content: Text('Camera permission is required to take photos'),
                   action: SnackBarAction(
                     label: 'Settings',
                     onPressed: openAppSettings,
@@ -764,8 +765,8 @@ class _VendorOnboardingScreenState extends State<VendorOnboardingScreen> {
           if (!status.isGranted) {
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('Storage permission is required to select images'),
+                const SnackBar(
+                  content: Text('Storage permission is required to select images'),
                   action: SnackBarAction(
                     label: 'Settings',
                     onPressed: openAppSettings,
@@ -797,13 +798,14 @@ class _VendorOnboardingScreenState extends State<VendorOnboardingScreen> {
     }
   }
 
-  void _selectLocationOnMap() {
-    // TODO: Implement location selection on map
-    // For now, simulate with a location
-    _bloc.add(const LocationUpdated(
-      address: '123 Main St, City, State',
-      latitude: 37.7749,
-      longitude: -122.4194,
+  Future<void> _selectLocationOnMap() async {
+    // Auto-detect location or use Johannesburg default
+    final location = await LocationService().getLocationOrDefault();
+    
+    _bloc.add(LocationUpdated(
+      address: 'Tap to set precise address',  // Placeholder until geocoding implemented
+      latitude: location.latitude,
+      longitude: location.longitude,
     ));
   }
 

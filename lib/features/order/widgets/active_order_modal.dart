@@ -9,6 +9,7 @@ import '../models/preparation_step_model.dart';
 import '../models/order_preparation_state.dart';
 import 'preparation_timer_widget.dart';
 import 'preparation_steps_list.dart';
+import '../../../core/utils/date_time_utils.dart';
 
 class ActiveOrderModal extends StatefulWidget {
   const ActiveOrderModal({super.key});
@@ -189,7 +190,7 @@ class _ActiveOrderModalState extends State<ActiveOrderModal> {
     final orderId = order['id'] as String;
     final status = order['status'] as String? ?? 'pending';
     final totalAmount = (order['total_amount'] as num?)?.toDouble() ?? 0.0;
-    final createdAt = DateTime.parse(order['created_at'] as String);
+    final createdAt = DateTimeUtils.parse(order['created_at'] as String) ?? DateTime.now();
     final vendorName = order['vendors']?['business_name'] as String? ?? 'Vendor';
     final vendorLogo = order['vendors']?['logo_url'] as String?;
     final pickupCode = order['pickup_code'] as String?;
@@ -200,12 +201,8 @@ class _ActiveOrderModalState extends State<ActiveOrderModal> {
         ? OrderPreparationState(
             orderId: orderId,
             steps: steps,
-            preparationStartedAt: order['preparation_started_at'] != null
-                ? DateTime.parse(order['preparation_started_at'] as String)
-                : null,
-            estimatedReadyAt: order['estimated_ready_at'] != null
-                ? DateTime.parse(order['estimated_ready_at'] as String)
-                : null,
+            preparationStartedAt: DateTimeUtils.parse(order['preparation_started_at'] as String?),
+            estimatedReadyAt: DateTimeUtils.parse(order['estimated_ready_at'] as String?),
           )
         : null;
     
@@ -483,18 +480,7 @@ class _ActiveOrderModalState extends State<ActiveOrderModal> {
 
   // Helper methods for enhanced order display
   String _formatDateTime(DateTime dateTime) {
-    final now = DateTime.now();
-    final difference = now.difference(dateTime);
-
-    if (difference.inMinutes < 1) {
-      return 'just now';
-    } else if (difference.inMinutes < 60) {
-      return '${difference.inMinutes} min${difference.inMinutes == 1 ? '' : 's'} ago';
-    } else if (difference.inHours < 24) {
-      return '${difference.inHours} hour${difference.inHours == 1 ? '' : 's'} ago';
-    } else {
-      return '${difference.inDays} day${difference.inDays == 1 ? '' : 's'} ago';
-    }
+    return DateTimeUtils.formatTimeAgo(dateTime);
   }
 
   Widget _buildOrderTimeline(String status, DateTime createdAt, DateTime updatedAt) {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../blocs/vendor_chat_bloc.dart';
+import '../../../../core/constants/app_strings.dart';
 
 class ChatMessageWidget extends StatelessWidget {
   final Map<String, dynamic> message;
@@ -92,7 +93,7 @@ class ChatMessageWidget extends StatelessWidget {
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              'Read',
+                              AppStrings.readStatus,
                               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                 color: isFromVendor
                                     ? Theme.of(context).colorScheme.onPrimary.withOpacity(0.7)
@@ -156,7 +157,7 @@ class ChatMessageWidget extends StatelessWidget {
     final mediaUrl = message['media_url'] as String?;
 
     if (mediaUrl == null || mediaUrl.isEmpty) {
-      return _buildTextMessage(context, '[Image not available]');
+      return _buildTextMessage(context, AppStrings.imageNotAvailable);
     }
 
     return Column(
@@ -191,7 +192,7 @@ class ChatMessageWidget extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Failed to load image',
+                      AppStrings.failedToLoadImage,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: isFromVendor
                             ? Theme.of(context).colorScheme.onPrimary.withOpacity(0.7)
@@ -214,7 +215,7 @@ class ChatMessageWidget extends StatelessWidget {
 
   Widget _buildFileMessage(BuildContext context, Map<String, dynamic> message) {
     final mediaUrl = message['media_url'] as String?;
-    final fileName = message['content'] as String? ?? 'Document';
+    final fileName = message['content'] as String? ?? AppStrings.defaultDocumentName;
 
     return Container(
       width: 200,
@@ -256,7 +257,7 @@ class ChatMessageWidget extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
-                  'Tap to download',
+                  AppStrings.tapToDownload,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: isFromVendor
                         ? Theme.of(context).colorScheme.onPrimary.withOpacity(0.5)
@@ -273,7 +274,7 @@ class ChatMessageWidget extends StatelessWidget {
   }
 
   Widget _buildLocationMessage(BuildContext context, Map<String, dynamic> message) {
-    final content = message['content'] as String? ?? 'Location shared';
+    final content = message['content'] as String? ?? AppStrings.defaultLocationContent;
 
     return Container(
       width: 200,

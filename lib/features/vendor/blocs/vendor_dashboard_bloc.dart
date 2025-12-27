@@ -32,6 +32,9 @@ class VendorDashboardBloc extends Bloc<VendorDashboardEvent, VendorDashboardStat
     on<UnsubscribeFromOrderUpdates>(_onUnsubscribeFromOrderUpdates);
     on<VerifyPickupCode>(_onVerifyPickupCode);
     on<RefreshDashboard>(_onRefreshDashboard);
+    on<LoadDetailedAnalytics>(_onLoadDetailedAnalytics);
+    on<LoadPerformanceMetrics>(_onLoadPerformanceMetrics);
+    on<LoadPopularItems>(_onLoadPopularItems);
   }
 
   @override
@@ -103,6 +106,9 @@ class VendorDashboardBloc extends Bloc<VendorDashboardEvent, VendorDashboardStat
         Future(() => add(LoadOrders(vendorId: vendorResponse['id']))),
         Future(() => add(LoadOrderStats(vendorId: vendorResponse['id']))),
         Future(() => add(LoadMenuItems(vendorId: vendorResponse['id']))),
+        Future(() => add(LoadDetailedAnalytics(vendorId: vendorResponse['id']))),
+        Future(() => add(LoadPerformanceMetrics(vendorId: vendorResponse['id']))),
+        Future(() => add(LoadPopularItems(vendorId: vendorResponse['id']))),
       ]);
 
       emit(state.copyWith(
@@ -472,6 +478,48 @@ class VendorDashboardBloc extends Bloc<VendorDashboardEvent, VendorDashboardStat
     _logVendor('dashboard.refresh.trigger');
     if (state.vendor != null) {
       add(LoadDashboardData());
+    }
+  }
+
+  Future<void> _onLoadDetailedAnalytics(
+    LoadDetailedAnalytics event,
+    Emitter<VendorDashboardState> emit,
+  ) async {
+    try {
+      _logVendor('analytics.detailed.load.request', vendorId: event.vendorId, severity: DiagnosticSeverity.debug);
+      final data = await _ordersService.fetchDetailedAnalytics(event.vendorId);
+      emit(state.copyWith(detailedAnalytics: data));
+      _logVendor('analytics.detailed.load.success', vendorId: event.vendorId);
+    } catch (e) {
+      _logVendor('analytics.detailed.load.error', severity: DiagnosticSeverity.error, vendorId: event.vendorId, payload: {'message': e.toString()});
+    }
+  }
+
+  Future<void> _onLoadPerformanceMetrics(
+    LoadPerformanceMetrics event,
+    Emitter<VendorDashboardState> emit,
+  ) async {
+    try {
+      _logVendor('analytics.performance.load.request', vendorId: event.vendorId, severity: DiagnosticSeverity.debug);
+      final data = await _ordersService.fetchPerformanceMetrics(event.vendorId);
+      emit(state.copyWith(performanceMetrics: data));
+      _logVendor('analytics.performance.load.success', vendorId: event.vendorId);
+    } catch (e) {
+      _logVendor('analytics.performance.load.error', severity: DiagnosticSeverity.error, vendorId: event.vendorId, payload: {'message': e.toString()});
+    }
+  }
+
+  Future<void> _onLoadPopularItems(
+    LoadPopularItems event,
+    Emitter<VendorDashboardState> emit,
+  ) async {
+    try {
+      _logVendor('analytics.popular_items.load.request', vendorId: event.vendorId, severity: DiagnosticSeverity.debug);
+      final data = await _ordersService.fetchPopularItems(event.vendorId);
+      emit(state.copyWith(popularItems: data));
+      _logVendor('analytics.popular_items.load.success', vendorId: event.vendorId);
+    } catch (e) {
+      _logVendor('analytics.popular_items.load.error', severity: DiagnosticSeverity.error, vendorId: event.vendorId, payload: {'message': e.toString()});
     }
   }
 }

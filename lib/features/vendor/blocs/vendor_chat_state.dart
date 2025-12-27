@@ -1,4 +1,11 @@
 part of 'vendor_chat_bloc.dart';
+// AppStrings is imported in the part file (vendor_chat_bloc.dart) so it should be available?
+// No, part files don't automatically share imports unless the parent imports it and exports it? 
+// Actually, part files share the same scope. The parent file's imports are available to the part.
+// vendor_chat_bloc.dart imports AppStrings. So we don't need to import it here.
+// But to be safe or if it fails analysis, we can check.
+// Typically `part of` files share imports of parents.
+// I will assume it works since I added import to vendor_chat_bloc.dart.
 
 enum VendorChatStatus {
   initial,
@@ -114,13 +121,13 @@ class VendorChatState extends Equatable {
     final difference = now.difference(dateTime);
 
     if (difference.inMinutes < 1) {
-      return 'now';
+      return AppStrings.now;
     } else if (difference.inHours < 1) {
-      return '${difference.inMinutes}m ago';
+      return '${difference.inMinutes}${AppStrings.minAgo}';
     } else if (difference.inDays < 1) {
-      return '${difference.inHours}h ago';
+      return '${difference.inHours}${AppStrings.hourAgo}';
     } else if (difference.inDays < 7) {
-      return '${difference.inDays}d ago';
+      return '${difference.inDays}${AppStrings.dayAgo}';
     } else {
       return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
     }
@@ -128,7 +135,7 @@ class VendorChatState extends Equatable {
 
   static String formatLastMessage(String? content, {int maxLength = 50}) {
     if (content == null || content.isEmpty) {
-      return 'No messages yet';
+      return AppStrings.noMessagesYet;
     }
 
     if (content.length <= maxLength) {
@@ -146,7 +153,7 @@ class VendorChatState extends Equatable {
       return customerName;
     }
 
-    return 'Unknown Customer';
+    return AppStrings.unknownCustomer;
   }
 
   static String getCustomerPhone(Map<String, dynamic> conversation) {
@@ -173,11 +180,11 @@ class VendorChatState extends Equatable {
 
     switch (messageType) {
       case 'image':
-        return '📷 Image';
+        return AppStrings.imageMessage;
       case 'file':
-        return '📎 File';
+        return AppStrings.fileMessage;
       case 'location':
-        return '📍 Location';
+        return AppStrings.locationMessage;
       default:
         return content;
     }
@@ -256,22 +263,22 @@ class VendorChatState extends Equatable {
   // Conversation status
   static String getConversationStatus(Map<String, dynamic> conversation) {
     final lastMessage = conversation['last_message'] as Map<String, dynamic>?;
-    if (lastMessage == null) return 'No messages';
+    if (lastMessage == null) return AppStrings.noMessagesStatus;
 
     final updatedAt = DateTime.tryParse(conversation['updated_at'] ?? '');
-    if (updatedAt == null) return 'Unknown';
+    if (updatedAt == null) return AppStrings.unknown;
 
     final now = DateTime.now();
     final difference = now.difference(updatedAt);
 
     if (difference.inMinutes < 5) {
-      return 'Active now';
+      return AppStrings.activeNow;
     } else if (difference.inHours < 1) {
-      return 'Active recently';
+      return AppStrings.activeRecently;
     } else if (difference.inDays < 1) {
-      return 'Active today';
+      return AppStrings.activeToday;
     } else {
-      return 'Inactive';
+      return AppStrings.inactiveStatus;
     }
   }
 }

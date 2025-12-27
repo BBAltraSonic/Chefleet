@@ -1,10 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
-import 'dart:async';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/routes/app_routes.dart';
-import '../blocs/auth_bloc.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -23,13 +18,15 @@ class _SplashScreenState extends State<SplashScreen>
   void initState() {
     super.initState();
     _setupAnimations();
-    _checkAuthAndNavigate();
+    // Navigation logic removed - handled by Bootstrap and Router
+    // This screen is now only used for explicit role switching or error states
   }
 
   void _setupAnimations() {
+    // Reduced animation duration for faster presentation when needed
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 400), // Reduced from 1500ms
     );
 
     _fadeAnimation = Tween<double>(
@@ -43,37 +40,16 @@ class _SplashScreenState extends State<SplashScreen>
     );
 
     _scaleAnimation = Tween<double>(
-      begin: 0.5,
+      begin: 0.8,
       end: 1.0,
     ).animate(
       CurvedAnimation(
         parent: _animationController,
-        curve: const Interval(0.0, 0.7, curve: Curves.elasticOut),
+        curve: const Interval(0.0, 0.7, curve: Curves.easeOut),
       ),
     );
 
     _animationController.forward();
-  }
-
-  Future<void> _checkAuthAndNavigate() async {
-    // Wait for animations to complete
-    await Future.delayed(const Duration(milliseconds: 2000));
-
-    if (!mounted) return;
-
-    final authState = context.read<AuthBloc>().state;
-
-    // Navigate based on auth mode
-    if (authState.isAuthenticated) {
-      // Registered user - go to map
-      context.go(CustomerRoutes.map);
-    } else if (authState.isGuest) {
-      // Guest user - go to map
-      context.go(CustomerRoutes.map);
-    } else {
-      // No session - go to auth screen
-      context.go(SharedRoutes.auth);
-    }
   }
 
   @override

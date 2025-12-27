@@ -1,31 +1,11 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 import { createClient } from 'jsr:@supabase/supabase-js@2'
+import { CreateOrderSchema, validateRequest } from '../_shared/schemas.ts'
+import { checkRateLimit, createRateLimitResponse } from '../_shared/rate_limiter.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
-
-interface OrderItem {
-  dish_id: string
-  quantity: number
-  special_instructions?: string
-}
-
-interface CreateOrderRequest {
-  vendor_id: string
-  items: OrderItem[]
-  pickup_time: string
-  delivery_address?: {
-    street: string
-    city: string
-    state: string
-    postal_code: string
-    lat: number
-    lng: number
-  }
-  special_instructions?: string
-  idempotency_key: string
 }
 
 Deno.serve(async (req) => {
@@ -40,18 +20,30 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    // Parse request body first to check for guest user
-    const body: CreateOrderRequest & { guest_user_id?: string } = await req.json()
-    const { vendor_id, items, pickup_time, delivery_address, special_instructions, idempotency_key, guest_user_id } = body
+    // Validate request body
+    const bodyResult = validateRequest(CreateOrderSchema, await req.json())
+
+    if (!bodyResult.success) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Validation failed',
+          details: bodyResult.errors
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400
+        }
+      )
+    }
+
+    const { vendor_id, items, pickup_time, delivery_address, special_instructions, idempotency_key, guest_user_id } = bodyResult.data
 
     // Determine user ID - either from auth token or guest session
     let userId: string
 
     if (guest_user_id) {
-      // Guest user flow - validate format and optionally create session
-      if (!guest_user_id.startsWith('guest_')) {
-        throw new Error('Invalid guest user ID format')
-      }
+      // Guest user flow - format validation handled by Zod schema
 
       // Try to find or create guest session
       const { data: guestSession } = await supabase
@@ -89,36 +81,20 @@ Deno.serve(async (req) => {
       userId = user.id
     }
 
-    // Validate required fields
-    if (!vendor_id || !items || !pickup_time || !idempotency_key) {
-      throw new Error('Missing required fields')
+    // Rate limiting check
+    const rateLimitResult = await checkRateLimit(supabase, 'create_order', userId)
+    if (!rateLimitResult.allowed) {
+      return createRateLimitResponse(rateLimitResult, corsHeaders)
     }
 
-    if (!items.length) {
-      throw new Error('Order must contain at least one item')
-    }
-
-    // Validate pickup time
+    // Business Logic Validation: Validate pickup time relative to now
+    // Format is already validated by Zod
     const pickupDate = new Date(pickup_time)
     const now = new Date()
     const minPickupTime = new Date(now.getTime() + 15 * 60000) // 15 min
 
-    if (isNaN(pickupDate.getTime())) {
-      throw new Error('Invalid pickup_time format. Use ISO 8601.')
-    }
-
     if (pickupDate < minPickupTime) {
       throw new Error('Pickup time must be at least 15 minutes in the future')
-    }
-
-    // Validate item quantities
-    for (const item of items) {
-      if (!item.quantity || item.quantity <= 0) {
-        throw new Error(`Invalid quantity for dish ${item.dish_id}`)
-      }
-      if (item.quantity > 99) {
-        throw new Error(`Quantity exceeds maximum (99) for dish ${item.dish_id}`)
-      }
     }
 
     // Check for duplicate order using idempotency key
@@ -164,16 +140,26 @@ Deno.serve(async (req) => {
       special_instructions: string | null
     }> = []
 
-    for (const item of items) {
-      const { data: dish, error: dishError } = await supabase
-        .from('dishes')
-        .select('*')
-        .eq('id', item.dish_id)
-        .eq('vendor_id', vendor_id)
-        .eq('available', true)
-        .single()
+    // Optimize: Fetch all dishes in one query instead of loops
+    const dishIds = items.map(i => i.dish_id)
+    const { data: dishes, error: dishesError } = await supabase
+      .from('dishes')
+      .select('*')
+      .in('id', dishIds)
+      .eq('vendor_id', vendor_id)
+      .eq('available', true)
 
-      if (dishError || !dish) {
+    if (dishesError) {
+      throw new Error(`Failed to fetch dishes: ${dishesError.message}`)
+    }
+
+    // Create a map for quick lookup
+    const dishMap = new Map(dishes?.map(d => [d.id, d]))
+
+    for (const item of items) {
+      const dish = dishMap.get(item.dish_id)
+
+      if (!dish) {
         throw new Error(`Dish ${item.dish_id} not found or unavailable`)
       }
 
@@ -188,8 +174,10 @@ Deno.serve(async (req) => {
       })
     }
 
-    // Generate pickup code (6-digit random number)
-    const pickup_code = Math.floor(100000 + Math.random() * 900000).toString()
+    // Generate pickup code (6-digit random number) - crypto-secure
+    const pickup_code = Array.from(crypto.getRandomValues(new Uint32Array(2)))
+      .reduce((acc, val) => acc + val.toString().padStart(10, '0'), '')
+      .substring(0, 6)
 
     const tax_cents = 0
     const delivery_fee_cents = 0
@@ -284,7 +272,14 @@ Deno.serve(async (req) => {
       messageData.sender_id = userId
     }
 
-    await supabase.from('messages').insert(messageData)
+    // Add error handling for message insert (from Phase 1 audit)
+    // Don't fail the whole order if message creation fails
+    try {
+      await supabase.from('messages').insert(messageData)
+    } catch (msgError) {
+      console.error('Failed to create initial order message:', msgError)
+      // Proceed without failing
+    }
 
     // Notify vendor via realtime
     // Supabase automatically handles realtime subscriptions for tables
@@ -308,7 +303,12 @@ Deno.serve(async (req) => {
         }
       }),
       {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+          'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
+          'X-RateLimit-Reset': Math.floor(rateLimitResult.resetAt.getTime() / 1000).toString()
+        },
         status: 201
       }
     )

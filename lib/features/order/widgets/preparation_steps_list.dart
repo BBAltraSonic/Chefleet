@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../models/preparation_step_model.dart';
+import '../../../core/utils/date_time_utils.dart';
 
 class PreparationStepsList extends StatelessWidget {
   const PreparationStepsList({
@@ -261,14 +262,6 @@ class PreparationStepsList extends StatelessWidget {
   }
 
   String _formatCompletionTime(DateTime completedAt) {
-    final now = DateTime.now();
-    final difference = now.difference(completedAt);
-
-    if (difference.inMinutes < 1) {
-      return 'just now';
-    } else if (difference.inMinutes < 60) {
-      return '${difference.inMinutes}m ago';
-    }
-    return '${difference.inHours}h ago';
+    return DateTimeUtils.formatTimeAgo(completedAt);
   }
 }

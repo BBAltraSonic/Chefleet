@@ -1,9 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
 
 // Auth Screens
 import '../../features/auth/screens/auth_screen.dart';
@@ -12,8 +9,6 @@ import '../../features/auth/screens/role_selection_screen.dart';
 import '../../features/auth/screens/profile_creation_screen.dart';
 import '../../features/auth/screens/guest_conversion_screen.dart';
 import '../../features/auth/screens/profile_management_screen.dart';
-import '../../features/auth/screens/forgot_password_screen.dart';
-import '../../features/auth/screens/reset_password_screen.dart';
 
 // Customer Screens
 import '../../features/map/screens/map_screen.dart';
@@ -28,7 +23,6 @@ import '../../features/settings/screens/settings_screen.dart';
 import '../../features/settings/screens/notifications_screen.dart';
 
 // Vendor Screens
-import '../../features/vendor/blocs/vendor_dashboard_bloc.dart';
 import '../../features/vendor/screens/vendor_dashboard_screen.dart';
 import '../../features/vendor/screens/vendor_orders_screen.dart';
 import '../../features/vendor/screens/vendor_dishes_screen.dart';
@@ -87,12 +81,14 @@ class AppRouter {
     required AuthBloc authBloc,
     required UserProfileBloc profileBloc,
     required RoleBloc roleBloc,
+    String? initialLocation,
   }) {
     // Create a listenable that triggers redirect when auth/profile/role state changes
     final refreshNotifier = _RouterRefreshNotifier(authBloc, profileBloc, roleBloc);
     
     return GoRouter(
-      initialLocation: splash,
+      // Use provided initialLocation from bootstrap, fallback to splash
+      initialLocation: initialLocation ?? splash,
       refreshListenable: refreshNotifier,
       redirect: (BuildContext context, GoRouterState state) {
         return _globalRedirect(
@@ -130,14 +126,6 @@ class AppRouter {
           path: VendorRoutes.onboarding,
           builder: (context, state) => const VendorOnboardingScreen(),
         ),
-        GoRoute(
-          path: '/forgot-password',
-          builder: (context, state) => const ForgotPasswordScreen(),
-        ),
-        GoRoute(
-          path: '/reset-password',
-          builder: (context, state) => const ResetPasswordScreen(),
-        ),
         
         // ============================================================
         // CUSTOMER SHELL ROUTE
@@ -145,10 +133,10 @@ class AppRouter {
         ShellRoute(
           builder: (context, state, child) {
             return CustomerAppShell(
-              child: child,
               availableRoles: roleBloc.state is RoleLoaded
                   ? (roleBloc.state as RoleLoaded).availableRoles
                   : {UserRole.customer},
+              child: child,
             );
           },
           routes: [
@@ -238,30 +226,20 @@ class AppRouter {
         // ============================================================
         ShellRoute(
           builder: (context, state, child) {
-            return BlocProvider(
-              create: (context) => VendorDashboardBloc(
-                supabaseClient: Supabase.instance.client,
-              )..add(const LoadDashboardData()),
-              child: VendorAppShell(
-                child: child,
-                availableRoles: roleBloc.state is RoleLoaded
-                    ? (roleBloc.state as RoleLoaded).availableRoles
-                    : {UserRole.vendor},
-              ),
+            return VendorAppShell(
+              availableRoles: roleBloc.state is RoleLoaded
+                  ? (roleBloc.state as RoleLoaded).availableRoles
+                  : {UserRole.vendor},
+              child: child,
             );
           },
           routes: [
             // Vendor Dashboard
             GoRoute(
               path: VendorRoutes.dashboard,
-              pageBuilder: (context, state) {
-                // Parse tab query parameter (default to 0 = Orders)
-                final tabParam = state.uri.queryParameters['tab'];
-                final initialTab = int.tryParse(tabParam ?? '') ?? 0;
-                return NoTransitionPage(
-                  child: VendorDashboardScreen(initialTab: initialTab),
-                );
-              },
+              pageBuilder: (context, state) => const NoTransitionPage(
+                child: VendorDashboardScreen(),
+              ),
             ),
             
             // Vendor Orders
@@ -387,13 +365,9 @@ class AppRouter {
     
     final currentPath = state.matchedLocation;
     
-    // Allow splash and auth routes always
+    // Allow splash and auth routes (but bootstrap should handle initial routing)
+    // These are only needed for explicit navigation
     if (currentPath == splash || currentPath == auth) {
-      return null;
-    }
-    
-    // Allow password reset routes without authentication
-    if (currentPath == '/forgot-password' || currentPath == '/reset-password') {
       return null;
     }
     
@@ -409,13 +383,11 @@ class AppRouter {
     
     // Guest user restrictions
     if (isGuest) {
-      // Guests can access customer map, dish details, profile, and order-related screens
+      // Guests can only access customer map and dish details
       if (currentPath.startsWith(CustomerRoutes.map) || 
           currentPath.startsWith(CustomerRoutes.dish) ||
           currentPath.startsWith(CustomerRoutes.checkout) ||
-          currentPath.startsWith(CustomerRoutes.orders) ||
-          currentPath.startsWith(CustomerRoutes.profile) ||
-          currentPath.startsWith(CustomerRoutes.chat)) {
+          currentPath.startsWith(CustomerRoutes.orders)) {
         return null;
       }
       // Redirect to auth for registration prompt
@@ -429,38 +401,12 @@ class AppRouter {
     
     // After profile creation, redirect to role selection if not already there
     if (isAuthenticated && hasProfile && roleState is RoleLoaded) {
-      final hasRoleSelected = roleState.activeRole != null;
-      if (!hasRoleSelected && currentPath != roleSelection && currentPath != profileCreation) {
-        return roleSelection;
+      if (currentPath != roleSelection && currentPath != profileCreation) {
+        // Always check - roleBloc ensures activeRole is set after profile creation
+        return null;
       }
     }
     
-    
-    final hasVendorAccess = roleState is RoleLoaded &&
-        roleState.availableRoles.contains(UserRole.vendor);
-
-    // Only force onboarding if the user still lacks vendor access. After we
-    // auto-approve and grant the vendor role, stale metadata should not keep
-    // bouncing the user back into the onboarding flow.
-    // CRITICAL: Check metadata AND role state to avoid redirect loops
-    // ALSO: Don't redirect during initial role loading to avoid race conditions
-    final isRoleLoading = roleState is! RoleLoaded;
-    final hasPendingVendorOnboarding =
-        !hasVendorAccess && !isRoleLoading && _userHasPendingVendorOnboarding();
-
-    if (hasPendingVendorOnboarding && currentPath != VendorRoutes.onboarding) {
-      return VendorRoutes.onboarding;
-    }
-
-    // If user has vendor role but is still on onboarding screen, redirect to dashboard
-    if (!hasPendingVendorOnboarding && currentPath == VendorRoutes.onboarding) {
-      final shouldGoToDashboard = roleState is RoleLoaded &&
-          roleState.availableRoles.contains(UserRole.vendor);
-      if (shouldGoToDashboard) {
-        return VendorRoutes.dashboard;
-      }
-    }
-
     // Role-based routing guard
     if (roleState is RoleLoaded && isAuthenticated) {
       final redirect = RoleRouteGuard.validateAccess(
@@ -474,23 +420,6 @@ class AppRouter {
     }
     
     return null;
-  }
-
-  static bool _userHasPendingVendorOnboarding() {
-    final user = Supabase.instance.client.auth.currentUser;
-    if (user == null) return false;
-    return hasPendingVendorOnboarding(user.userMetadata);
-  }
-
-  @visibleForTesting
-  static bool hasPendingVendorOnboarding(Map<String, dynamic>? metadata) {
-    if (metadata == null) return false;
-    final progress = metadata['vendor_onboarding_progress'];
-    if (progress == null) return false;
-    if (progress is Map<String, dynamic>) {
-      return (progress['data'] ?? progress).isNotEmpty;
-    }
-    return true;
   }
 }
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../shared/utils/currency_formatter.dart';
+import '../../../../core/constants/app_strings.dart';
 
 class MenuItemCard extends StatelessWidget {
   const MenuItemCard({
@@ -15,7 +16,7 @@ class MenuItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name = item['name'] as String? ?? 'Unknown Item';
+    final name = item['name'] as String? ?? AppStrings.unknownItem;
     final description = item['description'] as String? ?? '';
     final price = (item['price'] as num?)?.toDouble() ?? 0.0;
     final isAvailable = item['is_available'] as bool? ?? true;
@@ -104,7 +105,7 @@ class MenuItemCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        isAvailable ? 'Active' : 'Hidden',
+                        isAvailable ? AppStrings.active : AppStrings.hidden,
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
                           color: isAvailable ? const Color(0xFF4CAF50) : const Color(0xFFF44336),
                           fontWeight: FontWeight.w700,

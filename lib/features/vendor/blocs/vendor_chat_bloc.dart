@@ -1,6 +1,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/constants/app_strings.dart';
 
 part 'vendor_chat_event.dart';
 part 'vendor_chat_state.dart';
@@ -62,7 +63,7 @@ class VendorChatBloc extends Bloc<VendorChatEvent, VendorChatState> {
       if (currentUser == null) {
         emit(state.copyWith(
           status: VendorChatStatus.error,
-          errorMessage: 'User not authenticated',
+          errorMessage: AppStrings.userNotAuthenticated,
         ));
         return;
       }
@@ -119,7 +120,7 @@ class VendorChatBloc extends Bloc<VendorChatEvent, VendorChatState> {
     } catch (e) {
       emit(state.copyWith(
         status: VendorChatStatus.error,
-        errorMessage: 'Failed to load conversations: ${e.toString()}',
+        errorMessage: '${AppStrings.errorLoadingConversations}: ${e.toString()}',
       ));
     }
   }
@@ -151,7 +152,7 @@ class VendorChatBloc extends Bloc<VendorChatEvent, VendorChatState> {
     } catch (e) {
       emit(state.copyWith(
         messagesStatus: VendorChatStatus.error,
-        errorMessage: 'Failed to load messages: ${e.toString()}',
+        errorMessage: '${AppStrings.errorLoadingMessages}${e.toString()}',
       ));
     }
   }
@@ -186,7 +187,7 @@ class VendorChatBloc extends Bloc<VendorChatEvent, VendorChatState> {
       }
     } catch (e) {
       emit(state.copyWith(
-        errorMessage: 'Failed to send message: ${e.toString()}',
+        errorMessage: '${AppStrings.errorSendingMessage}${e.toString()}',
       ));
     }
   }
@@ -245,7 +246,7 @@ class VendorChatBloc extends Bloc<VendorChatEvent, VendorChatState> {
       ));
     } catch (e) {
       emit(state.copyWith(
-        errorMessage: 'Failed to load quick replies: ${e.toString()}',
+        errorMessage: '${AppStrings.errorLoadingQuickReplies}${e.toString()}',
       ));
     }
   }
@@ -281,7 +282,7 @@ class VendorChatBloc extends Bloc<VendorChatEvent, VendorChatState> {
       add(LoadQuickReplies());
     } catch (e) {
       emit(state.copyWith(
-        errorMessage: 'Failed to create quick reply: ${e.toString()}',
+        errorMessage: '${AppStrings.errorCreatingQuickReply}${e.toString()}',
       ));
     }
   }
@@ -303,7 +304,7 @@ class VendorChatBloc extends Bloc<VendorChatEvent, VendorChatState> {
       add(LoadQuickReplies());
     } catch (e) {
       emit(state.copyWith(
-        errorMessage: 'Failed to update quick reply: ${e.toString()}',
+        errorMessage: '${AppStrings.errorUpdatingQuickReply}${e.toString()}',
       ));
     }
   }
@@ -322,7 +323,7 @@ class VendorChatBloc extends Bloc<VendorChatEvent, VendorChatState> {
       add(LoadQuickReplies());
     } catch (e) {
       emit(state.copyWith(
-        errorMessage: 'Failed to delete quick reply: ${e.toString()}',
+        errorMessage: '${AppStrings.errorDeletingQuickReply}${e.toString()}',
       ));
     }
   }
@@ -348,7 +349,7 @@ class VendorChatBloc extends Bloc<VendorChatEvent, VendorChatState> {
       add(LoadQuickReplies());
     } catch (e) {
       emit(state.copyWith(
-        errorMessage: 'Failed to toggle quick reply: ${e.toString()}',
+        errorMessage: '${AppStrings.errorTogglingQuickReply}${e.toString()}',
       ));
     }
   }

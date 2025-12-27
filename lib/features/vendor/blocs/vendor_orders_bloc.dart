@@ -59,14 +59,33 @@ class VendorOrdersLoading extends VendorOrdersState {
 class VendorOrdersLoaded extends VendorOrdersState {
   const VendorOrdersLoaded({
     required this.orders,
+    required this.allOrders,
     this.filter,
+    this.sortOption = 'date',
+    this.sortAscending = false,
   });
 
   final List<Order> orders;
+  final List<Order> allOrders;
   final String? filter;
+  final String sortOption;
+  final bool sortAscending;
 
   @override
-  List<Object?> get props => [orders, filter];
+  List<Object?> get props => [orders, allOrders, filter, sortOption, sortAscending];
+}
+
+class SortOrders extends VendorOrdersEvent {
+  const SortOrders({
+    required this.option,
+    required this.ascending,
+  });
+  
+  final String option;
+  final bool ascending;
+  
+  @override
+  List<Object?> get props => [option, ascending];
 }
 
 class VendorOrdersError extends VendorOrdersState {
@@ -83,6 +102,7 @@ class VendorOrdersBloc extends Bloc<VendorOrdersEvent, VendorOrdersState> {
   VendorOrdersBloc() : super(const VendorOrdersInitial()) {
     on<LoadVendorOrders>(_onLoadVendorOrders);
     on<FilterOrdersByStatus>(_onFilterOrdersByStatus);
+    on<SortOrders>(_onSortOrders);
     on<UpdateOrderStatus>(_onUpdateOrderStatus);
   }
   
@@ -134,7 +154,10 @@ class VendorOrdersBloc extends Bloc<VendorOrdersEvent, VendorOrdersState> {
           .map((json) => Order.fromJson(json as Map<String, dynamic>))
           .toList();
       
-      emit(VendorOrdersLoaded(orders: orders));
+      emit(VendorOrdersLoaded(
+        orders: orders,
+        allOrders: orders,
+      ));
       
       // Set up real-time subscription
       _setupRealtimeSubscription();
@@ -166,22 +189,83 @@ class VendorOrdersBloc extends Bloc<VendorOrdersEvent, VendorOrdersState> {
     if (state is VendorOrdersLoaded) {
       final currentState = state as VendorOrdersLoaded;
       
-      // Filter orders by status if a filter is provided
-      if (event.status.isEmpty || event.status == 'all') {
-        emit(VendorOrdersLoaded(
-          orders: currentState.orders,
-          filter: null,
-        ));
-      } else {
-        final filteredOrders = currentState.orders
-            .where((order) => order.status == event.status)
-            .toList();
-        emit(VendorOrdersLoaded(
-          orders: filteredOrders,
-          filter: event.status,
-        ));
-      }
+      final filteredOrders = (event.status.isEmpty || event.status == 'all')
+          ? currentState.allOrders
+          : currentState.allOrders
+              .where((order) => order.status == event.status)
+              .toList();
+              
+      final sortedOrders = _sortOrders(
+        filteredOrders,
+        currentState.sortOption,
+        currentState.sortAscending,
+      );
+
+      emit(VendorOrdersLoaded(
+        orders: sortedOrders,
+        allOrders: currentState.allOrders,
+        filter: event.status,
+        sortOption: currentState.sortOption,
+        sortAscending: currentState.sortAscending,
+      ));
     }
+  }
+
+  Future<void> _onSortOrders(
+    SortOrders event,
+    Emitter<VendorOrdersState> emit,
+  ) async {
+    if (state is VendorOrdersLoaded) {
+      final currentState = state as VendorOrdersLoaded;
+      
+      final sortedOrders = _sortOrders(
+        currentState.orders,
+        event.option,
+        event.ascending,
+      );
+
+      emit(VendorOrdersLoaded(
+        orders: sortedOrders,
+        allOrders: currentState.allOrders,
+        filter: currentState.filter,
+        sortOption: event.option,
+        sortAscending: event.ascending,
+      ));
+    }
+  }
+
+  List<Order> _sortOrders(
+    List<Order> orders,
+    String option,
+    bool ascending,
+  ) {
+    var sorted = List<Order>.from(orders);
+    
+    switch (option) {
+      case 'date':
+        sorted.sort((a, b) {
+          final aDate = a.createdAt ?? DateTime(0);
+          final bDate = b.createdAt ?? DateTime(0);
+          return ascending ? aDate.compareTo(bDate) : bDate.compareTo(aDate);
+        });
+        break;
+      case 'amount':
+        sorted.sort((a, b) {
+          return ascending
+              ? a.totalAmount.compareTo(b.totalAmount)
+              : b.totalAmount.compareTo(a.totalAmount);
+        });
+        break;
+      case 'status':
+        sorted.sort((a, b) {
+          return ascending
+              ? a.status.compareTo(b.status)
+              : b.status.compareTo(a.status);
+        });
+        break;
+    }
+    
+    return sorted;
   }
 
   Future<void> _onUpdateOrderStatus(

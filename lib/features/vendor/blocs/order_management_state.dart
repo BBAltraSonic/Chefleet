@@ -115,19 +115,19 @@ class OrderManagementState extends Equatable {
   static String getStatusDisplayName(String status) {
     switch (status.toLowerCase()) {
       case 'pending':
-        return 'New Order';
+        return AppStrings.statusNewOrder;
       case 'confirmed':
-        return 'Confirmed';
+        return AppStrings.statusConfirmed;
       case 'preparing':
-        return 'Preparing';
+        return AppStrings.statusPreparing;
       case 'ready':
-        return 'Ready for Pickup';
+        return AppStrings.statusReadyForPickup;
       case 'completed':
-        return 'Completed';
+        return AppStrings.statusCompleted;
       case 'cancelled':
-        return 'Cancelled';
+        return AppStrings.statusCancelled;
       case 'rejected':
-        return 'Rejected';
+        return AppStrings.statusRejected;
       default:
         return status;
     }

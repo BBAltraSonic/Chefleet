@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/constants/app_strings.dart';
 
 import '../../feed/models/dish_model.dart';
 import '../blocs/menu_management_bloc.dart';
@@ -23,7 +24,7 @@ class DishListView extends StatelessWidget {
   Widget build(BuildContext context) {
     if (dishes.isEmpty) {
       return const Center(
-        child: Text('No dishes found'),
+        child: Text(AppStrings.noDishesFound),
       );
     }
 

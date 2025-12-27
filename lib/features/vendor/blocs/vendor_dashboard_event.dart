@@ -105,3 +105,24 @@ class VerifyPickupCode extends VendorDashboardEvent {
 class RefreshDashboard extends VendorDashboardEvent {
   const RefreshDashboard();
 }
+
+class LoadDetailedAnalytics extends VendorDashboardEvent {
+  const LoadDetailedAnalytics({required this.vendorId});
+  final String vendorId;
+  @override
+  List<Object?> get props => [vendorId];
+}
+
+class LoadPerformanceMetrics extends VendorDashboardEvent {
+  const LoadPerformanceMetrics({required this.vendorId});
+  final String vendorId;
+  @override
+  List<Object?> get props => [vendorId];
+}
+
+class LoadPopularItems extends VendorDashboardEvent {
+  const LoadPopularItems({required this.vendorId});
+  final String vendorId;
+  @override
+  List<Object?> get props => [vendorId];
+}

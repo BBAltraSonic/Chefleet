@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/services/location_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/glass_container.dart';
 
@@ -25,7 +26,31 @@ class _PlacePinMapState extends State<PlacePinMap> {
   @override
   void initState() {
     super.initState();
-    _currentPosition = widget.initialPosition ?? AppConstants.defaultLocationSouthAfrica; // Default to Johannesburg
+    // Initialize synchronously first to prevent late initialization errors
+    _currentPosition = widget.initialPosition ?? AppConstants.defaultLocationSouthAfrica;
+    // Then attempt async auto-detection
+    _initializeLocation();
+  }
+
+  Future<void> _initializeLocation() async {
+    // If initial position provided, we already used it in initState
+    if (widget.initialPosition != null) {
+      return;
+    }
+
+    // Otherwise, auto-detect location
+    final detectedLocation = await LocationService().getLocationOrDefault();
+    
+    if (mounted) {
+      setState(() {
+        _currentPosition = detectedLocation;
+      });
+      
+      // Animate map to detected location
+      _mapController?.animateCamera(
+        CameraUpdate.newLatLng(detectedLocation),
+      );
+    }
   }
 
   @override

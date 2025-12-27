@@ -42,6 +42,18 @@ class VendorOrdersService {
         details.contains('orders_buyer_id_fkey') ||
         hint.contains("perhaps you meant 'users' instead of 'users_public'");
   }
+
+  Future<Map<String, dynamic>> fetchDetailedAnalytics(String vendorId) {
+    return _ordersQueryRunner.fetchDetailedAnalytics(vendorId);
+  }
+
+  Future<Map<String, dynamic>> fetchPerformanceMetrics(String vendorId) {
+    return _ordersQueryRunner.fetchPerformanceMetrics(vendorId);
+  }
+
+  Future<List<Map<String, dynamic>>> fetchPopularItems(String vendorId) {
+    return _ordersQueryRunner.fetchPopularItems(vendorId);
+  }
 }
 
 abstract class VendorOrdersQueryRunner {
@@ -50,6 +62,10 @@ abstract class VendorOrdersQueryRunner {
     required int limit,
     required bool includeBuyer,
   });
+
+  Future<Map<String, dynamic>> fetchDetailedAnalytics(String vendorId);
+  Future<Map<String, dynamic>> fetchPerformanceMetrics(String vendorId);
+  Future<List<Map<String, dynamic>>> fetchPopularItems(String vendorId);
 }
 
 class SupabaseVendorOrdersQueryRunner implements VendorOrdersQueryRunner {
@@ -126,5 +142,50 @@ class SupabaseVendorOrdersQueryRunner implements VendorOrdersQueryRunner {
     }
 
     return data;
+  }
+
+  Future<Map<String, dynamic>> fetchDetailedAnalytics(String vendorId) async {
+    // TODO: Replace with actual analytics query
+    return {
+      'total_orders': 150,
+      'total_revenue': 15000, // in cents
+      'completed_orders': 140,
+      'cancelled_orders': 10,
+      'status_counts': {
+        'completed': 140,
+        'cancelled': 8,
+        'rejected': 2,
+      },
+      'daily_revenue': [
+        {'date': '2024-01-01', 'revenue': 1200},
+        {'date': '2024-01-02', 'revenue': 1500},
+        {'date': '2024-01-03', 'revenue': 900},
+        // ... more days
+      ],
+      'peak_hours': [
+        {'hour': 12, 'order_count': 25},
+        {'hour': 13, 'order_count': 30},
+        {'hour': 18, 'order_count': 35},
+        {'hour': 19, 'order_count': 28},
+      ],
+    };
+  }
+
+  Future<Map<String, dynamic>> fetchPerformanceMetrics(String vendorId) async {
+    // TODO: Replace with actual performance query
+    return {
+      'avg_prep_time': 15,
+      'on_time_rate': 95.5,
+      'daily_average': 12.5,
+    };
+  }
+
+  Future<List<Map<String, dynamic>>> fetchPopularItems(String vendorId) async {
+    // TODO: Replace with actual popular items query
+    return [
+      {'dish_name': 'Burger', 'order_count': 45, 'total_revenue': 4500, 'category': 'Main Course'},
+      {'dish_name': 'Pizza', 'order_count': 38, 'total_revenue': 3800, 'category': 'Main Course'},
+      {'dish_name': 'Salad', 'order_count': 25, 'total_revenue': 1250, 'category': 'Salads'},
+    ];
   }
 }

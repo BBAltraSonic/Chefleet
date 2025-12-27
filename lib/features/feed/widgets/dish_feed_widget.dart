@@ -33,8 +33,7 @@ class DishFeedWidget extends StatelessWidget {
                 color: Theme.of(context).colorScheme.error,
               ),
                   ),
-            ),
-          );
+            );
         }
 
         List<Dish> dishes = state.dishes;

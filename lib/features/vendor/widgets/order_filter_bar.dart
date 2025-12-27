@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../blocs/order_management_bloc.dart';
+import '../../../../core/constants/app_strings.dart';
 
 class OrderFilterBar extends StatefulWidget {
   final Function(OrderFilters) onFilterChanged;
@@ -70,7 +71,7 @@ class _OrderFilterBarState extends State<OrderFilterBar>
             children: [
               Expanded(
                 child: Text(
-                  'Order History',
+                  AppStrings.orderHistory,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -82,7 +83,7 @@ class _OrderFilterBarState extends State<OrderFilterBar>
                   icon: AnimatedIcons.close_menu,
                   progress: _expandAnimation,
                 ),
-                label: const Text('Filters'),
+                label: const Text(AppStrings.filters),
               ),
             ],
           ),
@@ -106,7 +107,7 @@ class _OrderFilterBarState extends State<OrderFilterBar>
       children: [
         // Status Filter
         Text(
-          'Status',
+          AppStrings.status,
           style: Theme.of(context).textTheme.titleSmall,
         ),
         const SizedBox(height: 8),
@@ -115,7 +116,7 @@ class _OrderFilterBarState extends State<OrderFilterBar>
           runSpacing: 4,
           children: [
             FilterChip(
-              label: const Text('All'),
+              label: const Text(AppStrings.statusAll),
               onSelected: (selected) {
                 if (selected) {
                   widget.onFilterChanged(const OrderFilters());
@@ -123,7 +124,7 @@ class _OrderFilterBarState extends State<OrderFilterBar>
               },
             ),
             FilterChip(
-              label: const Text('Completed'),
+              label: const Text(AppStrings.statusCompleted),
               onSelected: (selected) {
                 if (selected) {
                   widget.onFilterChanged(const OrderFilters(status: 'completed'));
@@ -131,7 +132,7 @@ class _OrderFilterBarState extends State<OrderFilterBar>
               },
             ),
             FilterChip(
-              label: const Text('Cancelled'),
+              label: const Text(AppStrings.statusCancelled),
               onSelected: (selected) {
                 if (selected) {
                   widget.onFilterChanged(const OrderFilters(status: 'cancelled'));
@@ -139,7 +140,7 @@ class _OrderFilterBarState extends State<OrderFilterBar>
               },
             ),
             FilterChip(
-              label: const Text('Rejected'),
+              label: const Text(AppStrings.statusRejected),
               onSelected: (selected) {
                 if (selected) {
                   widget.onFilterChanged(const OrderFilters(status: 'rejected'));
@@ -153,7 +154,7 @@ class _OrderFilterBarState extends State<OrderFilterBar>
 
         // Time Range Filter
         Text(
-          'Time Range',
+          AppStrings.timeRange,
           style: Theme.of(context).textTheme.titleSmall,
         ),
         const SizedBox(height: 8),
@@ -162,19 +163,19 @@ class _OrderFilterBarState extends State<OrderFilterBar>
           runSpacing: 4,
           children: [
             ActionChip(
-              label: const Text('Today'),
+              label: const Text(AppStrings.timeToday),
               onPressed: () {
                 widget.onFilterChanged(const OrderFilters(timeRange: 'today'));
               },
             ),
             ActionChip(
-              label: const Text('This Week'),
+              label: const Text(AppStrings.timeThisWeek),
               onPressed: () {
                 widget.onFilterChanged(const OrderFilters(timeRange: 'week'));
               },
             ),
             ActionChip(
-              label: const Text('This Month'),
+              label: const Text(AppStrings.timeThisMonth),
               onPressed: () {
                 widget.onFilterChanged(const OrderFilters(timeRange: 'month'));
               },
@@ -188,7 +189,7 @@ class _OrderFilterBarState extends State<OrderFilterBar>
         Row(
           children: [
             Text(
-              'Sort by:',
+              AppStrings.sortBy,
               style: Theme.of(context).textTheme.titleSmall,
             ),
             const SizedBox(width: 12),
@@ -218,7 +219,7 @@ class _OrderFilterBarState extends State<OrderFilterBar>
                 // Toggle sort order logic would go here
               },
               icon: const Icon(Icons.sort),
-              tooltip: 'Toggle sort order',
+              tooltip: AppStrings.toggleSortOrder,
             ),
           ],
         ),
@@ -229,17 +230,17 @@ class _OrderFilterBarState extends State<OrderFilterBar>
   String _getSortOptionLabel(OrderSortOption option) {
     switch (option) {
       case OrderSortOption.orderTime:
-        return 'Order Time';
+        return AppStrings.sortOrderTime;
       case OrderSortOption.pickupTime:
-        return 'Pickup Time';
+        return AppStrings.sortPickupTime;
       case OrderSortOption.customerName:
-        return 'Customer Name';
+        return AppStrings.sortCustomerName;
       case OrderSortOption.totalAmount:
-        return 'Total Amount';
+        return AppStrings.sortTotalAmount;
       case OrderSortOption.priority:
-        return 'Priority';
+        return AppStrings.sortPriority;
       case OrderSortOption.preparationTime:
-        return 'Prep Time';
+        return AppStrings.sortPrepTime;
     }
   }
 }

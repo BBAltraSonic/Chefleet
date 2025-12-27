@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../auth/blocs/user_profile_bloc.dart';
 import '../../auth/models/user_profile_model.dart';
+import '../../../core/constants/app_strings.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/routes/app_routes.dart';
 import '../../../core/blocs/role_bloc.dart';
@@ -68,13 +69,13 @@ class ProfileScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: AppTheme.spacing24),
                 Text(
-                  'Complete Your Profile',
+                  AppStrings.completeProfile,
                   style: Theme.of(context).textTheme.headlineLarge,
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: AppTheme.spacing12),
                 Text(
-                  'Set up your profile to start discovering amazing dishes from local chefs',
+                  AppStrings.setupProfileMessage,
                   style: Theme.of(context).textTheme.bodyMedium,
                   textAlign: TextAlign.center,
                 ),
@@ -84,7 +85,7 @@ class ProfileScreen extends StatelessWidget {
                   child: ElevatedButton.icon(
                     onPressed: () => context.push(SharedRoutes.profileCreation),
                     icon: const Icon(Icons.add_circle_outline),
-                    label: const Text('Create Profile'),
+                    label: const Text(AppStrings.createProfile),
                   ),
                 ),
               ],
@@ -185,7 +186,7 @@ class ProfileScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: AppTheme.spacing4),
                       Text(
-                        'Member since ${_formatDate(profile.createdAt)}',
+                        '${AppStrings.memberSince}${_formatDate(profile.createdAt)}',
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
                     ],
@@ -264,7 +265,7 @@ class ProfileScreen extends StatelessWidget {
               ),
               const SizedBox(width: AppTheme.spacing12),
               Text(
-                'Default Address',
+                AppStrings.defaultAddress,
                 style: Theme.of(context).textTheme.titleMedium,
               ),
             ],
@@ -292,7 +293,7 @@ class ProfileScreen extends StatelessWidget {
             bottom: AppTheme.spacing12,
           ),
           child: Text(
-            'Quick Actions',
+            AppStrings.quickActions,
             style: Theme.of(context).textTheme.titleMedium,
           ),
         ),
@@ -307,8 +308,8 @@ class ProfileScreen extends StatelessWidget {
                 _buildActionTile(
                   context,
                   icon: Icons.favorite_outline,
-                  title: 'Favourites',
-                  subtitle: 'Your saved dishes',
+                  title: AppStrings.favourites,
+                  subtitle: AppStrings.savedDishes,
                   onTap: () => context.push(CustomerRoutes.favourites),
                 ),
                 const Divider(height: 1, indent: 64),
@@ -316,8 +317,8 @@ class ProfileScreen extends StatelessWidget {
               _buildActionTile(
                 context,
                 icon: Icons.notifications_outlined,
-                title: 'Notifications',
-                subtitle: 'Manage preferences',
+                title: AppStrings.notifications,
+                subtitle: AppStrings.managePreferences,
                 onTap: () => context.push(
                   isVendorMode ? VendorRoutes.notifications : CustomerRoutes.notifications,
                 ),
@@ -326,8 +327,8 @@ class ProfileScreen extends StatelessWidget {
               _buildActionTile(
                 context,
                 icon: Icons.settings_outlined,
-                title: 'Settings',
-                subtitle: 'App preferences',
+                title: AppStrings.settings,
+                subtitle: AppStrings.appPreferences,
                 onTap: () => context.push(
                   isVendorMode ? VendorRoutes.settings : CustomerRoutes.settings,
                 ),
@@ -399,7 +400,7 @@ class ProfileScreen extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-            child: _buildStatItem(context, 'Orders', '0', Icons.receipt_long),
+            child: _buildStatItem(context, AppStrings.statsOrders, '0', Icons.receipt_long),
           ),
           Container(
             width: 1,
@@ -407,7 +408,7 @@ class ProfileScreen extends StatelessWidget {
             color: AppTheme.borderGreen,
           ),
           Expanded(
-            child: _buildStatItem(context, 'Favorites', '0', Icons.favorite),
+            child: _buildStatItem(context, AppStrings.statsFavorites, '0', Icons.favorite),
           ),
           Container(
             width: 1,
@@ -415,7 +416,7 @@ class ProfileScreen extends StatelessWidget {
             color: AppTheme.borderGreen,
           ),
           Expanded(
-            child: _buildStatItem(context, 'Reviews', '0', Icons.star),
+            child: _buildStatItem(context, AppStrings.statsReviews, '0', Icons.star),
           ),
         ],
       ),
@@ -450,7 +451,7 @@ class ProfileScreen extends StatelessWidget {
   }
 
   String _formatDate(DateTime? date) {
-    if (date == null) return 'Unknown';
+    if (date == null) return AppStrings.unknown;
     return '${date.month}/${date.year}';
   }
 }

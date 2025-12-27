@@ -28,8 +28,7 @@ class VendorFeedWidget extends StatelessWidget {
                 color: Theme.of(context).colorScheme.error,
               ),
                   ),
-            ),
-          );
+            );
         }
 
         final vendors = state.vendors;

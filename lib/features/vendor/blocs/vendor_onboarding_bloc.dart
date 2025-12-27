@@ -361,16 +361,14 @@ class VendorOnboardingBloc
       try {
         await _supabaseClient.auth.getUser();
       } catch (_) {
-        // Last resort: wait briefly for metadata propagation
-        await Future.delayed(const Duration(milliseconds: 500));
+        // Metadata refresh failed, but proceed anyway
       }
     }
     
     // Verify metadata was actually cleared
     final user = _supabaseClient.auth.currentUser;
     if (user?.userMetadata?['vendor_onboarding_progress'] != null) {
-      // Metadata still present, wait and try one more refresh
-      await Future.delayed(const Duration(milliseconds: 500));
+      // Metadata still present, try one more refresh
       try {
         await _supabaseClient.auth.refreshSession();
       } catch (_) {}

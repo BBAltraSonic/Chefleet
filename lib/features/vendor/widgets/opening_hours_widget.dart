@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../core/models/opening_hours_model.dart';
-import '../../core/services/opening_hours_service.dart';
+import '../../../core/models/opening_hours_model.dart';
+import '../../../core/services/opening_hours_service.dart';
 
 class OpeningHoursWidget extends StatefulWidget {
   final OpeningHours openingHours;

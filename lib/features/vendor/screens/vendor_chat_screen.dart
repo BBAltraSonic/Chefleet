@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/constants/app_strings.dart';
 
 import '../blocs/vendor_chat_bloc.dart';
 import '../widgets/conversation_list_widget.dart';
@@ -47,18 +48,18 @@ class _VendorChatScreenState extends State<VendorChatScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Customer Chat'),
+        title: const Text(AppStrings.customerChat),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
             Tab(
               icon: Icon(Icons.chat),
-              text: 'Messages',
+              text: AppStrings.messages,
             ),
             Tab(
               icon: Icon(Icons.flash_on),
-              text: 'Quick Replies',
+              text: AppStrings.quickReplies,
             ),
           ],
         ),
@@ -75,7 +76,7 @@ class _VendorChatScreenState extends State<VendorChatScreen>
                       );
                     },
                     icon: const Icon(Icons.mark_chat_unread),
-                    tooltip: 'Unread Messages',
+                    tooltip: AppStrings.unreadMessages,
                   ),
                   if (unreadCount > 0)
                     Positioned(
@@ -139,7 +140,7 @@ class _VendorChatScreenState extends State<VendorChatScreen>
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Error loading conversations',
+                  AppStrings.errorLoadingConversations,
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
                 const SizedBox(height: 8),
@@ -153,7 +154,7 @@ class _VendorChatScreenState extends State<VendorChatScreen>
                   onPressed: () {
                     context.read<VendorChatBloc>().add(LoadConversations());
                   },
-                  child: const Text('Try Again'),
+                  child: const Text(AppStrings.tryAgain),
                 ),
               ],
             ),
@@ -172,12 +173,12 @@ class _VendorChatScreenState extends State<VendorChatScreen>
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'No conversations yet',
+                  AppStrings.noConversations,
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Customer messages will appear here',
+                  AppStrings.noConversationsHint,
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
               ],
@@ -207,7 +208,7 @@ class _VendorChatScreenState extends State<VendorChatScreen>
               child: TextField(
                 controller: _searchController,
                 decoration: InputDecoration(
-                  hintText: 'Search conversations...',
+                  hintText: AppStrings.searchConversations,
                   prefixIcon: const Icon(Icons.search),
                   suffixIcon: _searchController.text.isNotEmpty
                       ? IconButton(
@@ -240,7 +241,7 @@ class _VendorChatScreenState extends State<VendorChatScreen>
               child: Row(
                 children: [
                   FilterChip(
-                    label: const Text('All'),
+                    label: const Text(AppStrings.statusAll),
                     onSelected: (selected) {
                       if (selected) {
                         context.read<VendorChatBloc>().add(
@@ -251,7 +252,7 @@ class _VendorChatScreenState extends State<VendorChatScreen>
                   ),
                   const SizedBox(width: 8),
                   FilterChip(
-                    label: const Text('Unread'),
+                    label: const Text(AppStrings.statusUnread),
                     onSelected: (selected) {
                       if (selected) {
                         context.read<VendorChatBloc>().add(
@@ -352,7 +353,7 @@ class _VendorChatScreenState extends State<VendorChatScreen>
                   // Call customer functionality
                 },
                 icon: const Icon(Icons.phone),
-                tooltip: 'Call Customer',
+                tooltip: AppStrings.callCustomer,
               ),
             ],
           ),
@@ -364,7 +365,7 @@ class _VendorChatScreenState extends State<VendorChatScreen>
               ? const Center(child: CircularProgressIndicator())
               : state.messages.isEmpty
                   ? const Center(
-                      child: Text('No messages in this conversation yet'),
+                      child: Text(AppStrings.noMessages),
                     )
                   : ListView.builder(
                       padding: const EdgeInsets.all(16),
@@ -452,19 +453,19 @@ class _VendorChatScreenState extends State<VendorChatScreen>
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'No quick replies yet',
+                  AppStrings.noQuickReplies,
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Create quick replies for common questions',
+                  AppStrings.noQuickRepliesHint,
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
                 const SizedBox(height: 24),
                 ElevatedButton.icon(
                   onPressed: () => _showAddQuickReplyDialog(context),
                   icon: const Icon(Icons.add),
-                  label: const Text('Add Quick Reply'),
+                  label: const Text(AppStrings.addQuickReply),
                 ),
               ],
             ),
@@ -494,19 +495,19 @@ class _VendorChatScreenState extends State<VendorChatScreen>
   void _showAddQuickReplyDialog(BuildContext context) {
     final titleController = TextEditingController();
     final contentController = TextEditingController();
-    String selectedCategory = 'Custom';
+    String selectedCategory = AppStrings.custom;
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Add Quick Reply'),
+        title: const Text(AppStrings.addQuickReply),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             DropdownButtonFormField<String>(
               value: selectedCategory,
               decoration: const InputDecoration(
-                labelText: 'Category',
+                labelText: AppStrings.category,
                 border: OutlineInputBorder(),
               ),
               items: VendorChatState.defaultCategories.map((category) {
@@ -516,16 +517,16 @@ class _VendorChatScreenState extends State<VendorChatScreen>
                 );
               }).toList(),
               onChanged: (value) {
-                selectedCategory = value ?? 'Custom';
+                selectedCategory = value ?? AppStrings.custom;
               },
             ),
             const SizedBox(height: 16),
             TextField(
               controller: titleController,
               decoration: const InputDecoration(
-                labelText: 'Title',
+                labelText: AppStrings.title,
                 border: OutlineInputBorder(),
-                hintText: 'Short title for the reply',
+                hintText: AppStrings.titleHint,
               ),
               maxLength: 100,
             ),
@@ -533,9 +534,9 @@ class _VendorChatScreenState extends State<VendorChatScreen>
             TextField(
               controller: contentController,
               decoration: const InputDecoration(
-                labelText: 'Message',
+                labelText: AppStrings.message,
                 border: OutlineInputBorder(),
-                hintText: 'The message to send',
+                hintText: AppStrings.messageHint,
               ),
               maxLines: 3,
               maxLength: 500,
@@ -545,7 +546,7 @@ class _VendorChatScreenState extends State<VendorChatScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+            child: const Text(AppStrings.cancel),
           ),
           ElevatedButton(
             onPressed: () {
@@ -561,7 +562,7 @@ class _VendorChatScreenState extends State<VendorChatScreen>
                 Navigator.of(context).pop();
               }
             },
-            child: const Text('Add'),
+            child: const Text(AppStrings.add),
           ),
         ],
       ),
@@ -571,19 +572,19 @@ class _VendorChatScreenState extends State<VendorChatScreen>
   void _showEditQuickReplyDialog(BuildContext context, Map<String, dynamic> quickReply) {
     final titleController = TextEditingController(text: quickReply['title']);
     final contentController = TextEditingController(text: quickReply['content']);
-    String selectedCategory = quickReply['category'] ?? 'Custom';
+    String selectedCategory = quickReply['category'] ?? AppStrings.custom;
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Edit Quick Reply'),
+        title: const Text(AppStrings.editQuickReply),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             DropdownButtonFormField<String>(
               value: selectedCategory,
               decoration: const InputDecoration(
-                labelText: 'Category',
+                labelText: AppStrings.category,
                 border: OutlineInputBorder(),
               ),
               items: VendorChatState.defaultCategories.map((category) {
@@ -593,14 +594,14 @@ class _VendorChatScreenState extends State<VendorChatScreen>
                 );
               }).toList(),
               onChanged: (value) {
-                selectedCategory = value ?? 'Custom';
+                selectedCategory = value ?? AppStrings.custom;
               },
             ),
             const SizedBox(height: 16),
             TextField(
               controller: titleController,
               decoration: const InputDecoration(
-                labelText: 'Title',
+                labelText: AppStrings.title,
                 border: OutlineInputBorder(),
               ),
               maxLength: 100,
@@ -609,7 +610,7 @@ class _VendorChatScreenState extends State<VendorChatScreen>
             TextField(
               controller: contentController,
               decoration: const InputDecoration(
-                labelText: 'Message',
+                labelText: AppStrings.message,
                 border: OutlineInputBorder(),
               ),
               maxLines: 3,
@@ -620,7 +621,7 @@ class _VendorChatScreenState extends State<VendorChatScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+            child: const Text(AppStrings.cancel),
           ),
           ElevatedButton(
             onPressed: () {
@@ -637,7 +638,7 @@ class _VendorChatScreenState extends State<VendorChatScreen>
                 Navigator.of(context).pop();
               }
             },
-            child: const Text('Update'),
+            child: const Text(AppStrings.update),
           ),
         ],
       ),

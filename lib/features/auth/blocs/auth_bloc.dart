@@ -1,9 +1,8 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:chefleet/core/diagnostics/diagnostic_domains.dart';
-import 'package:chefleet/core/diagnostics/diagnostic_harness.dart';
-import 'package:chefleet/core/diagnostics/diagnostic_severity.dart';
+import '../../../core/diagnostics/diagnostic_domains.dart';
+import '../../../core/diagnostics/diagnostic_harness.dart';
+import '../../../core/diagnostics/diagnostic_severity.dart';
 import '../../../core/blocs/base_bloc.dart';
 import '../../../core/services/guest_session_service.dart';
 
@@ -183,14 +182,14 @@ class AuthBloc extends AppBloc<AuthEvent, AuthState> {
   void _initializeAuth() {
     try {
       _logAuth('init.start', severity: DiagnosticSeverity.debug);
-      // Get current auth state safely
+      // Get current auth state synchronously for fast bootstrap
       final currentUser = Supabase.instance.client.auth.currentUser;
 
-      // Use addPostFrameCallback to ensure the widget tree is fully built
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (isClosed) return; // Don't add events if bloc is disposed
+      // Immediately emit auth state for bootstrap orchestrator
+      // No post-frame callback delay - auth state must be available synchronously
+      if (!isClosed) {
         add(AuthStatusChanged(currentUser));
-      });
+      }
       _logAuth('init.success', severity: DiagnosticSeverity.debug);
     } catch (e) {
       // Handle initialization errors gracefully
@@ -498,12 +497,13 @@ class AuthBloc extends AppBloc<AuthEvent, AuthState> {
     AuthStatusChanged event,
     Emitter<AuthState> emit,
   ) {
+    // Immediately emit resolved auth state (no loading state)
     emit(state.copyWith(
       mode: event.user != null ? AuthMode.authenticated : AuthMode.unauthenticated,
       user: event.user,
       guestId: null,
       isAuthenticated: event.user != null,
-      isLoading: false,
+      isLoading: false, // Critical: isLoading must be false for bootstrap
       errorMessage: null,
     ));
   }

@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import '../../../core/utils/date_time_utils.dart';
 
 class PreparationStep extends Equatable {
   const PreparationStep({
@@ -21,19 +22,11 @@ class PreparationStep extends Equatable {
       stepNumber: json['step_number'] as int,
       stepName: json['step_name'] as String,
       estimatedDurationSeconds: json['estimated_duration_seconds'] as int,
-      startedAt: json['started_at'] != null
-          ? DateTime.parse(json['started_at'] as String)
-          : null,
-      completedAt: json['completed_at'] != null
-          ? DateTime.parse(json['completed_at'] as String)
-          : null,
+      startedAt: DateTimeUtils.parse(json['started_at'] as String?),
+      completedAt: DateTimeUtils.parse(json['completed_at'] as String?),
       status: json['status'] as String,
-      createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'] as String)
-          : null,
-      updatedAt: json['updated_at'] != null
-          ? DateTime.parse(json['updated_at'] as String)
-          : null,
+      createdAt: DateTimeUtils.parse(json['created_at'] as String?),
+      updatedAt: DateTimeUtils.parse(json['updated_at'] as String?),
     );
   }
 

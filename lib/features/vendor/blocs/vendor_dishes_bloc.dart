@@ -106,7 +106,6 @@ class VendorDishesBloc extends Bloc<VendorDishesEvent, VendorDishesState> {
     try {
       // TODO: Implement actual dish loading from Supabase
       // For now, return empty list
-      await Future.delayed(const Duration(milliseconds: 500));
       emit(const VendorDishesLoaded(dishes: []));
     } catch (e) {
       emit(VendorDishesError('Failed to load dishes: $e'));

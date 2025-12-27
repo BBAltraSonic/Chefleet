@@ -67,6 +67,9 @@ class VendorDashboardState extends Equatable {
     this.statusFilter,
     this.errorMessage,
     this.successMessage,
+    this.detailedAnalytics,
+    this.performanceMetrics,
+    this.popularItems,
   });
 
   final bool isLoading;
@@ -78,6 +81,9 @@ class VendorDashboardState extends Equatable {
   final String? statusFilter;
   final String? errorMessage;
   final String? successMessage;
+  final Map<String, dynamic>? detailedAnalytics;
+  final Map<String, dynamic>? performanceMetrics;
+  final List<Map<String, dynamic>>? popularItems;
 
   @override
   List<Object?> get props => [
@@ -90,6 +96,9 @@ class VendorDashboardState extends Equatable {
         statusFilter,
         errorMessage,
         successMessage,
+        detailedAnalytics,
+        performanceMetrics,
+        popularItems,
       ];
 
   VendorDashboardState copyWith({
@@ -102,6 +111,9 @@ class VendorDashboardState extends Equatable {
     String? statusFilter,
     String? errorMessage,
     String? successMessage,
+    Map<String, dynamic>? detailedAnalytics,
+    Map<String, dynamic>? performanceMetrics,
+    List<Map<String, dynamic>>? popularItems,
   }) {
     return VendorDashboardState(
       isLoading: isLoading ?? this.isLoading,
@@ -113,6 +125,9 @@ class VendorDashboardState extends Equatable {
       statusFilter: statusFilter ?? this.statusFilter,
       errorMessage: errorMessage,
       successMessage: successMessage,
+      detailedAnalytics: detailedAnalytics ?? this.detailedAnalytics,
+      performanceMetrics: performanceMetrics ?? this.performanceMetrics,
+      popularItems: popularItems ?? this.popularItems,
     );
   }
 }

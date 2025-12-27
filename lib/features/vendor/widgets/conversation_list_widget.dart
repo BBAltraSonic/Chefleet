@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../blocs/vendor_chat_bloc.dart';
+import '../../../../core/constants/app_strings.dart';
 
 class ConversationListWidget extends StatelessWidget {
   final List<Map<String, dynamic>> conversations;
@@ -25,12 +26,12 @@ class ConversationListWidget extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'No conversations found',
+              AppStrings.noConversationsFound,
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 8),
             Text(
-              'Start a conversation with customers',
+              AppStrings.startConversationHint,
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           ],

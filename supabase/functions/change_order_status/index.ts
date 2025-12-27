@@ -1,19 +1,15 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 import { createClient } from 'jsr:@supabase/supabase-js@2'
+import { ChangeOrderStatusSchema, validateRequest } from '../_shared/schemas.ts'
+import { checkRateLimit, createRateLimitResponse } from '../_shared/rate_limiter.ts'
+import { checkIdempotency, storeIdempotencyResponse, markIdempotencyFailed } from '../_shared/idempotency.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-interface ChangeStatusRequest {
-  order_id: string
-  new_status: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'picked_up' | 'completed' | 'cancelled'
-  pickup_code?: string // For completion verification
-  reason?: string // For cancellation
-}
-
-const VALID_STATUS_TRANSITIONS = {
+const VALID_STATUS_TRANSITIONS: Record<string, string[]> = {
   'pending': ['confirmed', 'cancelled'],
   'confirmed': ['preparing', 'cancelled'],
   'preparing': ['ready', 'cancelled'],
@@ -48,17 +44,53 @@ Deno.serve(async (req) => {
       throw new Error('Unauthorized')
     }
 
-    const body: ChangeStatusRequest = await req.json()
-    const { order_id, new_status, pickup_code, reason } = body
-
-    // Validate required fields
-    if (!order_id || !new_status) {
-      throw new Error('Missing required fields')
+    // Rate limiting check
+    const rateLimitResult = await checkRateLimit(supabase, 'change_order_status', user.id)
+    if (!rateLimitResult.allowed) {
+      return createRateLimitResponse(rateLimitResult, corsHeaders)
     }
 
-    // Validate status
-    if (!Object.keys(VALID_STATUS_TRANSITIONS).includes(new_status)) {
-      throw new Error('Invalid status')
+    // Validate request body
+    const bodyResult = validateRequest(ChangeOrderStatusSchema, await req.json())
+
+    if (!bodyResult.success) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Validation failed',
+          details: bodyResult.errors
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400
+        }
+      )
+    }
+
+    const { order_id, new_status, pickup_code, reason, idempotency_key } = bodyResult.data
+
+    // Idempotency check: Return cached response if this is a retry
+    if (idempotency_key) {
+      const idempResult = await checkIdempotency(supabase, {
+        functionName: 'change_order_status',
+        userId: user.id,
+        idempotencyKey: idempotency_key,
+        requestBody: { order_id, new_status, pickup_code, reason }
+      })
+
+      if (idempResult.isRetry) {
+        return new Response(
+          JSON.stringify(idempResult.cachedResponse),
+          {
+            headers: {
+              ...corsHeaders,
+              'Content-Type': 'application/json',
+              'X-Idempotent-Replay': 'true'
+            },
+            status: 200
+          }
+        )
+      }
     }
 
     // Get current order with user verification
@@ -68,7 +100,8 @@ Deno.serve(async (req) => {
         *,
         buyer_id,
         vendor_id,
-        pickup_code
+        pickup_code,
+        updated_at
       `)
       .eq('id', order_id)
       .single()
@@ -82,8 +115,24 @@ Deno.serve(async (req) => {
       throw new Error('Unauthorized: You are not a participant in this order')
     }
 
+    // IDEMPOTENCY CHECK: If status is already what we want, return success
+    if (order.status === new_status) {
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: `Order is already ${new_status}`,
+          order: order,
+          idempotent: true
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200
+        }
+      )
+    }
+
     // Check if this is a valid status transition
-    const validTransitions = VALID_STATUS_TRANSITIONS[order.status]
+    const validTransitions = VALID_STATUS_TRANSITIONS[order.status] || []
     if (!validTransitions.includes(new_status)) {
       throw new Error(`Invalid status transition from ${order.status} to ${new_status}`)
     }
@@ -141,11 +190,27 @@ Deno.serve(async (req) => {
       .from('orders')
       .update(updateData)
       .eq('id', order_id)
+      .eq('updated_at', order.updated_at) // Optimistic locking
       .select()
       .single()
 
     if (updateError) {
       throw new Error(`Failed to update order: ${updateError.message}`)
+    }
+
+    // Check if update affected any rows (optimistic lock failure)
+    if (!updatedOrder) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Order was modified by another request. Please refresh and try again.',
+          error_code: 'CONCURRENT_MODIFICATION'
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 409
+        }
+      )
     }
 
     // Create system message for status change
@@ -193,25 +258,37 @@ Deno.serve(async (req) => {
 
     const { data: buyer } = await supabase
       .from('users_public')
-      .select('full_name')
-      .eq('user_id', order.buyer_id)
+      .select('name')
+      .eq('id', order.buyer_id)
       .single()
 
     // TODO: Send push notifications
     // Send notification to other party about status change
     // This would require FCM/APNs integration
 
+    const responseData = {
+      success: true,
+      message: `Order status changed to ${new_status}`,
+      order: updatedOrder,
+      status_message: statusMessage,
+      buyer,
+      vendor
+    }
+
+    // Store idempotency response for future retries
+    if (idempotency_key) {
+      await storeIdempotencyResponse(supabase, idempotency_key, responseData)
+    }
+
     return new Response(
-      JSON.stringify({
-        success: true,
-        message: `Order status changed to ${new_status}`,
-        order: updatedOrder,
-        status_message: statusMessage,
-        buyer,
-        vendor
-      }),
+      JSON.stringify(responseData),
       {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+          'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
+          'X-RateLimit-Reset': Math.floor(rateLimitResult.resetAt.getTime() / 1000).toString()
+        },
         status: 200
       }
     )
@@ -219,10 +296,20 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('Error in change_order_status:', error)
 
+    // Mark idempotency key as failed if present
+    try {
+      const bodyData = await req.clone().json()
+      if (bodyData.idempotency_key) {
+        await markIdempotencyFailed(supabase, bodyData.idempotency_key, error)
+      }
+    } catch (e) {
+      // Ignore errors in marking idempotency failure
+    }
+
     return new Response(
       JSON.stringify({
         success: false,
-        error: error.message || 'Internal server error',
+        error: (error as Error).message || 'Internal server error',
         error_code: 'STATUS_UPDATE_FAILED'
       }),
       {

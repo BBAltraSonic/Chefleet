@@ -13,6 +13,7 @@ import 'order_history_screen.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/routes/app_routes.dart';
 import '../../../shared/widgets/glass_container.dart';
+import '../../../core/constants/app_strings.dart';
 import '../widgets/analytics_tab.dart';
 
 class VendorDashboardScreen extends StatefulWidget {
@@ -128,7 +129,7 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Welcome back,',
+                      AppStrings.welcomeBack,
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: Colors.grey[600],
                         fontSize: 16,
@@ -232,7 +233,7 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Overview',
+            AppStrings.overviewTab,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w700,
               color: const Color(0xFF1A1A1A),
@@ -249,28 +250,28 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen>
             padding: EdgeInsets.zero,
             children: [
               StatsCard(
-                title: 'Today\'s Orders',
+                title: AppStrings.todayOrders,
                 value: stats.todayOrders.toString(),
                 subtitle: CurrencyFormatter.format(stats.todayRevenue),
                 icon: Icons.shopping_bag_outlined,
                 color: const Color(0xFF2196F3),
               ),
               StatsCard(
-                title: 'Active Orders',
+                title: AppStrings.activeOrders,
                 value: stats.activeOrders.toString(),
                 subtitle: '${stats.pendingOrders} pending',
                 icon: Icons.timer_outlined,
                 color: const Color(0xFFFF9800),
               ),
               StatsCard(
-                title: 'This Week',
+                title: AppStrings.thisWeek,
                 value: stats.weekOrders.toString(),
                 subtitle: CurrencyFormatter.format(stats.weekRevenue),
                 icon: Icons.calendar_view_week_rounded,
                 color: const Color(0xFF4CAF50), // Green
               ),
               StatsCard(
-                title: 'This Month',
+                title: AppStrings.thisMonth,
                 value: stats.monthOrders.toString(),
                 subtitle: CurrencyFormatter.format(stats.monthRevenue),
                 icon: Icons.calendar_month_rounded,
@@ -314,10 +315,10 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen>
           indicatorSize: TabBarIndicatorSize.tab,
           dividerColor: Colors.transparent,
           tabs: const [
-            Tab(text: 'Orders'),
-            Tab(text: 'Menu'),
-            Tab(text: 'Stats'),
-            Tab(text: 'History'),
+            Tab(text: AppStrings.orders),
+            Tab(text: AppStrings.menuItems),
+            Tab(text: AppStrings.sales),
+            Tab(text: AppStrings.history),
           ],
         ),
       ),
@@ -387,15 +388,15 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen>
         scrollDirection: Axis.horizontal,
         child: Row(
           children: [
-            _buildFilterChip('all', 'All'),
+            _buildFilterChip('all', AppStrings.statusAll),
             const SizedBox(width: 8),
-            _buildFilterChip('pending', 'Pending'),
+            _buildFilterChip('pending', AppStrings.statusPending),
             const SizedBox(width: 8),
-            _buildFilterChip('accepted', 'Accepted'),
+            _buildFilterChip('accepted', AppStrings.statusAccepted),
             const SizedBox(width: 8),
-            _buildFilterChip('preparing', 'Preparing'),
+            _buildFilterChip('preparing', AppStrings.statusPreparing),
             const SizedBox(width: 8),
-            _buildFilterChip('ready', 'Ready'),
+            _buildFilterChip('ready', AppStrings.statusReady),
           ],
         ),
       ),
@@ -439,7 +440,7 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Menu Items',
+                AppStrings.menuItems,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
@@ -469,7 +470,7 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen>
                       Icon(Icons.add, color: Theme.of(context).colorScheme.primary, size: 18),
                       const SizedBox(width: 4),
                       Text(
-                        'Add Item',
+                        AppStrings.addItem,
                         style: TextStyle(
                           color: Theme.of(context).colorScheme.primary,
                           fontWeight: FontWeight.w600,
@@ -540,7 +541,7 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen>
             ),
             const SizedBox(height: 16),
             Text(
-              'Something went wrong',
+              AppStrings.somethingWentWrong,
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 8),
@@ -554,7 +555,7 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen>
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () => context.read<VendorDashboardBloc>().add(LoadDashboardData()),
-              child: const Text('Try Again'),
+              child: Text(AppStrings.tryAgain),
             ),
           ],
         ),
@@ -574,14 +575,14 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen>
           ),
           const SizedBox(height: 16),
           Text(
-            'No orders found',
+            AppStrings.noOrdersFound,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
               color: Colors.grey[600],
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            'Orders will appear here when customers place them',
+            AppStrings.ordersEmptyState,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: Colors.grey[500],
             ),
@@ -604,14 +605,14 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen>
           ),
           const SizedBox(height: 16),
           Text(
-            'No menu items yet',
+            AppStrings.noMenuItems,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
               color: Colors.grey[600],
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            'Add your first menu item to get started',
+            AppStrings.startAddingMenuItems,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: Colors.grey[500],
             ),
