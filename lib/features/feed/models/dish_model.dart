@@ -34,9 +34,11 @@ class Dish extends Equatable {
        preparationTimeMinutes = preparationTimeMinutes ?? prepTimeMinutes;
 
   factory Dish.fromJson(Map<String, dynamic> json) {
-    // Handle both price (numeric) and price_cents (integer) from DB
-    final priceCents = json['price_cents'] as int? ?? 
-                       ((json['price'] as num?)?.toDouble() ?? 0.0 * 100).toInt();
+    // Database stores 'price' as INTEGER in cents (e.g., 15000 for R150.00)
+    // Supabase returns INTEGER as num, so safely convert to int
+    final priceCents = (json['price_cents'] as num?)?.toInt() ?? 
+                       (json['price'] as num?)?.toInt() ?? 
+                       0;
     
     return Dish(
       id: json['id'] as String,
@@ -100,9 +102,9 @@ class Dish extends Equatable {
   // Computed properties
   String get displayName => name;
   String get displayDescription => description.isNotEmpty ? description : 'No description available';
-  double get priceDollars => priceCents / 100.0;
+  double get priceRands => priceCents / 100.0;
 
-  String get formattedPrice => CurrencyFormatter.format(priceDollars);
+  String get formattedPrice => CurrencyFormatter.format(priceRands);
   String get formattedPrepTime => '${prepTimeMinutes} min';
 
   // Dietary indicators
@@ -148,8 +150,7 @@ class Dish extends Equatable {
       'vendor_id': vendorId,
       'name': name,
       'description': description,
-      'price': price, // DB uses numeric 'price' as primary (NOT NULL)
-      // price_cents is a generated column - don't include in toJson
+      'price': priceCents, // DB expects INTEGER in cents (e.g., 15000 for R150.00)
       'preparation_time_minutes': prepTimeMinutes,
       'available': available, // DB column is 'available', not 'is_available'
       'image_url': imageUrl,
