@@ -101,15 +101,13 @@ class VendorDashboardBloc extends Bloc<VendorDashboardEvent, VendorDashboardStat
 
       final vendorResponse = Map<String, dynamic>.from(vendorRows.first as Map);
 
-      // Load orders and stats in parallel
-      await Future.wait([
-        Future(() => add(LoadOrders(vendorId: vendorResponse['id']))),
-        Future(() => add(LoadOrderStats(vendorId: vendorResponse['id']))),
-        Future(() => add(LoadMenuItems(vendorId: vendorResponse['id']))),
-        Future(() => add(LoadDetailedAnalytics(vendorId: vendorResponse['id']))),
-        Future(() => add(LoadPerformanceMetrics(vendorId: vendorResponse['id']))),
-        Future(() => add(LoadPopularItems(vendorId: vendorResponse['id']))),
-      ]);
+      // Queue events to load data
+      add(LoadOrders(vendorId: vendorResponse['id']));
+      add(LoadOrderStats(vendorId: vendorResponse['id']));
+      add(LoadMenuItems(vendorId: vendorResponse['id']));
+      add(LoadDetailedAnalytics(vendorId: vendorResponse['id']));
+      add(LoadPerformanceMetrics(vendorId: vendorResponse['id']));
+      add(LoadPopularItems(vendorId: vendorResponse['id']));
 
       emit(state.copyWith(
         isLoading: false,
@@ -326,7 +324,7 @@ class VendorDashboardBloc extends Bloc<VendorDashboardEvent, VendorDashboardStat
       );
       await _supabaseClient
           .from('dishes')
-          .update({'is_available': event.isAvailable})
+          .update({'available': event.isAvailable})
           .eq('id', event.itemId);
 
       // Refresh menu items
@@ -365,6 +363,7 @@ class VendorDashboardBloc extends Bloc<VendorDashboardEvent, VendorDashboardStat
           schema: 'public',
           table: 'orders',
           callback: (payload) {
+            if (isClosed) return;
             final newRecord = payload.newRecord;
             if (newRecord['vendor_id'] == event.vendorId) {
               // Refresh orders when they're updated
@@ -378,6 +377,7 @@ class VendorDashboardBloc extends Bloc<VendorDashboardEvent, VendorDashboardStat
           schema: 'public',
           table: 'orders',
           callback: (payload) {
+            if (isClosed) return;
             final newRecord = payload.newRecord;
             if (newRecord['vendor_id'] == event.vendorId) {
               // Refresh orders when new ones are created

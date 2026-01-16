@@ -9,8 +9,6 @@ import '../blocs/vendor_dashboard_bloc.dart';
 import '../widgets/order_card.dart';
 import '../widgets/stats_card.dart';
 import '../widgets/menu_item_card.dart';
-import 'order_history_screen.dart';
-import '../../../core/theme/app_theme.dart';
 import '../../../core/routes/app_routes.dart';
 import '../../../shared/widgets/glass_container.dart';
 import '../../../core/constants/app_strings.dart';
@@ -53,7 +51,7 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen>
       // IMPORTANT: Store subscription and cancel it in dispose
       _blocSubscription = _dashboardBloc?.stream.listen((state) {
         if (!mounted) return;
-        if (state.vendor != null) {
+        if (state.vendor != null && !(_dashboardBloc?.isClosed ?? true)) {
           // Use captured bloc reference to be safe even if context is technically deactivated
           _dashboardBloc?.add(
             SubscribeToOrderUpdates(vendorId: state.vendor!['id']),
@@ -67,7 +65,7 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen>
   void dispose() {
     _tabController.dispose();
     _blocSubscription?.cancel(); // Cancel stream subscription to prevent disposal errors
-    _dashboardBloc?.add(UnsubscribeFromOrderUpdates());
+    // Bloc close() handles unsubscribe, no need to dispatch event here which might fail if bloc is closing
     super.dispose();
   }
 
@@ -92,7 +90,6 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen>
             // Using NestedScrollView to prevent "dependents is empty" assertions
             // and handle tab scrolling properly
             return NestedScrollView(
-              key: const PageStorageKey('VendorDashboardNestedScrollView'),
               headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
                 return <Widget>[
                   SliverToBoxAdapter(child: _buildHeader(state)),
@@ -333,7 +330,7 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen>
         _buildOrdersTab(state),
         _buildMenuTab(state),
         _buildAnalyticsTab(state),
-        _buildHistoryTab(),
+        _buildHistoryTab(state),
       ],
     );
   }
@@ -349,6 +346,7 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen>
               : ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   itemCount: state.filteredOrders.length,
+                  primary: false,
                   itemBuilder: (context, index) {
                     final order = state.filteredOrders[index];
                     return Padding(
@@ -487,6 +485,7 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen>
             child: state.menuItems.isEmpty
                 ? _buildEmptyMenuState()
                 : ListView.builder(
+                    primary: false,
                     itemCount: state.menuItems.length,
                     itemBuilder: (context, index) {
                       final item = state.menuItems[index];
@@ -498,7 +497,7 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen>
                             // Ensure all required fields for Dish are present or handled
                             try {
                               final dish = Dish.fromJson(item);
-                              context.push('${VendorRoutes.dishes}/edit', extra: dish);
+                              context.push('${VendorRoutes.dishes}/edit/${dish.id}', extra: dish);
                             } catch (e) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(content: Text('Error opening dish: $e')),
@@ -623,8 +622,205 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen>
     );
   }
 
-  Widget _buildHistoryTab() {
-    return const OrderHistoryScreen();
+  Widget _buildHistoryTab(VendorDashboardState state) {
+    // Inline history content using parent state to avoid nested BlocBuilder disposal issues
+    final historyOrders = state.filteredOrders.where((order) {
+      final status = order['status'] as String? ?? 'pending';
+      return ['completed', 'cancelled'].contains(status);
+    }).toList();
+
+    if (state.isLoading && historyOrders.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (historyOrders.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.history_outlined,
+              size: 64,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No order history found',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Completed and cancelled orders will appear here',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Colors.grey[500],
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      itemCount: historyOrders.length,
+      primary: false,
+      itemBuilder: (context, index) {
+        final order = historyOrders[index];
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: _buildHistoryOrderCard(order),
+        );
+      },
+    );
+  }
+
+  Widget _buildHistoryOrderCard(Map<String, dynamic> order) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final status = order['status'] as String? ?? 'pending';
+    final totalAmount = (order['total_amount'] as num?)?.toDouble() ?? 0.0;
+    final updatedAt = DateTime.tryParse(order['updated_at'] as String? ?? '') ?? DateTime.now();
+    final buyer = order['buyer'] as Map<String, dynamic>? ?? {};
+    final items = order['items'] as List<dynamic>? ?? [];
+
+    Color backgroundColor;
+    Color textColor;
+    String displayText;
+    final isDark = theme.brightness == Brightness.dark;
+
+    switch (status) {
+      case 'completed':
+        backgroundColor = Colors.green.withValues(alpha: isDark ? 0.2 : 0.1);
+        textColor = isDark ? Colors.green[300]! : Colors.green;
+        displayText = 'Completed';
+        break;
+      case 'cancelled':
+        backgroundColor = Colors.red.withValues(alpha: isDark ? 0.2 : 0.1);
+        textColor = isDark ? Colors.red[300]! : Colors.red;
+        displayText = 'Cancelled';
+        break;
+      default:
+        backgroundColor = Colors.grey.withValues(alpha: isDark ? 0.2 : 0.1);
+        textColor = isDark ? Colors.grey[300]! : Colors.grey;
+        displayText = status;
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.cardTheme.color ?? colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Order #${order['id'].toString().substring(0, 8).toUpperCase()}',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      buyer['full_name'] as String? ?? 'Customer',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: backgroundColor,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: textColor.withValues(alpha: 0.3),
+                    width: 1,
+                  ),
+                ),
+                child: Text(
+                  displayText,
+                  style: TextStyle(
+                    color: textColor,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Items (${items.length})',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 4),
+          ...items.take(3).map((item) {
+            final dish = item['dishes'] as Map<String, dynamic>? ?? {};
+            final quantity = item['quantity'] as int? ?? 1;
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Text(
+                '$quantity × ${dish['name'] as String? ?? 'Item'}',
+                style: theme.textTheme.bodySmall,
+              ),
+            );
+          }),
+          if (items.length > 3)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Text(
+                '+${items.length - 3} more items',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                CurrencyFormatter.format(totalAmount),
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: colorScheme.primary,
+                ),
+              ),
+              Text(
+                DateFormat('MMM dd, h:mm a').format(updatedAt),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: status == 'completed' ? Colors.green[600] : Colors.red[600],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 }
 

@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 // Auth Screens
 import '../../features/auth/screens/auth_screen.dart';
 import '../../features/auth/screens/splash_screen.dart';
+import '../../features/auth/screens/loading_screen.dart';
+import '../../features/auth/screens/error_screen.dart';
 import '../../features/auth/screens/role_selection_screen.dart';
 import '../../features/auth/screens/profile_creation_screen.dart';
 import '../../features/auth/screens/guest_conversion_screen.dart';
@@ -39,9 +41,15 @@ import '../../features/vendor/screens/vendor_chat_screen.dart';
 // Models
 import '../../features/feed/models/dish_model.dart';
 
+// Exceptions
+import '../exceptions/app_exceptions.dart';
+
 // Blocs
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
 import '../../features/auth/blocs/auth_bloc.dart' show AuthBloc, AuthMode, AuthState;
 import '../../features/auth/blocs/user_profile_bloc.dart' show UserProfileBloc, UserProfileState;
+import '../../features/vendor/blocs/vendor_dashboard_bloc.dart';
 import '../blocs/role_bloc.dart';
 import '../blocs/role_state.dart';
 import '../models/user_role.dart';
@@ -49,6 +57,7 @@ import '../models/user_role.dart';
 // Routes & Guards
 import '../routes/app_routes.dart';
 import '../routes/role_route_guard.dart';
+import '../routes/route_guards.dart';
 
 // Shells
 import '../../features/customer/customer_app_shell.dart';
@@ -68,6 +77,8 @@ class AppRouter {
 
   // Shared route constants (no role prefix)
   static const String splash = '/splash';
+  static const String loading = '/loading';
+  static const String error = '/error';
   static const String auth = '/auth';
   static const String roleSelection = '/role-selection';
   static const String profileCreation = '/profile-creation';
@@ -98,6 +109,28 @@ class AppRouter {
           roleBloc: roleBloc,
         );
       },
+      // Phase 6: Error boundary - handle navigation exceptions
+      onException: (BuildContext context, GoRouterState state, GoRouter router) {
+        // Extract error details
+        final exception = state.error;
+        final route = state.matchedLocation;
+        
+        // Create NavigationException with context
+        final navError = NavigationException(
+          exception?.toString() ?? 'Unknown navigation error',
+          route: route,
+          stackTrace: exception is Error ? (exception as Error).stackTrace : null,
+        );
+        
+        // Log the error for debugging
+        print('🚨 Navigation Exception: ${navError.toString()}');
+        if (navError.stackTrace != null) {
+          print('Stack trace: ${navError.stackTrace}');
+        }
+        
+        // Navigate to error screen with error details
+        router.go(error, extra: navError);
+      },
       routes: [
         // ============================================================
         // SHARED ROUTES (No role prefix - accessible by all)
@@ -105,6 +138,17 @@ class AppRouter {
         GoRoute(
           path: splash,
           builder: (context, state) => const SplashScreen(),
+        ),
+        GoRoute(
+          path: loading,
+          builder: (context, state) => const LoadingScreen(),
+        ),
+        GoRoute(
+          path: error,
+          builder: (context, state) {
+            final navError = state.extra as NavigationException?;
+            return ErrorScreen(error: navError);
+          },
         ),
         GoRoute(
           path: auth,
@@ -124,6 +168,10 @@ class AppRouter {
         ),
         GoRoute(
           path: VendorRoutes.onboarding,
+          redirect: (context, state) => RouteGuards.validateVendorOnboardingAccess(
+            context: context,
+            state: state,
+          ),
           builder: (context, state) => const VendorOnboardingScreen(),
         ),
         
@@ -173,6 +221,12 @@ class AppRouter {
             // Chat Detail (order-specific)
             GoRoute(
               path: '${CustomerRoutes.chat}/:orderId',
+              redirect: (context, state) => RouteGuards.validateOrderExists(
+                context: context,
+                state: state,
+                orderIdParam: 'orderId',
+                fallbackRoute: CustomerRoutes.orders,
+              ),
               builder: (context, state) {
                 final orderId = state.pathParameters['orderId']!;
                 final orderStatus = state.uri.queryParameters['orderStatus'] ?? 'pending';
@@ -222,203 +276,421 @@ class AppRouter {
         ),
         
         // ============================================================
-        // VENDOR SHELL ROUTE
+        // VENDOR SHELL ROUTE WITH TAB-SPECIFIC STACKS
         // ============================================================
-        ShellRoute(
-          builder: (context, state, child) {
+        // Phase 4: Using StatefulShellRoute.indexedStack to maintain
+        // independent navigation stacks for each bottom nav tab
+        StatefulShellRoute.indexedStack(
+          builder: (context, state, navigationShell) {
             return VendorAppShell(
               availableRoles: roleBloc.state is RoleLoaded
                   ? (roleBloc.state as RoleLoaded).availableRoles
                   : {UserRole.vendor},
-              child: child,
+              navigationShell: navigationShell,
             );
           },
-          routes: [
-            // Vendor Dashboard
-            GoRoute(
-              path: VendorRoutes.dashboard,
-              pageBuilder: (context, state) => const NoTransitionPage(
-                child: VendorDashboardScreen(),
-              ),
-            ),
-            
-            // Vendor Orders
-            GoRoute(
-              path: VendorRoutes.orders,
-              pageBuilder: (context, state) => const NoTransitionPage(
-                child: VendorOrdersScreen(),
-              ),
+          branches: [
+            // ============================================================
+            // TAB 0: DASHBOARD BRANCH
+            // ============================================================
+            StatefulShellBranch(
               routes: [
-                // Order Detail
                 GoRoute(
-                  path: ':orderId',
-                  builder: (context, state) {
-                    final orderId = state.pathParameters['orderId']!;
-                    return OrderDetailScreen(orderId: orderId);
-                  },
+                  path: VendorRoutes.dashboard,
+                  pageBuilder: (context, state) => NoTransitionPage(
+                    child: BlocProvider(
+                      create: (context) => VendorDashboardBloc(
+                        supabaseClient: Supabase.instance.client,
+                      )..add(LoadDashboardData()),
+                      child: const VendorDashboardScreen(),
+                    ),
+                  ),
                 ),
               ],
             ),
             
-            // Order History
-            GoRoute(
-              path: '${VendorRoutes.orders}/history',
-              builder: (context, state) => const OrderHistoryScreen(),
-            ),
-            
-            // Vendor Dishes
-            GoRoute(
-              path: VendorRoutes.dishes,
-              pageBuilder: (context, state) => const NoTransitionPage(
-                child: VendorDishesScreen(),
-              ),
+            // ============================================================
+            // TAB 1: ORDERS BRANCH
+            // ============================================================
+            StatefulShellBranch(
               routes: [
-                // Add Dish
                 GoRoute(
-                  path: 'add',
-                  builder: (context, state) => const DishEditScreen(),
-                ),
-                // Edit Dish
-                GoRoute(
-                  path: 'edit/:dishId',
-                  builder: (context, state) {
-                    final dish = state.extra as Dish?;
-                    return DishEditScreen(dish: dish);
-                  },
+                  path: VendorRoutes.orders,
+                  pageBuilder: (context, state) => const NoTransitionPage(
+                    child: VendorOrdersScreen(),
+                  ),
+                  routes: [
+                    // Order Detail
+                    GoRoute(
+                      path: ':orderId',
+                      redirect: (context, state) => RouteGuards.validateOrderExists(
+                        context: context,
+                        state: state,
+                        orderIdParam: 'orderId',
+                        fallbackRoute: VendorRoutes.orders,
+                      ),
+                      builder: (context, state) {
+                        final orderId = state.pathParameters['orderId']!;
+                        return OrderDetailScreen(orderId: orderId);
+                      },
+                    ),
+                    // Order History
+                    GoRoute(
+                      path: 'history',
+                      builder: (context, state) => BlocProvider(
+                        create: (context) => VendorDashboardBloc(
+                          supabaseClient: Supabase.instance.client,
+                        )..add(LoadDashboardData()),
+                        child: const OrderHistoryScreen(),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
             
-            // Menu Management
-            GoRoute(
-              path: '${VendorRoutes.dishes}/menu',
-              builder: (context, state) => const MenuManagementScreen(),
+            // ============================================================
+            // TAB 2: DISHES BRANCH (Redirects to Dashboard Menu Tab)
+            // ============================================================
+            // VendorDishesScreen is deprecated. The Dishes tab now shows
+            // the Dashboard with the Menu tab selected for unified management.
+            StatefulShellBranch(
+              routes: [
+                GoRoute(
+                  path: VendorRoutes.dishes,
+                  pageBuilder: (context, state) => NoTransitionPage(
+                    child: BlocProvider(
+                      create: (context) => VendorDashboardBloc(
+                        supabaseClient: Supabase.instance.client,
+                      )..add(LoadDashboardData()),
+                      child: const VendorDashboardScreen(initialTab: 1), // 1 = Menu tab
+                    ),
+                  ),
+                  routes: [
+                    // Add Dish
+                    GoRoute(
+                      path: 'add',
+                      builder: (context, state) => const DishEditScreen(),
+                    ),
+                    // Edit Dish
+                    GoRoute(
+                      path: 'edit/:dishId',
+                      redirect: (context, state) => RouteGuards.validateDishAccess(
+                        context: context,
+                        state: state,
+                        dishIdParam: 'dishId',
+                      ),
+                      builder: (context, state) {
+                        final dish = state.extra as Dish?;
+                        return DishEditScreen(dish: dish);
+                      },
+                    ),
+                    // Menu Management
+                    GoRoute(
+                      path: 'menu',
+                      builder: (context, state) => const MenuManagementScreen(),
+                    ),
+                  ],
+                ),
+              ],
             ),
             
-            // Vendor Profile
-            GoRoute(
-              path: VendorRoutes.profile,
-              pageBuilder: (context, state) => const NoTransitionPage(
-                child: ProfileScreen(),
-              ),
-            ),
-            
-            // Vendor Chat
-            GoRoute(
-              path: '${VendorRoutes.chat}/:orderId',
-              builder: (context, state) {
-                final orderId = state.pathParameters['orderId']!;
-                return VendorChatScreen(orderId: orderId);
-              },
-            ),
-            
-            // Vendor Settings
-            GoRoute(
-              path: VendorRoutes.settings,
-              builder: (context, state) => const SettingsScreen(),
-            ),
-            
-            // Vendor Notifications
-            GoRoute(
-              path: VendorRoutes.notifications,
-              builder: (context, state) => const NotificationsScreen(),
-            ),
-            
-            // Availability Management
-            GoRoute(
-              path: '${VendorRoutes.availability}/:vendorId',
-              builder: (context, state) {
-                final vendorId = state.pathParameters['vendorId']!;
-                return AvailabilityManagementScreen(vendorId: vendorId);
-              },
-            ),
-            
-            // Moderation Tools
-            GoRoute(
-              path: VendorRoutes.moderation,
-              builder: (context, state) => const ModerationToolsScreen(),
-            ),
-            
-            // Vendor Quick Tour
-            GoRoute(
-              path: VendorRoutes.quickTour,
-              builder: (context, state) => const VendorQuickTourScreen(),
+            // ============================================================
+            // TAB 3: PROFILE BRANCH
+            // ============================================================
+            StatefulShellBranch(
+              routes: [
+                GoRoute(
+                  path: VendorRoutes.profile,
+                  pageBuilder: (context, state) => const NoTransitionPage(
+                    child: ProfileScreen(),
+                  ),
+                ),
+              ],
             ),
           ],
+        ),
+        
+        // ============================================================
+        // VENDOR NON-TAB ROUTES (Outside Shell)
+        // ============================================================
+        // These routes are not part of the bottom navigation tabs
+        // but are still vendor-specific and accessible via push
+        
+        // Vendor Chat
+        GoRoute(
+          path: '${VendorRoutes.chat}/:orderId',
+          redirect: (context, state) => RouteGuards.validateOrderExists(
+            context: context,
+            state: state,
+            orderIdParam: 'orderId',
+            fallbackRoute: VendorRoutes.orders,
+          ),
+          builder: (context, state) {
+            final orderId = state.pathParameters['orderId']!;
+            return VendorChatScreen(orderId: orderId);
+          },
+        ),
+        
+        // Vendor Settings
+        GoRoute(
+          path: VendorRoutes.settings,
+          builder: (context, state) => const SettingsScreen(),
+        ),
+        
+        // Vendor Notifications
+        GoRoute(
+          path: VendorRoutes.notifications,
+          builder: (context, state) => const NotificationsScreen(),
+        ),
+        
+        // Availability Management
+        GoRoute(
+          path: '${VendorRoutes.availability}/:vendorId',
+          redirect: (context, state) => RouteGuards.validateAvailabilityAccess(
+            context: context,
+            state: state,
+            vendorIdParam: 'vendorId',
+          ),
+          builder: (context, state) {
+            final vendorId = state.pathParameters['vendorId']!;
+            return AvailabilityManagementScreen(vendorId: vendorId);
+          },
+        ),
+        
+        // Moderation Tools
+        GoRoute(
+          path: VendorRoutes.moderation,
+          builder: (context, state) => const ModerationToolsScreen(),
+        ),
+        
+        // Vendor Quick Tour
+        GoRoute(
+          path: VendorRoutes.quickTour,
+          builder: (context, state) => const VendorQuickTourScreen(),
         ),
       ],
     );
   }
 
   /// Global redirect logic for auth and role-based routing.
+  /// 
+  /// This method handles all auth/role state combinations explicitly,
+  /// preventing route access during loading states and ensuring proper
+  /// error recovery paths.
   static String? _globalRedirect({
     required GoRouterState state,
     required AuthBloc authBloc,
     required UserProfileBloc profileBloc,
     required RoleBloc roleBloc,
   }) {
-    final authMode = authBloc.state.mode;
-    final isAuthenticated = authBloc.state.isAuthenticated;
-    final isGuest = authMode == AuthMode.guest;
-    final hasProfile = profileBloc.state.profile.isNotEmpty;
-    final roleState = roleBloc.state;
-    
     final currentPath = state.matchedLocation;
+    print('🧭 Router redirect check: currentPath=$currentPath');
     
-    // Allow splash and auth routes (but bootstrap should handle initial routing)
-    // These are only needed for explicit navigation
-    if (currentPath == splash || currentPath == auth) {
+    // ============================================================
+    // 1. Always allow bootstrap, error, and explicit auth exit routes
+    // ============================================================
+    if (currentPath == splash || currentPath == error) {
+      print('🧭 Allowing splash/error route');
       return null;
     }
     
-    // Allow role selection and profile creation during onboarding
-    if (currentPath == roleSelection || currentPath == profileCreation) {
+    // Special handling for loading route - only allow if actually loading
+    if (currentPath == loading) {
+      final authState = authBloc.state;
+      final profileState = profileBloc.state;
+      final roleState = roleBloc.state;
+      
+      // Check if anything is actually loading
+      final isActuallyLoading = authState.isLoading ||
+                                profileState.isLoading ||
+                                roleState is RoleLoading ||
+                                roleState is RoleInitial ||
+                                roleState is RoleSwitching;
+      
+      if (isActuallyLoading) {
+        print('🧭 Allowing loading route - something is loading');
+        return null;
+      }
+      
+      // Everything loaded - redirect to appropriate home screen
+      if (roleState is RoleLoaded && authState.isAuthenticated) {
+        final redirectTo = RoleRouteGuard.getRedirectAfterRoleSwitch(roleState.activeRole);
+        print('🧭 Loading complete - redirecting from /loading to $redirectTo');
+        return redirectTo;
+      }
+      
+      // Fallback - allow loading if we can't determine state
+      print('🧭 Loading route - unable to determine state, allowing');
       return null;
     }
     
-    // If unauthenticated and not guest, redirect to auth
+    // ============================================================
+    // 2. Check auth state with explicit loading handling
+    // ============================================================
+    final authState = authBloc.state;
+    
+    // Block all navigation while auth is loading, UNLESS going to error or explicit auth
+    // This allows the LoadingScreen to redirect to /auth or /error on timeout
+    if (authState.isLoading) {
+      if (currentPath == error || currentPath == auth) {
+        return null;
+      }
+      return loading;
+    }
+    
+    final isAuthenticated = authState.isAuthenticated;
+    final isGuest = authState.mode == AuthMode.guest;
+    
+    // ============================================================
+    // 3. Auth screen access control
+    // ============================================================
+    // Auth screen should only be accessible to unauthenticated users (not guests)
+    if (currentPath == auth) {
+      if (!isAuthenticated && !isGuest) {
+        // Unauthenticated user - allow access to auth screen
+        return null;
+      }
+      // Authenticated or guest user on auth screen - redirect them
+      // Let subsequent logic determine where to send them
+    }
+    
+    // Unauthenticated users (not guests) - only allow public routes
     if (!isAuthenticated && !isGuest) {
+      if (SharedRoutes.publicRoutes.contains(currentPath)) {
+        return null;
+      }
       return auth;
     }
     
-    // Guest user restrictions
+    // ============================================================
+    // 4. Check profile state (authenticated users only)
+    // ============================================================
+    if (isAuthenticated) {
+      final profileState = profileBloc.state;
+      print('🧭 Profile check: isLoading=${profileState.isLoading}, isEmpty=${profileState.profile.isEmpty}');
+      
+      // Block navigation while profile is loading EXCEPT on profile-creation
+      // (allow user to stay on profile-creation while saving)
+      if (profileState.isLoading) {
+        if (currentPath == profileCreation) {
+          print('🧭 Profile loading on profile-creation - allowing (save in progress)');
+          return null;
+        }
+        print('🧭 Profile loading - redirecting to loading');
+        return loading;
+      }
+      
+      final hasProfile = profileState.profile.isNotEmpty;
+      
+      // Require profile creation for authenticated users without profile
+      if (!hasProfile && currentPath != profileCreation) {
+        print('🧭 No profile and not on profile-creation - redirecting to profile-creation');
+        return profileCreation;
+      }
+      
+      if (currentPath == profileCreation && !hasProfile) {
+        print('🧭 On profile-creation without profile - allowing');
+      }
+    }
+    
+    // ============================================================
+    // 5. Check role state with explicit loading/error handling
+    // ============================================================
+    final roleState = roleBloc.state;
+    print('🧭 Role check: roleState=${roleState.runtimeType}');
+    
+    // Block navigation during role loading
+    // BUT allow profile-creation, role-selection, and vendor-onboarding since role is determined AFTER profile is created
+    if (roleState is RoleLoading || roleState is RoleInitial) {
+      if (currentPath == profileCreation || 
+          currentPath == roleSelection || 
+          currentPath.startsWith('/vendor/onboarding')) {
+        print('🧭 Role is initial but allowing $currentPath');
+        return null;
+      }
+      print('🧭 Role is loading/initial - redirecting to loading');
+      return loading;
+    }
+    
+    // Block navigation during role switch
+    if (roleState is RoleSwitching) {
+      print('🧭 Role is switching - redirecting to loading');
+      return loading;
+    }
+    
+    // Redirect to role selection if required
+    if (roleState is RoleSelectionRequired) {
+      if (currentPath != roleSelection) {
+        return roleSelection;
+      }
+      return null;
+    }
+    
+    // Role error - redirect to role selection for recovery
+    if (roleState is RoleError) {
+      if (currentPath != roleSelection) {
+        return roleSelection;
+      }
+      return null;
+    }
+    
+    // ============================================================
+    // 6. Guest user restrictions
+    // ============================================================
     if (isGuest) {
-      // Guests can only access customer map and dish details
-      if (currentPath.startsWith(CustomerRoutes.map) || 
-          currentPath.startsWith(CustomerRoutes.dish) ||
-          currentPath.startsWith(CustomerRoutes.checkout) ||
-          currentPath.startsWith(CustomerRoutes.orders)) {
-        return null;
+      final allowedPaths = [
+        CustomerRoutes.map,
+        CustomerRoutes.dish,
+        CustomerRoutes.checkout,
+        CustomerRoutes.orders,
+        auth, // Allow auth for guest conversion
+      ];
+      
+      final isAllowed = allowedPaths.any((path) => 
+        currentPath == path || currentPath.startsWith('$path/')
+      );
+      
+      if (!isAllowed) {
+        // Redirect guests to map
+        return CustomerRoutes.map;
       }
-      // Redirect to auth for registration prompt
-      return auth;
+      return null;
     }
     
-    // Authenticated user without profile
-    if (isAuthenticated && !hasProfile && currentPath != profileCreation) {
-      return profileCreation;
-    }
-    
-    // After profile creation, redirect to role selection if not already there
-    if (isAuthenticated && hasProfile && roleState is RoleLoaded) {
-      if (currentPath != roleSelection && currentPath != profileCreation) {
-        // Always check - roleBloc ensures activeRole is set after profile creation
-        return null;
-      }
-    }
-    
-    // Role-based routing guard
+    // ============================================================
+    // 7. Role-based access control (only if role fully loaded)
+    // ============================================================
     if (roleState is RoleLoaded && isAuthenticated) {
+      // Redirect authenticated users from auth screen to their home
+      if (currentPath == auth) {
+        return RoleRouteGuard.getRedirectAfterRoleSwitch(roleState.activeRole);
+      }
+      
+      // Allow onboarding and shared routes
+      if (currentPath == roleSelection || 
+          currentPath == profileCreation ||
+          currentPath == profileEdit ||
+          currentPath == VendorRoutes.onboarding) {
+        return null;
+      }
+      
+      // Validate role-based access
       final redirect = RoleRouteGuard.validateAccess(
         route: currentPath,
         activeRole: roleState.activeRole,
         availableRoles: roleState.availableRoles,
       );
+      
       if (redirect != null) {
         return redirect;
       }
     }
     
+    // ============================================================
+    // 8. All checks passed - allow navigation
+    // ============================================================
+    print('🧭 All checks passed - allowing navigation to $currentPath');
     return null;
   }
 }

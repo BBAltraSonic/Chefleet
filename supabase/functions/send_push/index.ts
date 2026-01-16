@@ -3,16 +3,19 @@ import { createClient } from 'jsr:@supabase/supabase-js@2'
 import { SendPushSchema, validateRequest } from '../_shared/schemas.ts'
 import { checkRateLimit, createRateLimitResponse } from '../_shared/rate_limiter.ts'
 import { checkIdempotency, storeIdempotencyResponse, markIdempotencyFailed } from '../_shared/idempotency.ts'
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+import { 
+  getOriginFromRequest, 
+  getCorsHeaders, 
+  handleCorsPreflight,
+  createCorsResponse 
+} from '../_shared/cors.ts'
 
 Deno.serve(async (req) => {
+  const origin = getOriginFromRequest(req);
+  
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return handleCorsPreflight(origin);
   }
 
   try {
@@ -34,11 +37,7 @@ Deno.serve(async (req) => {
     }
 
     // Strict Auth Check: Only allow service role or admins
-    // Since we don't have a reliable 'admin' table in all snippets, checking for service_role in JWT
-    // OR checking simple app_metadata which is common
     const isServiceRole = user.role === 'service_role' || (user.app_metadata && user.app_metadata.role === 'service_role')
-    // Also allow if user is specifically an admin in our system (if we had that logic, skipping for safety to strict service role/admin)
-    // Actually, let's look at `generate_pickup_code` which did: `const isAdmin = user.app_metadata?.role === "service_role";`
 
     if (!isServiceRole) {
       throw new Error('Forbidden: Only system admins can send broadcast push notifications')
@@ -47,24 +46,22 @@ Deno.serve(async (req) => {
     // Rate limiting check (100 per hour for admins)
     const rateLimitResult = await checkRateLimit(supabase, 'send_push', user.id)
     if (!rateLimitResult.allowed) {
-      return createRateLimitResponse(rateLimitResult, corsHeaders)
+      return createRateLimitResponse(rateLimitResult, getCorsHeaders(origin))
     }
 
     // Validate request body
     const bodyResult = validateRequest(SendPushSchema, await req.json())
 
     if (!bodyResult.success) {
-      return new Response(
+      return createCorsResponse(
         JSON.stringify({
           success: false,
           error: 'Validation failed',
           details: bodyResult.errors
         }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 400
-        }
-      )
+        400,
+        origin
+      );
     }
 
     const { user_ids, title, body: message_body, data, image_url, idempotency_key } = bodyResult.data
@@ -79,30 +76,26 @@ Deno.serve(async (req) => {
       })
 
       if (idempResult.isRetry) {
-        return new Response(
+        return createCorsResponse(
           JSON.stringify(idempResult.cachedResponse),
+          200,
+          origin,
           {
-            headers: {
-              ...corsHeaders,
-              'Content-Type': 'application/json',
-              'X-Idempotent-Replay': 'true'
-            },
-            status: 200
+            'X-Idempotent-Replay': 'true'
           }
-        )
+        );
       }
     }
 
     // Fetch device tokens for these users
     const { data: deviceTokens, error: tokensError } = await supabase
-      .from('user_devices') // Assuming a table for device tokens exists
+      .from('user_devices')
       .select('token, platform, user_id')
       .in('user_id', user_ids)
       .eq('is_active', true)
 
     if (tokensError) {
       console.warn('Could not fetch device tokens (table might not exist yet):', tokensError.message)
-      // Fallback: just create notifications table entries
     }
 
     const tokens = deviceTokens || []
@@ -117,7 +110,6 @@ Deno.serve(async (req) => {
       type: 'push',
       data: data || {},
       is_read: false
-      // created_at auto-generated
     }))
 
     const { error: notificationError } = await supabase
@@ -126,11 +118,7 @@ Deno.serve(async (req) => {
 
     if (notificationError) {
       console.error(`Failed to store notifications:`, notificationError)
-      // Continue anyway
     }
-
-    // TODO: Implement actual push notification sending
-    // This would involve calling FCM/APNs APIs
 
     const responseData = {
       success: true,
@@ -149,18 +137,15 @@ Deno.serve(async (req) => {
       await storeIdempotencyResponse(supabase, idempotency_key, responseData)
     }
 
-    return new Response(
+    return createCorsResponse(
       JSON.stringify(responseData),
+      200,
+      origin,
       {
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json',
-          'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
-          'X-RateLimit-Reset': Math.floor(rateLimitResult.resetAt.getTime() / 1000).toString()
-        },
-        status: 200
+        'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
+        'X-RateLimit-Reset': Math.floor(rateLimitResult.resetAt.getTime() / 1000).toString()
       }
-    )
+    );
 
   } catch (error) {
     console.error('Error in send_push:', error)
@@ -175,15 +160,13 @@ Deno.serve(async (req) => {
       // Ignore errors in marking idempotency failure
     }
 
-    return new Response(
+    return createCorsResponse(
       JSON.stringify({
         success: false,
         error: (error as Error).message || 'Internal server error'
       }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400 // or 500 depending on error, but 400 is safer safe default for auth/val errors
-      }
-    )
+      400,
+      origin
+    );
   }
 })

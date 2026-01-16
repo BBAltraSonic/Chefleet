@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../blocs/order_management_bloc.dart';
-import '../../../../core/constants/app_strings.dart';
+import '../../../core/constants/app_strings.dart';
 
 class OrderFilterBar extends StatefulWidget {
   final Function(OrderFilters) onFilterChanged;

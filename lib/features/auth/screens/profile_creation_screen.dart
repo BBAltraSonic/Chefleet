@@ -156,8 +156,9 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
     debugPrint('🎯 Profile complete. Initial role from signup: $initialRole');
     
     if (initialRole == 'vendor') {
-      // User selected vendor during signup - set role and go to vendor onboarding
-      context.read<RoleBloc>().add(const InitialRoleSelected(UserRole.vendor));
+      // User selected vendor during signup - go to vendor onboarding
+      // Note: Don't grant vendor role yet - it will be granted after completing onboarding
+      debugPrint('🎯 Navigating to vendor onboarding (role will be granted after completion)');
       context.go(VendorRoutes.onboarding);
     } else if (initialRole == 'customer') {
       // User selected customer during signup - set role and go to map
@@ -208,6 +209,7 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    print('🎨 ProfileCreationScreen: build() called');
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: BlocListener<UserProfileBloc, UserProfileState>(

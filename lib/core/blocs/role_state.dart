@@ -24,14 +24,17 @@ class RoleLoading extends RoleState {
 /// Contains:
 /// - [activeRole]: The currently active role
 /// - [availableRoles]: Set of roles the user can switch between
+/// - [isOffline]: Whether role was loaded from cache due to network failure
 class RoleLoaded extends RoleState {
   const RoleLoaded({
     required this.activeRole,
     required this.availableRoles,
+    this.isOffline = false,
   });
 
   final UserRole activeRole;
   final Set<UserRole> availableRoles;
+  final bool isOffline;
 
   /// Checks if the user has multiple roles available.
   bool get hasMultipleRoles => availableRoles.length > 1;
@@ -43,16 +46,18 @@ class RoleLoaded extends RoleState {
   bool canSwitchTo(UserRole role) => availableRoles.contains(role) && role != activeRole;
 
   @override
-  List<Object?> get props => [activeRole, availableRoles];
+  List<Object?> get props => [activeRole, availableRoles, isOffline];
 
   /// Creates a copy with updated fields.
   RoleLoaded copyWith({
     UserRole? activeRole,
     Set<UserRole>? availableRoles,
+    bool? isOffline,
   }) {
     return RoleLoaded(
       activeRole: activeRole ?? this.activeRole,
       availableRoles: availableRoles ?? this.availableRoles,
+      isOffline: isOffline ?? this.isOffline,
     );
   }
 }
@@ -97,19 +102,22 @@ class RoleSwitched extends RoleState {
 /// - [message]: Human-readable error message
 /// - [code]: Optional error code for programmatic handling
 /// - [previousState]: The state before the error occurred
+/// - [canUseDegradedMode]: Whether user can continue in degraded/offline mode
 class RoleError extends RoleState {
   const RoleError({
     required this.message,
     this.code,
     this.previousState,
+    this.canUseDegradedMode = false,
   });
 
   final String message;
   final String? code;
   final RoleState? previousState;
+  final bool canUseDegradedMode;
 
   @override
-  List<Object?> get props => [message, code, previousState];
+  List<Object?> get props => [message, code, previousState, canUseDegradedMode];
 }
 
 /// State when role sync is in progress.

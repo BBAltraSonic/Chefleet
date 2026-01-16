@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:developer' as developer;
 import 'dart:collection';
-import 'package:sqflite/sqflite.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Database query optimization utilities for improving performance
@@ -380,7 +379,7 @@ class DatabaseOptimizer {
           'name': 'Dish $i',
           'vendor_id': 'vendor_${i % 10}',
           'price': 10.0 + (i % 50),
-          'is_available': (i % 10) != 0,
+          'available': (i % 10) != 0,
         });
       }
     }

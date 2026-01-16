@@ -5,6 +5,8 @@ import '../../../core/diagnostics/diagnostic_harness.dart';
 import '../../../core/diagnostics/diagnostic_severity.dart';
 import '../../../core/blocs/base_bloc.dart';
 import '../../../core/services/guest_session_service.dart';
+import '../models/auth_error_type.dart';
+import '../utils/auth_error_parser.dart';
 
 class AuthEvent extends AppEvent {
   const AuthEvent();
@@ -82,6 +84,10 @@ class AuthGoogleSignInRequested extends AuthEvent {
   const AuthGoogleSignInRequested();
 }
 
+class AuthSessionExpired extends AuthEvent {
+  const AuthSessionExpired();
+}
+
 enum AuthMode {
   guest,           // Anonymous user with guest_id
   authenticated,   // Registered user with auth.users record
@@ -96,6 +102,9 @@ class AuthState extends AppState {
     this.isAuthenticated = false,
     this.isLoading = false,
     this.errorMessage,
+    this.errorType,
+    this.retryCount = 0,
+    this.errorTimestamp,
   });
 
   final AuthMode mode;
@@ -104,6 +113,9 @@ class AuthState extends AppState {
   final bool isAuthenticated;
   final bool isLoading;
   final String? errorMessage;
+  final AuthErrorType? errorType;
+  final int retryCount;
+  final DateTime? errorTimestamp;
 
   bool get isGuest => mode == AuthMode.guest;
 
@@ -114,6 +126,9 @@ class AuthState extends AppState {
     bool? isAuthenticated,
     bool? isLoading,
     String? errorMessage,
+    AuthErrorType? errorType,
+    int? retryCount,
+    DateTime? errorTimestamp,
   }) {
     return AuthState(
       mode: mode ?? this.mode,
@@ -122,18 +137,36 @@ class AuthState extends AppState {
       isAuthenticated: isAuthenticated ?? this.isAuthenticated,
       isLoading: isLoading ?? this.isLoading,
       errorMessage: errorMessage ?? this.errorMessage,
+      errorType: errorType ?? this.errorType,
+      retryCount: retryCount ?? this.retryCount,
+      errorTimestamp: errorTimestamp ?? this.errorTimestamp,
     );
   }
 
   @override
-  List<Object?> get props => [mode, user, guestId, isAuthenticated, isLoading, errorMessage];
+  List<Object?> get props => [
+        mode,
+        user,
+        guestId,
+        isAuthenticated,
+        isLoading,
+        errorMessage,
+        errorType,
+        retryCount,
+        errorTimestamp,
+      ];
 }
 
 class AuthBloc extends AppBloc<AuthEvent, AuthState> {
   AuthBloc({
     GuestSessionService? guestSessionService,
+    SupabaseClient? supabaseClient,
   })  : _guestSessionService = guestSessionService ?? GuestSessionService(),
-        super(const AuthState()) {
+        _supabaseClient = supabaseClient ?? Supabase.instance.client,
+        // CRITICAL: Hydrate initial state SYNCHRONOUSLY in constructor
+        // This ensures auth state is available immediately for BootstrapOrchestrator
+        // preventing the flash from unauthenticated -> authenticated screens
+        super(_getInitialAuthState(supabaseClient ?? Supabase.instance.client)) {
     // Register all event handlers first
     on<AuthLoginRequested>(_onLoginRequested);
     on<AuthSignupRequested>(_onSignupRequested);
@@ -143,15 +176,46 @@ class AuthBloc extends AppBloc<AuthEvent, AuthState> {
     on<AuthGuestModeStarted>(_onGuestModeStarted);
     on<AuthGuestToRegisteredRequested>(_onGuestToRegisteredRequested);
     on<AuthGoogleSignInRequested>(_onGoogleSignInRequested);
-
-    // Initialize auth state after handlers are registered
-    _initializeAuth();
+    on<AuthSessionExpired>(_onSessionExpired);
 
     // Set up auth state listener for automatic session recovery
     _setupAuthStateListener();
   }
 
+  /// Get initial auth state synchronously by checking Supabase session.
+  /// This MUST be synchronous to avoid race conditions during app bootstrap.
+  static AuthState _getInitialAuthState(SupabaseClient client) {
+    try {
+      final currentUser = client.auth.currentUser;
+      
+      if (currentUser != null) {
+        // User has active session - return authenticated state immediately
+        return AuthState(
+          mode: AuthMode.authenticated,
+          user: currentUser,
+          isAuthenticated: true,
+          isLoading: false,
+        );
+      }
+      
+      // No active session - return unauthenticated state
+      return const AuthState(
+        mode: AuthMode.unauthenticated,
+        isAuthenticated: false,
+        isLoading: false,
+      );
+    } catch (e) {
+      // On error, default to unauthenticated
+      return const AuthState(
+        mode: AuthMode.unauthenticated,
+        isAuthenticated: false,
+        isLoading: false,
+      );
+    }
+  }
+
   final GuestSessionService _guestSessionService;
+  final SupabaseClient _supabaseClient;
   final DiagnosticHarness _diagnostics = DiagnosticHarness.instance;
 
   void _logAuth(
@@ -179,33 +243,9 @@ class AuthBloc extends AppBloc<AuthEvent, AuthState> {
     return null;
   }
 
-  void _initializeAuth() {
-    try {
-      _logAuth('init.start', severity: DiagnosticSeverity.debug);
-      // Get current auth state synchronously for fast bootstrap
-      final currentUser = Supabase.instance.client.auth.currentUser;
-
-      // Immediately emit auth state for bootstrap orchestrator
-      // No post-frame callback delay - auth state must be available synchronously
-      if (!isClosed) {
-        add(AuthStatusChanged(currentUser));
-      }
-      _logAuth('init.success', severity: DiagnosticSeverity.debug);
-    } catch (e) {
-      // Handle initialization errors gracefully
-      if (isClosed) return;
-      add(AuthErrorOccurred('Auth initialization failed: ${e.toString()}'));
-      _logAuth(
-        'init.error',
-        severity: DiagnosticSeverity.error,
-        payload: {'message': e.toString()},
-      );
-    }
-  }
-
   void _setupAuthStateListener() {
     // Listen to Supabase auth state changes for automatic session recovery
-    Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+    _supabaseClient.auth.onAuthStateChange.listen((data) {
       if (isClosed) return;
 
       final AuthChangeEvent event = data.event;
@@ -213,7 +253,7 @@ class AuthBloc extends AppBloc<AuthEvent, AuthState> {
 
       switch (event) {
         case AuthChangeEvent.initialSession:
-          // Initial session is handled by _initializeAuth
+          // Initial session is handled synchronously in constructor
           break;
         case AuthChangeEvent.signedIn:
           add(AuthStatusChanged(user));
@@ -231,8 +271,13 @@ class AuthBloc extends AppBloc<AuthEvent, AuthState> {
           // Handle password recovery if needed
           break;
         case AuthChangeEvent.tokenRefreshed:
-          // Token is refreshed automatically, just update user state
-          add(AuthStatusChanged(user));
+          if (user != null) {
+            // Token refreshed successfully, update user state
+            add(AuthStatusChanged(user));
+          } else {
+            // Token refresh failed - session expired
+            add(const AuthSessionExpired());
+          }
           break;
         case AuthChangeEvent.mfaChallengeVerified:
           // MFA challenge verified, update user state
@@ -247,8 +292,11 @@ class AuthBloc extends AppBloc<AuthEvent, AuthState> {
     if (event.errorMessage.isNotEmpty) {
       emit(state.copyWith(errorMessage: event.errorMessage));
     } else {
-      // Clear the error message
-      emit(state.copyWith(errorMessage: null));
+      // Clear the error message and type
+      emit(state.copyWith(
+        errorMessage: null,
+        errorType: null,
+      ));
     }
   }
 
@@ -256,7 +304,13 @@ class AuthBloc extends AppBloc<AuthEvent, AuthState> {
     AuthLoginRequested event,
     Emitter<AuthState> emit,
   ) async {
-    emit(state.copyWith(isLoading: true, errorMessage: null));
+    // Reset error state and start loading
+    emit(state.copyWith(
+      isLoading: true, 
+      errorMessage: null,
+      errorType: null,
+    ));
+    
     _logAuth(
       'login.request',
       severity: DiagnosticSeverity.debug,
@@ -264,10 +318,10 @@ class AuthBloc extends AppBloc<AuthEvent, AuthState> {
     );
 
     try {
-      final response = await Supabase.instance.client.auth.signInWithPassword(
+      final response = await _supabaseClient.auth.signInWithPassword(
         email: event.email,
         password: event.password,
-      );
+      ).timeout(const Duration(seconds: 10));
 
       if (response.user != null) {
         add(AuthStatusChanged(response.user));
@@ -277,10 +331,15 @@ class AuthBloc extends AppBloc<AuthEvent, AuthState> {
           correlationId: 'user-${response.user!.id}',
         );
       } else {
+        // This case usually throws, but just in case
+        const errorType = AuthErrorType.invalidCredentials;
         emit(state.copyWith(
           isLoading: false,
-          errorMessage: 'Login failed. Please check your credentials.',
+          errorMessage: AuthErrorParser.getUserFriendlyMessage(errorType),
+          errorType: errorType,
+          errorTimestamp: DateTime.now(),
         ));
+        
         _logAuth(
           'login.failure',
           severity: DiagnosticSeverity.warn,
@@ -288,14 +347,24 @@ class AuthBloc extends AppBloc<AuthEvent, AuthState> {
         );
       }
     } catch (e) {
+      final errorType = AuthErrorParser.parseError(e);
+      final userFriendlyMessage = AuthErrorParser.getUserFriendlyMessage(errorType);
+
       emit(state.copyWith(
         isLoading: false,
-        errorMessage: 'Login error: ${e.toString()}',
+        errorMessage: userFriendlyMessage,
+        errorType: errorType,
+        errorTimestamp: DateTime.now(),
       ));
+      
       _logAuth(
         'login.error',
         severity: DiagnosticSeverity.error,
-        payload: {'message': e.toString()},
+        payload: {
+          'message': userFriendlyMessage, 
+          'raw': e.toString(),
+          'errorType': errorType.toString(),
+        },
       );
     }
   }
@@ -304,7 +373,12 @@ class AuthBloc extends AppBloc<AuthEvent, AuthState> {
     AuthSignupRequested event,
     Emitter<AuthState> emit,
   ) async {
-    emit(state.copyWith(isLoading: true, errorMessage: null));
+    emit(state.copyWith(
+      isLoading: true, 
+      errorMessage: null,
+      errorType: null,
+    ));
+    
     _logAuth(
       'signup.request',
       severity: DiagnosticSeverity.debug,
@@ -317,27 +391,25 @@ class AuthBloc extends AppBloc<AuthEvent, AuthState> {
     try {
       print('DEBUG: Starting signup for email: ${event.email}');
 
-      final response = await Supabase.instance.client.auth.signUp(
+      final response = await _supabaseClient.auth.signUp(
         email: event.email,
         password: event.password,
         data: {
           'name': event.name,
           if (event.initialRole != null) 'initial_role': event.initialRole,
         },
-      );
+      ).timeout(const Duration(seconds: 10));
 
       print('DEBUG: Signup response received');
       print('DEBUG: User created: ${response.user?.email}');
       print('DEBUG: Session active: ${response.session != null}');
-      // Note: AuthResponse doesn't have error property directly
-      // The error is thrown as an exception, not part of the response
 
       if (response.user != null) {
         print('DEBUG: Signup successful, attempting to create profile...');
 
         // Try to create profile manually since the trigger might be failing
         try {
-          final supabase = Supabase.instance.client;
+          final supabase = _supabaseClient;
           final profileResult = await supabase
               .from('users_public')
               .upsert({
@@ -357,8 +429,6 @@ class AuthBloc extends AppBloc<AuthEvent, AuthState> {
           if (profileError.toString().contains('audit_logs') ||
               profileError.toString().contains('500')) {
             print('DEBUG: Detected audit trigger issue, user created but profile failed');
-            // Still proceed with successful signup since auth user was created
-            // The profile can be created later or through a separate process
             _logAuth(
               'signup.profile_fallback',
               severity: DiagnosticSeverity.warn,
@@ -377,10 +447,14 @@ class AuthBloc extends AppBloc<AuthEvent, AuthState> {
           correlationId: 'user-${response.user!.id}',
         );
       } else {
+        const errorType = AuthErrorType.unknown;
         emit(state.copyWith(
           isLoading: false,
           errorMessage: 'Signup failed. Please try again.',
+          errorType: errorType,
+          errorTimestamp: DateTime.now(),
         ));
+        
         _logAuth(
           'signup.failure',
           severity: DiagnosticSeverity.warn,
@@ -392,85 +466,28 @@ class AuthBloc extends AppBloc<AuthEvent, AuthState> {
       print('DEBUG: Error type: ${e.runtimeType}');
       print('DEBUG: Error message: ${e.toString()}');
 
-      String userFriendlyMessage;
-
-      if (e is AuthException) {
-        print('DEBUG: Auth error code: ${e.code}');
-        print('DEBUG: Auth error status: ${e.statusCode}');
-        print('DEBUG: Auth error details: ${e.message}');
-
-        // Parse AuthException for user-friendly messages
-        userFriendlyMessage = _formatSignupAuthError(e);
-      } else {
-        // Handle non-auth exceptions
-        if (e.toString().contains('Database error saving new user')) {
-          userFriendlyMessage = 'Registration temporarily unavailable due to database maintenance. Please try again in a few minutes.';
-        } else {
-          userFriendlyMessage = 'Signup failed. Please try again.';
-        }
-      }
+      final errorType = AuthErrorParser.parseError(e);
+      final userFriendlyMessage = AuthErrorParser.getUserFriendlyMessage(errorType);
 
       emit(state.copyWith(
         isLoading: false,
         errorMessage: userFriendlyMessage,
+        errorType: errorType,
+        errorTimestamp: DateTime.now(),
       ));
+      
       _logAuth(
         'signup.error',
         severity: DiagnosticSeverity.error,
-        payload: {'message': userFriendlyMessage, 'raw': e.toString()},
+        payload: {
+          'message': userFriendlyMessage, 
+          'raw': e.toString(),
+          'errorType': errorType.toString(),
+        },
       );
     }
   }
 
-  /// Format AuthException errors for signup into user-friendly messages
-  String _formatSignupAuthError(AuthException e) {
-    // Check error message content
-    final errorMsg = e.message.toLowerCase();
-    
-    // User already exists
-    if (errorMsg.contains('already registered') || 
-        errorMsg.contains('already exists') ||
-        errorMsg.contains('user already registered')) {
-      return 'This email is already registered. Please sign in instead.';
-    }
-    
-    // Invalid credentials format (misleading message from Supabase)
-    if (errorMsg.contains('invalid login credentials')) {
-      return 'Invalid email or password format. Please check your details.';
-    }
-    
-    // Email validation issues
-    if (errorMsg.contains('invalid email') || errorMsg.contains('email')) {
-      return 'Please enter a valid email address.';
-    }
-    
-    // Password validation issues
-    if (errorMsg.contains('password') && errorMsg.contains('short')) {
-      return 'Password must be at least 6 characters long.';
-    }
-    
-    if (errorMsg.contains('password')) {
-      return 'Password does not meet requirements. Please use at least 6 characters.';
-    }
-    
-    // Rate limiting
-    if (e.statusCode == '429' || errorMsg.contains('too many')) {
-      return 'Too many signup attempts. Please try again in a few minutes.';
-    }
-    
-    // Network or server errors
-    if (e.statusCode == '500' || e.statusCode == '503') {
-      return 'Server error. Please try again later.';
-    }
-    
-    // Generic fallback with status code if available
-    if (e.statusCode != null) {
-      return 'Signup failed (${e.statusCode}). Please try again.';
-    }
-    
-    // Last resort fallback
-    return 'Signup failed. Please check your details and try again.';
-  }
 
   Future<void> _onLogoutRequested(
     AuthLogoutRequested event,
@@ -478,17 +495,27 @@ class AuthBloc extends AppBloc<AuthEvent, AuthState> {
   ) async {
     try {
       _logAuth('logout.request', severity: DiagnosticSeverity.debug);
-      await Supabase.instance.client.auth.signOut();
+      await _supabaseClient.auth.signOut();
       add(const AuthStatusChanged(null));
       _logAuth('logout.success');
     } catch (e) {
+      final errorType = AuthErrorParser.parseError(e);
+      final userFriendlyMessage = AuthErrorParser.getUserFriendlyMessage(errorType);
+      
       emit(state.copyWith(
-        errorMessage: 'Logout error: ${e.toString()}',
+        errorMessage: userFriendlyMessage,
+        errorType: errorType,
+        errorTimestamp: DateTime.now(),
       ));
+      
       _logAuth(
         'logout.error',
         severity: DiagnosticSeverity.error,
-        payload: {'message': e.toString()},
+        payload: {
+          'message': userFriendlyMessage,
+          'raw': e.toString(),
+          'errorType': errorType.toString(),
+        },
       );
     }
   }
@@ -545,22 +572,29 @@ class AuthBloc extends AppBloc<AuthEvent, AuthState> {
       return;
     }
 
-    emit(state.copyWith(isLoading: true, errorMessage: null));
+    emit(state.copyWith(
+      isLoading: true, 
+      errorMessage: null,
+      errorType: null,
+    ));
 
     try {
       final guestId = state.guestId!;
 
       // 1. Create auth.users account
-      final response = await Supabase.instance.client.auth.signUp(
+      final response = await _supabaseClient.auth.signUp(
         email: event.email,
         password: event.password,
         data: {'name': event.name},
-      );
+      ).timeout(const Duration(seconds: 10));
 
       if (response.user == null) {
+        const errorType = AuthErrorType.unknown;
         emit(state.copyWith(
           isLoading: false,
           errorMessage: 'Failed to create account. Please try again.',
+          errorType: errorType,
+          errorTimestamp: DateTime.now(),
         ));
         return;
       }
@@ -569,7 +603,7 @@ class AuthBloc extends AppBloc<AuthEvent, AuthState> {
 
       // 2. Call edge function to migrate guest data
       try {
-        final migrationResponse = await Supabase.instance.client.functions.invoke(
+        final migrationResponse = await _supabaseClient.functions.invoke(
           'migrate_guest_data',
           body: {
             'guest_id': guestId,
@@ -600,9 +634,14 @@ class AuthBloc extends AppBloc<AuthEvent, AuthState> {
         errorMessage: null,
       ));
     } catch (e) {
+      final errorType = AuthErrorParser.parseError(e);
+      final userFriendlyMessage = AuthErrorParser.getUserFriendlyMessage(errorType);
+
       emit(state.copyWith(
         isLoading: false,
-        errorMessage: 'Conversion failed: ${e.toString()}',
+        errorMessage: userFriendlyMessage,
+        errorType: errorType,
+        errorTimestamp: DateTime.now(),
       ));
     }
   }
@@ -611,7 +650,12 @@ class AuthBloc extends AppBloc<AuthEvent, AuthState> {
     AuthGoogleSignInRequested event,
     Emitter<AuthState> emit,
   ) async {
-    emit(state.copyWith(isLoading: true, errorMessage: null));
+    emit(state.copyWith(
+      isLoading: true, 
+      errorMessage: null,
+      errorType: null,
+    ));
+    
     _logAuth(
       'google_signin.request',
       severity: DiagnosticSeverity.debug,
@@ -619,16 +663,20 @@ class AuthBloc extends AppBloc<AuthEvent, AuthState> {
 
     try {
       // Initiate OAuth flow with Google
-      final response = await Supabase.instance.client.auth.signInWithOAuth(
+      final response = await _supabaseClient.auth.signInWithOAuth(
         OAuthProvider.google,
         redirectTo: 'chefleet://auth-callback',
       );
 
       if (!response) {
+        const errorType = AuthErrorType.unknown;
         emit(state.copyWith(
           isLoading: false,
           errorMessage: 'Google sign-in was cancelled or failed.',
+          errorType: errorType,
+          errorTimestamp: DateTime.now(),
         ));
+        
         _logAuth(
           'google_signin.cancelled',
           severity: DiagnosticSeverity.warn,
@@ -642,38 +690,71 @@ class AuthBloc extends AppBloc<AuthEvent, AuthState> {
         );
       }
     } on AuthException catch (e) {
+      final errorType = AuthErrorParser.parseError(e);
+      final userFriendlyMessage = AuthErrorParser.getUserFriendlyMessage(errorType);
+
       emit(state.copyWith(
         isLoading: false,
-        errorMessage: 'Google sign-in failed: ${e.message}',
+        errorMessage: userFriendlyMessage,
+        errorType: errorType,
+        errorTimestamp: DateTime.now(),
       ));
+      
       _logAuth(
         'google_signin.error',
         severity: DiagnosticSeverity.error,
-        payload: {'message': e.message, 'code': e.code},
+        payload: {
+          'message': userFriendlyMessage, 
+          'raw': e.toString(),
+          'code': e.code,
+        },
       );
     } catch (e) {
+      final errorType = AuthErrorParser.parseError(e);
+      final userFriendlyMessage = AuthErrorParser.getUserFriendlyMessage(errorType);
+
       emit(state.copyWith(
         isLoading: false,
-        errorMessage: 'Google sign-in error: ${e.toString()}',
+        errorMessage: userFriendlyMessage,
+        errorType: errorType,
+        errorTimestamp: DateTime.now(),
       ));
+      
       _logAuth(
         'google_signin.error',
         severity: DiagnosticSeverity.error,
-        payload: {'message': e.toString()},
+        payload: {
+          'message': userFriendlyMessage,
+          'raw': e.toString(),
+        },
       );
     }
+  }
+
+  void _onSessionExpired(AuthSessionExpired event, Emitter<AuthState> emit) {
+    _logAuth(
+      'session.expired',
+      severity: DiagnosticSeverity.warn,
+    );
+    
+    emit(const AuthState(
+      mode: AuthMode.unauthenticated,
+      isAuthenticated: false,
+      isLoading: false,
+      errorMessage: 'Your session has expired. Please sign in again.',
+    ));
   }
   
   /// Helper method to update user password
   Future<void> updatePassword(String currentPassword, String newPassword) async {
-    final user = Supabase.instance.client.auth.currentUser;
+    final user = _supabaseClient.auth.currentUser;
     if (user == null) {
       throw Exception('No user logged in');
     }
     
     // First verify current password by attempting to sign in
     try {
-      await Supabase.instance.client.auth.signInWithPassword(
+      await _supabaseClient.auth.signInWithPassword(
         email: user.email!,
         password: currentPassword,
       );
@@ -682,7 +763,7 @@ class AuthBloc extends AppBloc<AuthEvent, AuthState> {
     }
     
     // Update to new password
-    await Supabase.instance.client.auth.updateUser(
+    await _supabaseClient.auth.updateUser(
       UserAttributes(password: newPassword),
     );
     

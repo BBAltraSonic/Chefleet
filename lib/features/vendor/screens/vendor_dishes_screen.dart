@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/routes/app_routes.dart';
 import '../blocs/vendor_dishes_bloc.dart';
 import '../widgets/dish_card.dart';
 
@@ -105,7 +106,13 @@ class _VendorDishesView extends StatelessWidget {
                     const SizedBox(height: 24),
                     ElevatedButton.icon(
                       onPressed: () {
-                        // TODO: Navigate to add dish screen
+                        context.push(VendorRoutes.dishAdd).then((_) {
+                          if (context.mounted) {
+                            context
+                                .read<VendorDishesBloc>()
+                                .add(const LoadVendorDishes());
+                          }
+                        });
                       },
                       icon: const Icon(Icons.add),
                       label: const Text('Add Dish'),
@@ -156,7 +163,11 @@ class _VendorDishesView extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // TODO: Navigate to add dish screen
+          context.push(VendorRoutes.dishAdd).then((_) {
+            if (context.mounted) {
+              context.read<VendorDishesBloc>().add(const LoadVendorDishes());
+            }
+          });
         },
         backgroundColor: Colors.orange,
         child: const Icon(Icons.add),

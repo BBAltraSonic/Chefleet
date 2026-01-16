@@ -76,7 +76,7 @@ class UserProfile extends Equatable {
       'address': address?.toJson(),
       'notification_preferences': notificationPreferences.toJson(),
       'available_roles': availableRoles.toStringList(),
-      'active_role': activeRole.value,
+      'role': activeRole.value,  // Use 'role' to match database column
       'vendor_profile_id': vendorProfileId,
       'created_at': createdAt?.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),

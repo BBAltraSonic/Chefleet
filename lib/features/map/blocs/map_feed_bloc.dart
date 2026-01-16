@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:geolocator/geolocator.dart';
+import '../../../core/constants/timing_constants.dart';
 import '../../../core/diagnostics/diagnostic_domains.dart';
 import '../../../core/diagnostics/diagnostic_harness.dart';
 import '../../../core/diagnostics/diagnostic_severity.dart';
@@ -437,7 +438,7 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
     
     _debouncer?.cancel();
     if (shouldRefresh) {
-      _debouncer = Timer(const Duration(milliseconds: 600), () {
+      _debouncer = Timer(TimingConstants.mapDebounce, () {
         _lastRefreshBounds = event.bounds;
         add(const MapFeedRefreshed());
       });
@@ -534,7 +535,7 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
     );
 
     _searchDebouncer?.cancel();
-    _searchDebouncer = Timer(const Duration(milliseconds: 600), () {
+    _searchDebouncer = Timer(TimingConstants.searchDebounce, () {
       add(const MapFeedRefreshed());
     });
   }
@@ -734,7 +735,7 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
             .from('dishes')
             .select('*')
             .inFilter('vendor_id', vendorIds)
-            .eq('is_available', true)
+            .eq('available', true)
             .order('created_at', ascending: false)
             .range(0, _pageSize - 1);
 

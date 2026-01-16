@@ -52,4 +52,21 @@ class TimingConstants {
 
   /// Interval for updating ETA in route overlays.
   static const Duration etaUpdateInterval = Duration(seconds: 30);
+
+  // ============================================
+  // SNACKBAR/TOAST DURATIONS
+  // ============================================
+
+  /// Duration for success messages in snackbars.
+  /// Short and positive feedback.
+  static const Duration snackbarSuccess = Duration(milliseconds: 1500);
+
+  /// Duration for info messages in snackbars.
+  /// Informational messages.
+  static const Duration snackbarInfo = Duration(seconds: 3);
+
+  /// Duration for error messages in snackbars.
+  /// Long enough to read and understand.
+  static const Duration snackbarError = Duration(seconds: 4);
 }
+

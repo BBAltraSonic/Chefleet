@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../shared/utils/currency_formatter.dart';
-import '../../../../core/constants/app_strings.dart';
+import '../../../core/constants/app_strings.dart';
 
 class MenuItemCard extends StatelessWidget {
   const MenuItemCard({
@@ -19,7 +19,7 @@ class MenuItemCard extends StatelessWidget {
     final name = item['name'] as String? ?? AppStrings.unknownItem;
     final description = item['description'] as String? ?? '';
     final price = (item['price'] as num?)?.toDouble() ?? 0.0;
-    final isAvailable = item['is_available'] as bool? ?? true;
+    final isAvailable = item['available'] as bool? ?? true;
     final imageUrl = item['image_url'] as String?;
 
     return Container(

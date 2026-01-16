@@ -68,8 +68,13 @@ class ProfileDrawer extends StatelessWidget {
                       title: 'Favourites',
                       subtitle: 'Your saved dishes',
                       onTap: () {
-                        Navigator.pop(context);
-                        context.push(CustomerRoutes.favourites);
+                        final navigator = Navigator.of(context);
+                        final router = GoRouter.of(context);
+                        navigator.pop();
+                        // Use post-frame callback to ensure navigation happens after drawer closes
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          router.push(CustomerRoutes.favourites);
+                        });
                       },
                     ),
                     const SizedBox(height: AppTheme.spacing12),
@@ -93,8 +98,13 @@ class ProfileDrawer extends StatelessWidget {
                       title: 'Notifications',
                       subtitle: 'Manage preferences',
                       onTap: () {
-                        Navigator.pop(context);
-                        context.push(CustomerRoutes.notifications);
+                        final navigator = Navigator.of(context);
+                        final router = GoRouter.of(context);
+                        navigator.pop();
+                        // Use post-frame callback to ensure navigation happens after drawer closes
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          router.push(CustomerRoutes.notifications);
+                        });
                       },
                     ),
                     const SizedBox(height: AppTheme.spacing12),
@@ -104,8 +114,13 @@ class ProfileDrawer extends StatelessWidget {
                       title: 'Settings',
                       subtitle: 'App preferences',
                       onTap: () {
-                        Navigator.pop(context);
-                        context.push(CustomerRoutes.settings);
+                        final navigator = Navigator.of(context);
+                        final router = GoRouter.of(context);
+                        navigator.pop();
+                        // Use post-frame callback to ensure navigation happens after drawer closes
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          router.push(CustomerRoutes.settings);
+                        });
                       },
                     ),
                     const SizedBox(height: AppTheme.spacing12),
@@ -115,8 +130,12 @@ class ProfileDrawer extends StatelessWidget {
                       title: 'Help & Support',
                       subtitle: 'Get assistance',
                       onTap: () {
-                        Navigator.pop(context);
-                        _showHelpDialog(context);
+                        final navigator = Navigator.of(context);
+                        navigator.pop();
+                        // Use post-frame callback to ensure dialog shows after drawer closes
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          _showHelpDialog(context);
+                        });
                       },
                     ),
                     const SizedBox(height: AppTheme.spacing12),
@@ -126,8 +145,12 @@ class ProfileDrawer extends StatelessWidget {
                       title: 'About',
                       subtitle: 'App information',
                       onTap: () {
-                        Navigator.pop(context);
-                        _showAboutDialog(context);
+                        final navigator = Navigator.of(context);
+                        navigator.pop();
+                        // Use post-frame callback to ensure dialog shows after drawer closes
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          _showAboutDialog(context);
+                        });
                       },
                     ),
                   ],
@@ -152,8 +175,13 @@ class ProfileDrawer extends StatelessWidget {
                       width: double.infinity,
                       child: OutlinedButton.icon(
                         onPressed: () {
-                          Navigator.pop(context);
-                          _showLogoutDialog(context, isGuest: state.isGuest);
+                          final navigator = Navigator.of(context);
+                          final isGuestMode = state.isGuest;
+                          navigator.pop();
+                          // Use post-frame callback to ensure dialog shows after drawer closes
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            _showLogoutDialog(context, isGuest: isGuestMode);
+                          });
                         },
                         icon: const Icon(
                           Icons.logout,
@@ -445,6 +473,9 @@ class ProfileDrawer extends StatelessWidget {
   }
 
   void _showLogoutDialog(BuildContext context, {bool isGuest = false}) {
+    // Capture bloc reference before showing dialog
+    final authBloc = context.read<AuthBloc>();
+    
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -462,7 +493,7 @@ class ProfileDrawer extends StatelessWidget {
           TextButton(
             onPressed: () {
               Navigator.of(dialogContext).pop();
-              context.read<AuthBloc>().add(const AuthLogoutRequested());
+              authBloc.add(const AuthLogoutRequested());
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: Text(isGuest ? 'Exit' : 'Logout'),
@@ -475,7 +506,7 @@ class ProfileDrawer extends StatelessWidget {
   void _showHelpDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Help & Support'),
         content: const Text(
           'For assistance, please contact:\n\n'
@@ -484,7 +515,7 @@ class ProfileDrawer extends StatelessWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(dialogContext).pop(),
             child: const Text('Close'),
           ),
         ],
@@ -495,7 +526,7 @@ class ProfileDrawer extends StatelessWidget {
   void _showAboutDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('About SmthngTsty'),
         content: const Text(
           'SmthngTsty v1.0.0\n\n'
@@ -503,7 +534,7 @@ class ProfileDrawer extends StatelessWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(dialogContext).pop(),
             child: const Text('Close'),
           ),
         ],

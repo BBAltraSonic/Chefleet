@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/routes/app_routes.dart';
 import '../../../core/models/user_role.dart';
 import '../../../core/blocs/role_bloc.dart';
 import '../../../core/blocs/role_event.dart';
@@ -327,22 +325,13 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
 
     try {
       // Set the selected role in RoleBloc
+      // Router redirect will handle navigation to the appropriate destination
       context.read<RoleBloc>().add(
         InitialRoleSelected(_selectedRole!),
       );
-
-      // Navigate based on role
-      if (_selectedRole == UserRole.vendor) {
-        // Navigate to vendor onboarding
-        if (mounted) {
-          context.go(VendorRoutes.onboarding);
-        }
-      } else {
-        // Navigate to customer home (map/feed)
-        if (mounted) {
-          context.go(CustomerRoutes.map);
-        }
-      }
+      
+      // Navigation now handled by router redirect logic
+      // No manual context.go() needed - prevents competing navigation authorities
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -361,7 +350,9 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
   }
 
   void _handleSkip() {
-    // Default to buyer role
-    context.go(CustomerRoutes.map);
+    // Default to customer role - dispatch event and let router handle navigation
+    context.read<RoleBloc>().add(
+      InitialRoleSelected(UserRole.customer),
+    );
   }
 }

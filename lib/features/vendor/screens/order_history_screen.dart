@@ -19,14 +19,19 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       _loadOrderHistory();
     });
   }
 
   void _loadOrderHistory() {
-    final state = context.read<VendorDashboardBloc>().state;
+    // Guard against missing bloc - screen may be used standalone or as embedded tab
+    final bloc = context.read<VendorDashboardBloc?>();
+    if (bloc == null) return;
+    
+    final state = bloc.state;
     if (state.vendor != null) {
-      context.read<VendorDashboardBloc>().add(
+      bloc.add(
         LoadOrders(
           vendorId: state.vendor!['id'],
           statusFilter: _selectedStatusFilter == 'all' ? null : _selectedStatusFilter,

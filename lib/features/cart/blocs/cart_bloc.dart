@@ -288,4 +288,9 @@ class CartBloc extends Bloc<CartEvent, CartState> with HydratedMixin {
   Map<String, dynamic>? toJson(CartState state) {
     return state.toJson();
   }
+
+  @override
+  Future<void> close() {
+    return super.close();
+  }
 }

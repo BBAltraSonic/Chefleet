@@ -133,7 +133,7 @@ class VendorOrdersBloc extends Bloc<VendorOrdersEvent, VendorOrdersState> {
       final vendorResponse = await supabase
           .from('vendors')
           .select('id')
-          .eq('user_id', userId)
+          .eq('owner_id', userId)
           .maybeSingle();
       
       if (vendorResponse == null) {
@@ -146,7 +146,7 @@ class VendorOrdersBloc extends Bloc<VendorOrdersEvent, VendorOrdersState> {
       // Load orders for this vendor
       final ordersResponse = await supabase
           .from('orders')
-          .select('*, order_items(*, dishes(*)), users_public!buyer_id(*)')
+          .select('*, order_items(*, dishes(*)), users!buyer_id(*)')
           .eq('vendor_id', _vendorId!)
           .order('created_at', ascending: false);
       
@@ -177,6 +177,7 @@ class VendorOrdersBloc extends Bloc<VendorOrdersEvent, VendorOrdersState> {
         .stream(primaryKey: ['id'])
         .eq('vendor_id', _vendorId!)
         .listen((data) {
+          if (isClosed) return;
           // Reload orders when changes occur
           add(const LoadVendorOrders());
         });

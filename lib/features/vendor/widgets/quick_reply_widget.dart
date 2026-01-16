@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../core/constants/app_strings.dart';
+import '../../../core/constants/app_strings.dart';
 
 class QuickReplyWidget extends StatelessWidget {
   final List<Map<String, dynamic>> quickReplies;

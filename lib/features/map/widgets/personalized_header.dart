@@ -109,6 +109,8 @@ class PersonalizedHeader extends StatelessWidget {
                         letterSpacing: -0.5,
                         height: 1.2,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 6),
                     Text(

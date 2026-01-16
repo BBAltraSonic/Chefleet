@@ -1,18 +1,17 @@
 import 'dart:async';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../core/services/supabase_service.dart';
-import '../models/order_model.dart';
+import '../../../core/models/order_model.dart';
 
 /// Service for managing real-time order updates via Supabase Realtime
-/// 
+///
 /// Replaces polling with push-based updates for instant order status changes.
 /// Automatically reconnects on disconnect and handles subscription lifecycle.
 class OrderRealtimeService {
-  final SupabaseService _supabaseService;
+  final SupabaseClient _client;
   final Map<String, RealtimeChannel> _subscriptions = {};
   final Map<String, StreamController<Order>> _controllers = {};
 
-  OrderRealtimeService(this._supabaseService);
+  OrderRealtimeService(this._client);
 
   /// Subscribe to real-time updates for a specific order
   /// 
@@ -31,7 +30,7 @@ class OrderRealtimeService {
     _controllers[orderId] = controller;
 
     // Subscribe to Realtime updates
-    final channel = _supabaseService.client
+    final channel = _client
         .channel('order:$orderId')
         .onPostgresChanges(
           event: PostgresChangeEvent.update,
@@ -75,7 +74,7 @@ class OrderRealtimeService {
 
     final column = isVendor ? 'vendor_id' : 'buyer_id';
     
-    final channel = _supabaseService.client
+    final channel = _client
         .channel(key)
         .onPostgresChanges(
           event: PostgresChangeEvent.all,
@@ -110,7 +109,7 @@ class OrderRealtimeService {
   void _unsubscribeFromOrder(String key) {
     final channel = _subscriptions.remove(key);
     if (channel != null) {
-      _supabaseService.client.removeChannel(channel);
+      _client.removeChannel(channel);
     }
 
     final controller = _controllers.remove(key);
@@ -120,7 +119,7 @@ class OrderRealtimeService {
   /// Unsubscribe from all orders
   void unsubscribeAll() {
     for (final channel in _subscriptions.values) {
-      _supabaseService.client.removeChannel(channel);
+      _client.removeChannel(channel);
     }
     _subscriptions.clear();
 

@@ -1,7 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
-import '../../../../shared/utils/currency_formatter.dart';
+import '../../../shared/utils/currency_formatter.dart';
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_theme.dart';
+import '../../../core/theme/app_theme.dart';
 import '../blocs/vendor_dashboard_bloc.dart';
 
 class AnalyticsTab extends StatelessWidget {

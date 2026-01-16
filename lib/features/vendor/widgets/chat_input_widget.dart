@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import '../../../../core/constants/app_strings.dart';
+import '../../../core/constants/app_strings.dart';
 
 class ChatInputWidget extends StatefulWidget {
   final String conversationId;

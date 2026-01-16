@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'supabase_repository.dart';
+import 'package:chefleet/core/services/error_message_mapper.dart';
 
 class OrderRepository extends SupabaseRepository<Map<String, dynamic>> {
   OrderRepository(SupabaseClient client) : super(client) {
@@ -39,15 +40,15 @@ class OrderRepository extends SupabaseRepository<Map<String, dynamic>> {
 
   @override
   Exception _handleException(dynamic error) {
-    // Custom exception handling for order operations
+    // Custom exception handling for order operations with user-friendly messages
     if (error is FunctionException) {
-      return Exception('Edge Function error: ${error.toString()}');
+      return Exception(ErrorMessageMapper.getUserFriendlyMessage(error));
     } else if (error is PostgrestException) {
-      return Exception('Database error: ${error.message}');
+      return Exception(ErrorMessageMapper.getUserFriendlyMessage(error));
     } else if (error is AuthException) {
-      return error;
+      return Exception(ErrorMessageMapper.getUserFriendlyMessage(error));
     } else {
-      return Exception('Order operation failed: ${error.toString()}');
+      return Exception(ErrorMessageMapper.getUserFriendlyMessage(error));
     }
   }
 }

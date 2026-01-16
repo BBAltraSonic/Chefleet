@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../../shared/utils/currency_formatter.dart';
+import '../../../shared/utils/currency_formatter.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/glass_container.dart';
 import '../../../core/routes/app_routes.dart';
@@ -48,7 +48,7 @@ class _FavouritesScreenState extends State<FavouritesScreen> {
               price,
               prep_time_minutes,
               image_url,
-              is_available,
+              available,
               vendors!inner(
                 business_name,
                 location
@@ -266,7 +266,7 @@ class _FavouritesScreenState extends State<FavouritesScreen> {
     final price = dish['price'] as num? ?? 0;
     final prepTime = dish['prep_time_minutes'] as int? ?? 0;
     final imageUrl = dish['image_url'] as String?;
-    final isAvailable = dish['is_available'] as bool? ?? false;
+    final isAvailable = dish['available'] as bool? ?? false;
     final vendor = dish['vendors'] as Map<String, dynamic>?;
     final businessName = vendor?['business_name'] as String? ?? 'Unknown Vendor';
 

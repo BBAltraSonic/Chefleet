@@ -6,7 +6,7 @@ class Shimmer extends StatefulWidget {
     required this.child,
     this.baseColor,
     this.highlightColor,
-    this.duration = const Duration(milliseconds: 1500),
+    this.duration = const Duration(milliseconds: 1200),
     this.direction = ShimmerDirection.ltr,
   });
 

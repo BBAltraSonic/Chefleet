@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../shared/utils/currency_formatter.dart';
+import '../../../shared/utils/currency_formatter.dart';
 
 import '../../auth/blocs/auth_bloc.dart';
 import '../blocs/active_orders_bloc.dart';

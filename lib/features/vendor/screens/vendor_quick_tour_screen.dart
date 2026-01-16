@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/routes/app_routes.dart';
 import '../../../shared/widgets/glass_container.dart';
 
 class VendorQuickTourScreen extends StatefulWidget {
@@ -81,7 +82,7 @@ class _VendorQuickTourScreenState extends State<VendorQuickTourScreen> {
 
   void _completeTour() {
     // Navigate to vendor onboarding after completing the tour
-    context.pushReplacement('/vendor/onboarding');
+    context.pushReplacement(VendorRoutes.onboarding);
   }
 
   @override

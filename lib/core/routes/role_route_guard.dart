@@ -37,13 +37,10 @@ class RoleRouteGuard {
 
     // Check vendor routes
     if (RouteHelper.isVendorRoute(route)) {
-      // Allow onboarding only for users who haven't completed vendor setup yet
+      // Onboarding is now handled by RouteGuards.validateVendorOnboardingAccess()
+      // which performs more sophisticated validation (checks vendor_applications table)
+      // Skip role-based validation for onboarding route
       if (route == VendorRoutes.onboarding) {
-        final hasVendorRole = availableRoles.contains(UserRole.vendor);
-        if (hasVendorRole) {
-          _logUnauthorizedAccess(route, activeRole);
-          return VendorRoutes.dashboard;
-        }
         return null;
       }
 

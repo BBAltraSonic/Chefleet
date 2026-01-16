@@ -77,7 +77,7 @@ class WeeklyDish extends Equatable {
     'price': price,
     'category': category,
     'image_url': imageUrl,
-    'is_available': available,
+    'available': available,
     'is_vegetarian': isVegetarian,
     'is_vegan': isVegan,
     'is_gluten_free': isGlutenFree,

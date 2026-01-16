@@ -3,11 +3,12 @@ import { createClient } from 'jsr:@supabase/supabase-js@2'
 import { ChangeOrderStatusSchema, validateRequest } from '../_shared/schemas.ts'
 import { checkRateLimit, createRateLimitResponse } from '../_shared/rate_limiter.ts'
 import { checkIdempotency, storeIdempotencyResponse, markIdempotencyFailed } from '../_shared/idempotency.ts'
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+import { 
+  getOriginFromRequest, 
+  getCorsHeaders, 
+  handleCorsPreflight,
+  createCorsResponse 
+} from '../_shared/cors.ts'
 
 const VALID_STATUS_TRANSITIONS: Record<string, string[]> = {
   'pending': ['confirmed', 'cancelled'],
@@ -20,9 +21,11 @@ const VALID_STATUS_TRANSITIONS: Record<string, string[]> = {
 }
 
 Deno.serve(async (req) => {
+  const origin = getOriginFromRequest(req);
+  
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return handleCorsPreflight(origin);
   }
 
   try {
@@ -47,24 +50,22 @@ Deno.serve(async (req) => {
     // Rate limiting check
     const rateLimitResult = await checkRateLimit(supabase, 'change_order_status', user.id)
     if (!rateLimitResult.allowed) {
-      return createRateLimitResponse(rateLimitResult, corsHeaders)
+      return createRateLimitResponse(rateLimitResult, getCorsHeaders(origin))
     }
 
     // Validate request body
     const bodyResult = validateRequest(ChangeOrderStatusSchema, await req.json())
 
     if (!bodyResult.success) {
-      return new Response(
+      return createCorsResponse(
         JSON.stringify({
           success: false,
           error: 'Validation failed',
           details: bodyResult.errors
         }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 400
-        }
-      )
+        400,
+        origin
+      );
     }
 
     const { order_id, new_status, pickup_code, reason, idempotency_key } = bodyResult.data
@@ -125,7 +126,7 @@ Deno.serve(async (req) => {
           idempotent: true
         }),
         {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json' },
           status: 200
         }
       )
@@ -207,7 +208,7 @@ Deno.serve(async (req) => {
           error_code: 'CONCURRENT_MODIFICATION'
         }),
         {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json' },
           status: 409
         }
       )
@@ -313,7 +314,7 @@ Deno.serve(async (req) => {
         error_code: 'STATUS_UPDATE_FAILED'
       }),
       {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
         status: 400
       }
     )

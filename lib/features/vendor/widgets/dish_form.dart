@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/constants/dish_categories.dart';
 import '../../feed/models/dish_model.dart';
 import '../blocs/menu_management_bloc.dart';
 
@@ -34,17 +36,8 @@ class _DishFormState extends State<DishForm> {
   int _spiceLevel = 0;
   List<String> _dietaryRestrictions = [];
 
-  final List<String> _categories = [
-    'Appetizers',
-    'Main Course',
-    'Desserts',
-    'Beverages',
-    'Snacks',
-    'Salads',
-    'Soups',
-    'Breakfast',
-    'Side Dishes',
-  ];
+  // Use standardized category display names that map to database enum values
+  final List<String> _categories = DishCategories.displayNames;
 
   final List<String> _dietaryOptions = [
     'Vegetarian',
@@ -73,14 +66,15 @@ class _DishFormState extends State<DishForm> {
     _descriptionController.text = dish.description ?? '';
     _longDescriptionController.text = dish.descriptionLong ?? '';
     _priceController.text = (dish.priceCents / 100).toStringAsFixed(2);
-    _prepTimeController.text = dish.preparationTimeMinutes?.toString() ?? '';
+    _prepTimeController.text = dish.preparationTimeMinutes.toString();
     _ingredientsController.text = dish.ingredients?.join(', ') ?? '';
-    _allergensController.text = dish.allergens?.join(', ') ?? '';
-    _selectedCategory = dish.categoryEnum;
+    _allergensController.text = dish.allergens.join(', ');
+    // Convert database enum value to display name for UI
+    _selectedCategory = DishCategories.toDisplayName(dish.categoryEnum);
     _imageUrl = dish.imageUrl;
     _available = dish.available;
-    _isFeatured = dish.isFeatured ?? false;
-    _spiceLevel = dish.spiceLevel ?? 0;
+    _isFeatured = dish.isFeatured;
+    _spiceLevel = dish.spiceLevel;
     _dietaryRestrictions = List.from(dish.dietaryRestrictions ?? []);
   }
 
@@ -158,13 +152,31 @@ class _DishFormState extends State<DishForm> {
       // Upload image if a new one was selected
       String? finalImageUrl = _imageUrl;
       if (_imageFile != null) {
-        finalImageUrl = await _uploadImageToSupabase(_imageFile!);
+        try {
+          finalImageUrl = await _uploadImageToSupabase(_imageFile!);
+        } on TimeoutException catch (e) {
+          Navigator.of(context, rootNavigator: true).pop(); // Remove loading dialog
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Upload timeout: ${e.message ?? "Connection too slow"}'),
+                backgroundColor: Colors.orange,
+                action: SnackBarAction(
+                  label: 'Retry',
+                  onPressed: _saveDish,
+                ),
+              ),
+            );
+          }
+          return;
+        }
+        
         if (finalImageUrl == null) {
-          Navigator.of(context).pop(); // Remove loading dialog
+          Navigator.of(context, rootNavigator: true).pop(); // Remove loading dialog
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('Failed to upload image'),
+                content: Text('Failed to upload image. Please check your connection.'),
                 backgroundColor: Colors.red,
               ),
             );
@@ -203,7 +215,7 @@ class _DishFormState extends State<DishForm> {
         priceCents: priceCents,
         prepTimeMinutes: prepTime,
         category: _selectedCategory,
-        categoryEnum: _selectedCategory,
+        categoryEnum: DishCategories.toEnum(_selectedCategory),
         imageUrl: finalImageUrl,
         available: _available,
         isFeatured: _isFeatured,
@@ -216,16 +228,17 @@ class _DishFormState extends State<DishForm> {
         updatedAt: DateTime.now(),
       );
 
+      // Dispatch the event to BLoC - BlocListener in parent will handle navigation
       if (widget.dish == null) {
         context.read<MenuManagementBloc>().add(CreateDish(dish: dish));
       } else {
         context.read<MenuManagementBloc>().add(UpdateDish(dish: dish));
       }
 
-      Navigator.of(context).pop(); // Remove loading dialog
-      Navigator.of(context).pop(); // Close form
+      // DON'T pop here - let parent's BlocListener close dialog after operation completes
+      // Parent (MenuManagementScreen) has BlocListener that handles success/error
     } catch (e) {
-      Navigator.of(context).pop(); // Remove loading dialog
+      Navigator.of(context, rootNavigator: true).pop(); // Remove loading dialog
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -240,24 +253,40 @@ class _DishFormState extends State<DishForm> {
   Future<String?> _uploadImageToSupabase(File imageFile) async {
     try {
       final user = Supabase.instance.client.auth.currentUser;
-      if (user == null) return null;
+      if (user == null) {
+        debugPrint('Upload failed: No authenticated user');
+        return null;
+      }
 
       // Get vendor ID
+      debugPrint('Fetching vendor ID for user: ${user.id}');
       final vendorResponse = await Supabase.instance.client
           .from('vendors')
           .select('id')
           .eq('owner_id', user.id)
-          .single();
+          .single()
+          .timeout(
+            const Duration(seconds: 10),
+            onTimeout: () => throw TimeoutException('Vendor lookup timed out'),
+          );
 
-      final vendorId = vendorResponse['id'] as String? ?? '';
+      final vendorId = vendorResponse['id'] as String?;
+      if (vendorId == null || vendorId.isEmpty) {
+        debugPrint('Upload failed: No vendor ID found for user');
+        return null;
+      }
 
       // Generate unique filename
       final fileExt = imageFile.path.split('.').last;
       final fileName = '${vendorId}_${DateTime.now().millisecondsSinceEpoch}.$fileExt';
+      
+      debugPrint('Uploading image to dish-images bucket: $fileName');
 
       // Upload to Supabase Storage
       final bytes = await imageFile.readAsBytes();
-      await Supabase.instance.client.storage
+      debugPrint('Image size: ${bytes.length} bytes');
+      
+      final uploadResponse = await Supabase.instance.client.storage
           .from('dish-images')
           .uploadBinary(
             fileName,
@@ -266,16 +295,27 @@ class _DishFormState extends State<DishForm> {
               contentType: 'image/$fileExt',
               upsert: false,
             ),
+          )
+          .timeout(
+            const Duration(seconds: 30),
+            onTimeout: () => throw TimeoutException('Image upload timed out after 30 seconds'),
           );
+
+      debugPrint('Upload successful: $uploadResponse');
 
       // Get public URL
       final imageUrl = Supabase.instance.client.storage
           .from('dish-images')
           .getPublicUrl(fileName);
 
+      debugPrint('Public URL generated: $imageUrl');
       return imageUrl;
-    } catch (e) {
-      print('Error uploading image: $e');
+    } on TimeoutException catch (e) {
+      debugPrint('Timeout error: $e');
+      rethrow;
+    } catch (e, stackTrace) {
+      debugPrint('Error uploading image: $e');
+      debugPrint('Stack trace: $stackTrace');
       return null;
     }
   }

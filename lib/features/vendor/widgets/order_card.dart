@@ -6,9 +6,9 @@ class OrderCard extends StatelessWidget {
   const OrderCard({
     super.key,
     required this.order,
+    required this.onTap,
     required this.onStatusUpdate,
     this.onVerifyPickupCode,
-    this.onTap,
     this.isSelected = false,
     this.isUrgent = false,
     this.showProgress = false,
@@ -16,9 +16,9 @@ class OrderCard extends StatelessWidget {
   });
 
   final Map<String, dynamic> order;
-  final void Function(String newStatus) onStatusUpdate;
-  final void Function(String orderId, String pickupCode)? onVerifyPickupCode;
-  final VoidCallback? onTap;
+  final VoidCallback onTap;
+  final Function(String) onStatusUpdate;
+  final Function(String, String)? onVerifyPickupCode;
   final bool isSelected;
   final bool isUrgent;
   final bool showProgress;

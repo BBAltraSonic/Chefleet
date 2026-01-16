@@ -319,30 +319,37 @@ class _MapScreenState extends State<MapScreen> {
                       )
                     else if (state.dishes.isEmpty)
                       SliverFillRemaining(
-                        child: Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.restaurant_menu,
-                                size: 64,
-                                color: theme.primaryColor.withOpacity(0.3),
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                'No dishes found nearby',
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w600,
+                        hasScrollBody: false,
+                        child: Padding(
+                          padding: const EdgeInsets.all(24.0),
+                          child: Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.restaurant_menu,
+                                  size: 64,
+                                  color: theme.primaryColor.withOpacity(0.3),
                                 ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Try adjusting your location or check back later',
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: theme.colorScheme.onSurfaceVariant,
+                                const SizedBox(height: 16),
+                                Text(
+                                  'No dishes found nearby',
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  textAlign: TextAlign.center,
                                 ),
-                              ),
-                            ],
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Try adjusting your location or check back later',
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       )

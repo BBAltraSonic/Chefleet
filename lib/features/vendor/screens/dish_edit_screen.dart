@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -5,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/constants/dish_categories.dart';
 import '../../feed/models/dish_model.dart';
 import '../blocs/menu_management_bloc.dart';
 
@@ -35,17 +37,8 @@ class _DishEditScreenState extends State<DishEditScreen> {
   int _spiceLevel = 0;
   List<String> _dietaryRestrictions = [];
 
-  final List<String> _categories = [
-    'Appetizers',
-    'Main Course',
-    'Desserts',
-    'Beverages',
-    'Snacks',
-    'Salads',
-    'Soups',
-    'Breakfast',
-    'Side Dishes',
-  ];
+  // Use standardized category display names that map to database enum values
+  final List<String> _categories = DishCategories.displayNames;
 
   final List<String> _dietaryOptions = [
     'Vegetarian',
@@ -77,7 +70,8 @@ class _DishEditScreenState extends State<DishEditScreen> {
     _prepTimeController.text = dish.preparationTimeMinutes.toString() ?? '';
     _ingredientsController.text = dish.ingredients?.join(', ') ?? '';
     _allergensController.text = dish.allergens.join(', ') ?? '';
-    _selectedCategory = dish.categoryEnum;
+    // Convert database enum value to display name for UI
+    _selectedCategory = DishCategories.toDisplayName(dish.categoryEnum);
     _imageUrl = dish.imageUrl;
     _available = dish.available;
     _isFeatured = dish.isFeatured ?? false;
@@ -229,19 +223,24 @@ class _DishEditScreenState extends State<DishEditScreen> {
       return;
     }
 
+    final progressMessage = ValueNotifier<String>('Preparing...');
+    
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const Dialog(
+      builder: (context) => Dialog(
         child: Padding(
-          padding: EdgeInsets.all(20),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(width: 16),
-              Text('Saving dish...'),
-            ],
+          padding: const EdgeInsets.all(20),
+          child: ValueListenableBuilder<String>(
+            valueListenable: progressMessage,
+            builder: (context, message, child) => Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const CircularProgressIndicator(),
+                const SizedBox(width: 16),
+                Flexible(child: Text(message)),
+              ],
+            ),
           ),
         ),
       ),
@@ -250,13 +249,32 @@ class _DishEditScreenState extends State<DishEditScreen> {
     try {
       String? finalImageUrl = _imageUrl;
       if (_imageFile != null) {
-        finalImageUrl = await _uploadImageToSupabase(_imageFile!);
+        progressMessage.value = 'Uploading image...';
+        try {
+          finalImageUrl = await _uploadImageToSupabase(_imageFile!);
+        } on TimeoutException catch (e) {
+          if (mounted) {
+            Navigator.of(context, rootNavigator: true).pop();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Upload timeout: ${e.message ?? "Connection too slow"}'),
+                backgroundColor: Colors.orange,
+                action: SnackBarAction(
+                  label: 'Retry',
+                  onPressed: () => _saveDish(context),
+                ),
+              ),
+            );
+          }
+          return;
+        }
+        
         if (finalImageUrl == null) {
           if (mounted) {
-            Navigator.of(context).pop();
+            Navigator.of(context, rootNavigator: true).pop();
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('Failed to upload image'),
+                content: Text('Failed to upload image. Please check your connection.'),
                 backgroundColor: Colors.red,
               ),
             );
@@ -296,7 +314,7 @@ class _DishEditScreenState extends State<DishEditScreen> {
         prepTimeMinutes: prepTime ?? 0,
         preparationTimeMinutes: prepTime ?? 0,
         category: _selectedCategory,
-        categoryEnum: _selectedCategory,
+        categoryEnum: DishCategories.toEnum(_selectedCategory),
         imageUrl: finalImageUrl,
         available: _available,
         isFeatured: _isFeatured,
@@ -308,6 +326,8 @@ class _DishEditScreenState extends State<DishEditScreen> {
         updatedAt: DateTime.now(),
       );
 
+      // Dispatch the event to BLoC - BlocListener will handle navigation AND close dialog
+      progressMessage.value = 'Saving dish...';
       if (mounted) {
         if (widget.dish == null) {
           context.read<MenuManagementBloc>().add(CreateDish(dish: dish));
@@ -315,12 +335,12 @@ class _DishEditScreenState extends State<DishEditScreen> {
           context.read<MenuManagementBloc>().add(UpdateDish(dish: dish));
         }
 
-        Navigator.of(context).pop(); // Remove loading
-        Navigator.of(context).pop(); // Close screen
+        // DON'T close dialog here - BlocListener will close it after operation completes
+        // Dialog stays open until success/error is received
       }
     } catch (e) {
       if (mounted) {
-        Navigator.of(context).pop(); // Remove loading
+        Navigator.of(context, rootNavigator: true).pop(); // Remove loading
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error saving dish: ${e.toString()}'),
@@ -334,20 +354,37 @@ class _DishEditScreenState extends State<DishEditScreen> {
   Future<String?> _uploadImageToSupabase(File imageFile) async {
     try {
       final user = Supabase.instance.client.auth.currentUser;
-      if (user == null) return null;
+      if (user == null) {
+        debugPrint('Upload failed: No authenticated user');
+        return null;
+      }
 
+      debugPrint('Fetching vendor ID for user: ${user.id}');
       final vendorResponse = await Supabase.instance.client
           .from('vendors')
           .select('id')
           .eq('owner_id', user.id)
-          .single();
+          .single()
+          .timeout(
+            const Duration(seconds: 10),
+            onTimeout: () => throw TimeoutException('Vendor lookup timed out'),
+          );
 
-      final vendorId = vendorResponse['id'] as String;
+      final vendorId = vendorResponse['id'] as String?;
+      if (vendorId == null || vendorId.isEmpty) {
+        debugPrint('Upload failed: No vendor ID found for user');
+        return null;
+      }
+
       final fileExt = imageFile.path.split('.').last;
       final fileName = '${vendorId}_${DateTime.now().millisecondsSinceEpoch}.$fileExt';
+      
+      debugPrint('Uploading image to dish-images bucket: $fileName');
 
       final bytes = await imageFile.readAsBytes();
-      await Supabase.instance.client.storage
+      debugPrint('Image size: ${bytes.length} bytes');
+      
+      final uploadResponse = await Supabase.instance.client.storage
           .from('dish-images')
           .uploadBinary(
             fileName,
@@ -356,13 +393,26 @@ class _DishEditScreenState extends State<DishEditScreen> {
               contentType: 'image/$fileExt',
               upsert: false,
             ),
+          )
+          .timeout(
+            const Duration(seconds: 30),
+            onTimeout: () => throw TimeoutException('Image upload timed out after 30 seconds'),
           );
 
-      return Supabase.instance.client.storage
+      debugPrint('Upload successful: $uploadResponse');
+
+      final imageUrl = Supabase.instance.client.storage
           .from('dish-images')
           .getPublicUrl(fileName);
-    } catch (e) {
+      
+      debugPrint('Public URL generated: $imageUrl');
+      return imageUrl;
+    } on TimeoutException catch (e) {
+      debugPrint('Timeout error: $e');
+      rethrow;
+    } catch (e, stackTrace) {
       debugPrint('Error uploading image: $e');
+      debugPrint('Stack trace: $stackTrace');
       return null;
     }
   }
@@ -375,17 +425,51 @@ class _DishEditScreenState extends State<DishEditScreen> {
       create: (context) => MenuManagementBloc(supabaseClient: Supabase.instance.client),
       child: Builder(
         builder: (context) {
-          return Scaffold(
-            appBar: AppBar(
-              title: Text(isEditing ? 'Edit Dish' : 'Add New Dish'),
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.check),
-                  onPressed: () => _saveDish(context),
-                ),
-              ],
-            ),
-            body: Form(
+          return BlocListener<MenuManagementBloc, MenuManagementState>(
+            listener: (context, state) {
+              if (state.status == MenuManagementStatus.loaded && 
+                  state.lastAction != null) {
+                // Operation successful - close loading dialog (using rootNavigator), then close the screen
+                Navigator.of(context, rootNavigator: true).pop(); // Close loading dialog
+                Navigator.of(context).pop(); // Close dish edit screen
+                
+                // Show success message after navigation
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          state.lastAction == MenuManagementAction.create
+                              ? 'Dish created successfully'
+                              : 'Dish updated successfully',
+                        ),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
+                });
+              } else if (state.status == MenuManagementStatus.error) {
+                // Close loading dialog (using rootNavigator) and show error message
+                Navigator.of(context, rootNavigator: true).pop(); // Close loading dialog
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(state.errorMessage ?? 'An error occurred'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+            child: Scaffold(
+              appBar: AppBar(
+                title: Text(isEditing ? 'Edit Dish' : 'Add New Dish'),
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.check),
+                    onPressed: () => _saveDish(context),
+                  ),
+                ],
+              ),
+              body: Form(
               key: _formKey,
               child: ListView(
                 padding: const EdgeInsets.all(16),
@@ -561,6 +645,7 @@ class _DishEditScreenState extends State<DishEditScreen> {
                   ),
                 ],
               ),
+            ),
             ),
           );
         },

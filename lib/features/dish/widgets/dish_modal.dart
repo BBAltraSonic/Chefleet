@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../shared/utils/currency_formatter.dart';
+import '../../../shared/utils/currency_formatter.dart';
 import 'package:intl/intl.dart';
 
 import '../../cart/blocs/cart_bloc.dart';
@@ -9,6 +9,7 @@ import '../../cart/blocs/cart_event.dart';
 import '../../cart/blocs/cart_state.dart';
 import '../../feed/models/dish_model.dart';
 import '../../feed/models/vendor_model.dart';
+import '../../../core/constants/timing_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/routes/app_routes.dart';
 
@@ -59,6 +60,8 @@ class _DishModalState extends State<DishModal> {
     }
   }
 
+  /// Phase 4 Fix: Uses postFrameCallback with context.mounted check
+  /// to prevent navigation after modal disposal (Issue #8).
   void _onCheckout() {
     final cartBloc = context.read<CartBloc>();
     final cartState = cartBloc.state;
@@ -84,11 +87,15 @@ class _DishModalState extends State<DishModal> {
           : _instructionsController.text.trim(),
     ));
 
-    // Close modal
-    Navigator.pop(context);
+    // Close modal first
+    Navigator.of(context).pop();
 
-    // Navigate to checkout
-    context.push(CustomerRoutes.checkout);
+    // Navigate after the frame completes and verify context is still mounted
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (context.mounted) {
+        context.push(CustomerRoutes.checkout);
+      }
+    });
   }
 
   void _onaddToCart() {
@@ -124,6 +131,7 @@ class _DishModalState extends State<DishModal> {
       SnackBar(
         content: Text('${widget.dish.name} added to cart'),
         backgroundColor: AppTheme.primaryGreen,
+        duration: TimingConstants.snackbarSuccess,
       ),
     );
   }
@@ -147,9 +155,6 @@ class _DishModalState extends State<DishModal> {
               Navigator.pop(context); // Close dialog
               cartBloc.add(const ClearCart());
               // Retry checkout logic
-              // Note: We can't easily recursive call _onCheckout safely here without context issues
-              // But we can just manually do the steps or ask user to click again.
-              // Better UX: Do it automatically.
               
               if (_selectedPickupTime != null) {
                 cartBloc.add(SetPickupTime(_selectedPickupTime!));
@@ -159,8 +164,16 @@ class _DishModalState extends State<DishModal> {
                 quantity: _quantity,
                 specialInstructions: _instructionsController.text.trim(),
               ));
-              Navigator.pop(context); // Close modal
-              context.push(CustomerRoutes.checkout);
+              
+              // Close modal first
+              Navigator.of(context).pop();
+              
+              // Navigate after the frame completes and verify context is still mounted
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (context.mounted) {
+                  context.push(CustomerRoutes.checkout);
+                }
+              });
             },
             child: const Text('Clear & Start'),
           ),

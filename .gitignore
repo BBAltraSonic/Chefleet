@@ -124,3 +124,19 @@ config/production.json.local
 # Supabase local
 supabase/.branches
 supabase/.temp
+
+# Windows reserved device names
+NUL
+CON
+PRN
+AUX
+COM[1-9]
+LPT[1-9]
+
+# Analysis and build outputs
+analysis_*.txt
+build_log*.txt
+build_output*.txt
+errors_only.txt
+analyze_output*.txt
+analyze_current.txt

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import '../../../../shared/utils/currency_formatter.dart';
+import '../../../shared/utils/currency_formatter.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../../core/constants/app_strings.dart';
+import '../../../core/constants/app_strings.dart';
 import '../blocs/vendor_dashboard_bloc.dart';
 import '../blocs/order_management_bloc.dart'; // Keep for status colors/names
 

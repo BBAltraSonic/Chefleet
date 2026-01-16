@@ -1,6 +1,83 @@
-Running Gradle task 'assembleDebug'...                          
-Maps API key from .env: null
-Maps API key from local.properties: null
-Final maps API key: 
-Running Gradle task 'assembleDebug'...                             61.4s
-√ Built build\app\outputs\flutter-apk\app-debug.apk
+  Generating the build script.
+  Compiling the build script.
+  Reading the asset graph.
+  Creating the asset graph.
+  Doing initial build cleanup.
+  Deleting 5 declared outputs which already existed on disk.
+  Updating the asset graph.
+  Building, full build because builders changed.
+  0s freezed on 316 inputs; integration_test/buyer_flow_test.dart
+W SDK language version 3.10.0 is newer than `analyzer` language version 3.9.0. Run `flutter packages upgrade`.
+  11s freezed on 316 inputs: 1 no-op; spent 10s sdk; integration_test/chat_realtime_test.dart
+  12s freezed on 316 inputs: 45 no-op; spent 10s sdk, 2s analyzing; lib/core/models/order_model.dart
+  34s freezed on 316 inputs: 113 no-op; spent 19s analyzing, 10s sdk, 3s resolving; lib/features/chat/widgets/chat_bubble.dart
+E freezed on lib/features/feed/widgets/dish_feed_widget.dart:
+  36:13: Expected to find ';'.
+  36:14: Expected an identifier.
+  36:14: Unexpected text ','.
+  And 16 more.
+E freezed on lib/features/feed/widgets/vendor_feed_widget.dart:
+  31:13: Expected to find ';'.
+  31:14: Expected an identifier.
+  31:14: Unexpected text ','.
+  And 13 more.
+  35s freezed on 316 inputs: 169 no-op; spent 20s analyzing, 10s sdk, 3s resolving, 1s building; lib/features/vendor/blocs/media_upload_event.dart
+  38s freezed on 316 inputs: 184 no-op; spent 21s analyzing, 10s sdk, 4s resolving, 1s building; lib/features/vendor/blocs/vendor_onboarding_bloc.dart
+  42s freezed on 316 inputs: 201 no-op; spent 25s analyzing, 10s sdk, 4s resolving, 1s building, 1s reading; lib/features/vendor/screens/vendor_onboarding_screen.dart
+  44s freezed on 316 inputs: 238 no-op; spent 26s analyzing, 10s sdk, 4s resolving, 2s building, 1s reading; lib/shared/widgets/cached_data_indicator.dart
+  51s freezed on 316 inputs: 243 no-op; spent 32s analyzing, 10s sdk, 5s resolving, 2s reading, 2s building; lib/shared/widgets/offline_banner.dart
+  53s freezed on 316 inputs: 259 no-op; spent 33s analyzing, 10s sdk, 6s resolving, 2s reading, 2s building; test/core/services/notification_router_test.dart
+E freezed on test/integration/guest_conversion_flow_integration_test.dart:
+  404:4: Expected a method, getter, setter or operator declaration.
+  404:5: Unexpected text ';'.
+  406:9: Expected an identifier.
+  And 5 more.
+  54s freezed on 316 inputs: 316 no-op; spent 34s analyzing, 10s sdk, 6s resolving, 2s building, 2s reading
+  0s json_serializable on 632 inputs; integration_test/buyer_flow_test.dart
+  2s json_serializable on 632 inputs: 1 no-op; spent 1s analyzing; integration_test/buyer_flow_test.freezed.dart
+  3s json_serializable on 632 inputs: 12 skipped, 13 no-op; spent 2s analyzing; integration_test/vendor_flow_test.freezed.dart
+  4s json_serializable on 632 inputs: 44 skipped, 1 output, 44 no-op; spent 3s analyzing; lib/core/models/opening_hours_model.freezed.dart
+  11s json_serializable on 632 inputs: 56 skipped, 1 output, 56 no-op; spent 9s analyzing, 1s resolving; lib/core/services/deep_link_service.freezed.dart
+  13s json_serializable on 632 inputs: 78 skipped, 1 output, 78 no-op; spent 10s analyzing, 1s resolving; lib/core/utils/database_optimizer.freezed.dart
+  14s json_serializable on 632 inputs: 101 skipped, 1 output, 101 no-op; spent 11s analyzing, 2s resolving; lib/features/auth/widgets/guest_conversion_prompt.freezed.dart
+E json_serializable on lib/features/feed/widgets/dish_feed_widget.dart:
+  36:13: Expected to find ';'.
+  36:14: Expected an identifier.
+  36:14: Unexpected text ','.
+  And 16 more.
+E json_serializable on lib/features/feed/widgets/vendor_feed_widget.dart:
+  31:13: Expected to find ';'.
+  31:14: Expected an identifier.
+  31:14: Unexpected text ','.
+  And 13 more.
+  15s json_serializable on 632 inputs: 129 skipped, 1 output, 129 no-op; spent 12s analyzing, 2s resolving; lib/features/map/blocs/map_feed_bloc.freezed.dart
+  16s json_serializable on 632 inputs: 155 skipped, 1 output, 155 no-op; spent 13s analyzing, 2s resolving; lib/features/order/widgets/active_order_modal.freezed.dart
+  17s json_serializable on 632 inputs: 180 skipped, 1 output, 180 no-op; spent 14s analyzing, 2s resolving; lib/features/vendor/blocs/vendor_dashboard_bloc.freezed.dart
+  18s json_serializable on 632 inputs: 199 skipped, 2 output, 198 no-op; spent 15s analyzing, 2s resolving; lib/features/vendor/screens/vendor_dashboard_screen.freezed.dart
+  19s json_serializable on 632 inputs: 218 skipped, 2 output, 217 no-op; spent 16s analyzing, 2s resolving; lib/features/vendor/widgets/opening_hours_widget.freezed.dart
+  20s json_serializable on 632 inputs: 239 skipped, 2 output, 238 no-op; spent 17s analyzing, 2s resolving, 1s building; lib/shared/widgets/cached_image.freezed.dart
+  21s json_serializable on 632 inputs: 262 skipped, 2 output, 261 no-op; spent 18s analyzing, 2s resolving, 1s building; test/core/services/role_restoration_service_test.freezed.dart
+  22s json_serializable on 632 inputs: 286 skipped, 2 output, 285 no-op; spent 18s analyzing, 2s resolving, 1s building; test/features/map/widgets/map_interaction_test.freezed.dart
+E json_serializable on test/integration/guest_conversion_flow_integration_test.dart:
+  404:4: Expected a method, getter, setter or operator declaration.
+  404:5: Unexpected text ';'.
+  406:9: Expected an identifier.
+  And 5 more.
+  23s json_serializable on 632 inputs: 307 skipped, 2 output, 306 no-op; spent 19s analyzing, 3s resolving, 1s building; test/integration/map_feed_performance_test.freezed.dart
+  24s json_serializable on 632 inputs: 316 skipped, 2 output, 314 no-op; spent 19s analyzing, 3s resolving, 1s building
+  0s source_gen:combining_builder on 632 inputs; integration_test/buyer_flow_test.dart
+  1s source_gen:combining_builder on 632 inputs: 99 skipped, 1 output, 99 no-op; lib/features/auth/screens/splash_screen.freezed.dart
+  2s source_gen:combining_builder on 632 inputs: 251 skipped, 2 output, 250 no-op; spent 2s building; test/accessibility/accessibility_test.freezed.dart
+  2s source_gen:combining_builder on 632 inputs: 316 skipped, 2 output, 314 no-op; spent 2s building
+  0s mockito:mockBuilder on 260 inputs; test/accessibility/accessibility_test.dart
+  1s mockito:mockBuilder on 260 inputs: 21 skipped, 1 output, 7 no-op; test/core/services/guest_session_service_test.freezed.dart
+E mockito:mockBuilder on test/integration/guest_conversion_flow_integration_test.dart:
+  404:4: Expected a method, getter, setter or operator declaration.
+  404:5: Unexpected text ';'.
+  406:9: Expected an identifier.
+  And 5 more.
+  2s mockito:mockBuilder on 260 inputs: 171 skipped, 3 output, 55 no-op; spent 1s building; test/integration/order_flow_integration_test.freezed.dart
+  2s mockito:mockBuilder on 260 inputs: 195 skipped, 3 output, 62 no-op; spent 1s building
+  Running the post build.
+  Writing the asset graph.
+  Failed to build with build_runner in 86s; wrote 7 outputs.

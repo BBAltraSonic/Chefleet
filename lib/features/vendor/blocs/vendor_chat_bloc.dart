@@ -1,7 +1,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../../core/constants/app_strings.dart';
+import '../../../core/constants/app_strings.dart';
 
 part 'vendor_chat_event.dart';
 part 'vendor_chat_state.dart';
@@ -44,6 +44,7 @@ class VendorChatBloc extends Bloc<VendorChatEvent, VendorChatState> {
           schema: 'public',
           table: 'messages',
           callback: (payload) {
+            if (isClosed) return;
             if (payload.newRecord.isNotEmpty) {
               add(LoadConversations());
             }

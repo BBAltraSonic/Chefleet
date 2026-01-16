@@ -1,10 +1,10 @@
 import 'package:intl/intl.dart';
-import '../../../../shared/utils/currency_formatter.dart';
+import '../../../shared/utils/currency_formatter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../../core/constants/app_strings.dart';
+import '../../../core/constants/app_strings.dart';
 import '../blocs/order_management_bloc.dart';
 import '../widgets/order_queue_widget.dart';
 import '../widgets/order_details_widget.dart';

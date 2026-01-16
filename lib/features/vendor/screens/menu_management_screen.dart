@@ -70,44 +70,80 @@ class _MenuManagementScreenState extends State<MenuManagementScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Menu Management'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(
-              icon: Icon(Icons.restaurant_menu),
-              text: 'Menu Items',
+    return BlocListener<MenuManagementBloc, MenuManagementState>(
+      listener: (context, state) {
+        if (state.status == MenuManagementStatus.loaded && 
+            state.lastAction != null) {
+          // Close any open dialogs/bottom sheets (using rootNavigator for dialogs)
+          Navigator.of(context, rootNavigator: true).popUntil((route) => route.isFirst || !route.willHandlePopInternally);
+          
+          // Show success message
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                state.lastAction == MenuManagementAction.create
+                    ? 'Dish created successfully'
+                    : state.lastAction == MenuManagementAction.update
+                    ? 'Dish updated successfully'
+                    : state.lastAction == MenuManagementAction.delete
+                    ? 'Dish deleted successfully'
+                    : 'Operation completed',
+              ),
+              backgroundColor: Colors.green,
             ),
-            Tab(
-              icon: Icon(Icons.analytics),
-              text: 'Analytics',
+          );
+        } else if (state.status == MenuManagementStatus.error) {
+          // Close any open dialogs/sheets (using rootNavigator for dialogs)
+          Navigator.of(context, rootNavigator: true).popUntil((route) => route.isFirst || !route.willHandlePopInternally);
+          
+          // Show error message
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.errorMessage ?? 'An error occurred'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Menu Management'),
+          backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+          bottom: TabBar(
+            controller: _tabController,
+            tabs: const [
+              Tab(
+                icon: Icon(Icons.restaurant_menu),
+                text: 'Menu Items',
+              ),
+              Tab(
+                icon: Icon(Icons.analytics),
+                text: 'Analytics',
+              ),
+            ],
+          ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: () {
+                context.read<MenuManagementBloc>().add(const RefreshDishes());
+              },
+              tooltip: 'Refresh',
             ),
           ],
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () {
-              context.read<MenuManagementBloc>().add(const RefreshDishes());
-            },
-            tooltip: 'Refresh',
-          ),
-        ],
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildMenuItemsTab(),
-          _buildAnalyticsTab(),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showDishForm(),
-        tooltip: 'Add New Dish',
-        child: const Icon(Icons.add),
+        body: TabBarView(
+          controller: _tabController,
+          children: [
+            _buildMenuItemsTab(),
+            _buildAnalyticsTab(),
+          ],
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () => _showDishForm(),
+          tooltip: 'Add New Dish',
+          child: const Icon(Icons.add),
+        ),
       ),
     );
   }

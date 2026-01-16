@@ -37,7 +37,13 @@ class ActiveOrdersBloc extends Bloc<ActiveOrdersEvent, ActiveOrdersState> {
     on<SubscribeToPreparationUpdates>(_onSubscribeToPreparationUpdates);
     on<UnsubscribeFromPreparationUpdates>(_onUnsubscribeFromPreparationUpdates);
     on<UpdatePreparationSteps>(_onUpdatePreparationSteps);
+    
+    // Auth subscription deferred to startListening() call after bootstrap
+  }
 
+  /// Starts listening to auth state changes and loads active orders.
+  /// Call this after bootstrap completes to avoid premature data fetching.
+  void startListening() {
     // Listen to auth state changes to load orders when auth is ready
     _authSubscription = _authBloc.stream
         .distinct((prev, next) =>
@@ -49,6 +55,11 @@ class ActiveOrdersBloc extends Bloc<ActiveOrdersEvent, ActiveOrdersState> {
         add(const LoadActiveOrders());
       }
     });
+    
+    // Load immediately if already authenticated
+    if (_authBloc.state.isAuthenticated || _authBloc.state.isGuest) {
+      add(const LoadActiveOrders());
+    }
   }
 
   void _logActive(
@@ -178,6 +189,7 @@ class ActiveOrdersBloc extends Bloc<ActiveOrdersEvent, ActiveOrdersState> {
           schema: 'public',
           table: 'orders',
           callback: (payload) {
+            if (isClosed) return;
             // Check if this order belongs to the current user/guest
             bool isMyOrder = false;
 
@@ -392,6 +404,7 @@ class ActiveOrdersBloc extends Bloc<ActiveOrdersEvent, ActiveOrdersState> {
           schema: 'public',
           table: 'order_item_preparation_steps',
           callback: (payload) async {
+            if (isClosed) return;
             try {
               final orderItemId = payload.newRecord['order_item_id'] ?? 
                                  payload.oldRecord['order_item_id'];

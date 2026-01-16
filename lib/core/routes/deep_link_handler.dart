@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:go_router/go_router.dart';
 import '../models/user_role.dart';
 import '../blocs/role_bloc.dart';
@@ -247,9 +248,14 @@ class DeepLinkHandler {
   }
 
   /// Navigates to the target path.
+  ///
+  /// Waits for the next frame to ensure the router has processed any role change
+  /// state updates before navigating. This allows RouterRefreshNotifier to trigger
+  /// and the router to re-run its redirect logic with the updated role state.
   Future<void> _navigateToPath(DeepLinkData deepLink) async {
-    // Add a small delay to ensure role switch UI has settled
-    await Future.delayed(const Duration(milliseconds: 300));
+    // Wait for the next frame to ensure router has processed role change
+    // This replaces the arbitrary 300ms delay with proper state coordination
+    await SchedulerBinding.instance.endOfFrame;
 
     // Build full path with query parameters
     final uri = Uri(

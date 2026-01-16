@@ -2,16 +2,19 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 import { CreateOrderSchema, validateRequest } from '../_shared/schemas.ts'
 import { checkRateLimit, createRateLimitResponse } from '../_shared/rate_limiter.ts'
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+import { 
+  getOriginFromRequest, 
+  getCorsHeaders, 
+  handleCorsPreflight,
+  createCorsResponse 
+} from '../_shared/cors.ts'
 
 Deno.serve(async (req) => {
+  const origin = getOriginFromRequest(req);
+  
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return handleCorsPreflight(origin);
   }
 
   try {
@@ -24,17 +27,15 @@ Deno.serve(async (req) => {
     const bodyResult = validateRequest(CreateOrderSchema, await req.json())
 
     if (!bodyResult.success) {
-      return new Response(
+      return createCorsResponse(
         JSON.stringify({
           success: false,
           error: 'Validation failed',
           details: bodyResult.errors
         }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 400
-        }
-      )
+        400,
+        origin
+      );
     }
 
     const { vendor_id, items, pickup_time, delivery_address, special_instructions, idempotency_key, guest_user_id } = bodyResult.data
@@ -84,7 +85,7 @@ Deno.serve(async (req) => {
     // Rate limiting check
     const rateLimitResult = await checkRateLimit(supabase, 'create_order', userId)
     if (!rateLimitResult.allowed) {
-      return createRateLimitResponse(rateLimitResult, corsHeaders)
+      return createRateLimitResponse(rateLimitResult, getCorsHeaders(origin))
     }
 
     // Business Logic Validation: Validate pickup time relative to now
@@ -105,17 +106,15 @@ Deno.serve(async (req) => {
       .single()
 
     if (existingOrder) {
-      return new Response(
+      return createCorsResponse(
         JSON.stringify({
           success: true,
           message: 'Order already exists',
           order: existingOrder
         }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 200
-        }
-      )
+        200,
+        origin
+      );
     }
 
     // Verify vendor exists and is active
@@ -285,10 +284,26 @@ Deno.serve(async (req) => {
     // Supabase automatically handles realtime subscriptions for tables
     // The vendor client should be subscribed to orders:vendor_id=vendor_id
 
-    // TODO: Send push notification to vendor
-    // This would require FCM or APNs integration
+    // Send push notification to vendor
+    try {
+      await supabase.functions.invoke('send_push', {
+        body: {
+          user_ids: [vendor.owner_id],
+          title: 'New Order! 🍽️',
+          body: `New order #${order.id.substring(0, 8)} from ${buyer?.name || 'A customer'}`,
+          type: 'new_order',
+          data: {
+            order_id: order.id,
+            route: '/vendor/orders/${order.id}'
+          }
+        }
+      })
+    } catch (pushError) {
+      console.error('Failed to send push notification:', pushError)
+      // Don't fail the order if notification fails
+    }
 
-    return new Response(
+    return createCorsResponse(
       JSON.stringify({
         success: true,
         message: 'Order created successfully',
@@ -302,30 +317,26 @@ Deno.serve(async (req) => {
           buyer
         }
       }),
+      201,
+      origin,
       {
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json',
-          'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
-          'X-RateLimit-Reset': Math.floor(rateLimitResult.resetAt.getTime() / 1000).toString()
-        },
-        status: 201
+        'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
+        'X-RateLimit-Reset': Math.floor(rateLimitResult.resetAt.getTime() / 1000).toString()
       }
-    )
+    );
+
 
   } catch (error) {
     console.error('Error in create_order:', error)
 
-    return new Response(
+    return createCorsResponse(
       JSON.stringify({
         success: false,
         error: (error as Error).message || 'Internal server error',
         error_code: 'ORDER_CREATION_FAILED'
       }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400
-      }
-    )
+      400,
+      origin
+    );
   }
-})
+});

@@ -91,27 +91,40 @@ class RoleBloc extends Bloc<RoleEvent, RoleState> {
           UserRole.customer,
         };
 
+        // Load from cache immediately with offline flag false
         emit(RoleLoaded(
           activeRole: cachedRole,
           availableRoles: fallbackRoles,
+          isOffline: false, // Will be updated if sync fails
         ));
 
         // Then sync with backend in background
         _syncWithBackend(emit);
       } else {
-        // No cached data, fetch from backend
-        final (activeRole, availableRoles) = await _syncService.fetchRoleData();
+        // No cached data, must fetch from backend
+        try {
+          final (activeRole, availableRoles) = await _syncService.fetchRoleData();
 
-        if (activeRole == null) {
-          emit(const RoleSelectionRequired());
-        } else {
-          // Save to storage
-          await _storageService.saveActiveRole(activeRole);
-          await _storageService.saveAvailableRoles(availableRoles);
+          if (activeRole == null) {
+            emit(const RoleSelectionRequired());
+          } else {
+            // Save to storage
+            await _storageService.saveActiveRole(activeRole);
+            await _storageService.saveAvailableRoles(availableRoles);
 
-          emit(RoleLoaded(
-            activeRole: activeRole,
-            availableRoles: availableRoles,
+            emit(RoleLoaded(
+              activeRole: activeRole,
+              availableRoles: availableRoles,
+              isOffline: false,
+            ));
+          }
+        } on RoleSyncException catch (e) {
+          // NEW: Offer degraded experience instead of hard error
+          emit(RoleError(
+            message: 'Unable to verify your role. You can continue in offline mode or select a role.',
+            code: e.code,
+            previousState: state,
+            canUseDegradedMode: true, // NEW: Allow degraded mode
           ));
         }
       }
@@ -120,9 +133,10 @@ class RoleBloc extends Bloc<RoleEvent, RoleState> {
         message: 'User not authenticated',
         code: 'NOT_AUTHENTICATED',
         previousState: state,
+        canUseDegradedMode: false,
       ));
     } on RoleSyncException catch (e) {
-      // If we have cached data, use it despite sync failure
+      // If we have cached data, use it despite sync failure with offline flag
       final cachedRole = await _storageService.getActiveRole();
       final cachedAvailableRoles = await _storageService.getAvailableRoles();
 
@@ -130,18 +144,21 @@ class RoleBloc extends Bloc<RoleEvent, RoleState> {
         emit(RoleLoaded(
           activeRole: cachedRole,
           availableRoles: cachedAvailableRoles,
+          isOffline: true, // NEW: Mark as offline mode
         ));
       } else {
         emit(RoleError(
           message: e.message,
           code: e.code,
           previousState: state,
+          canUseDegradedMode: true, // NEW: Allow degraded mode
         ));
       }
     } catch (e) {
       emit(RoleError(
         message: 'Failed to load role: ${e.toString()}',
         previousState: state,
+        canUseDegradedMode: false,
       ));
     }
   }
@@ -480,6 +497,7 @@ class RoleBloc extends Bloc<RoleEvent, RoleState> {
   /// Syncs role data with backend in background.
   ///
   /// Does not emit errors to avoid disrupting UI.
+  /// Updates isOffline flag based on sync success/failure.
   Future<void> _syncWithBackend(Emitter<RoleState> emit) async {
     try {
       final (activeRole, availableRoles) = await _syncService.fetchRoleData();
@@ -495,16 +513,32 @@ class RoleBloc extends Bloc<RoleEvent, RoleState> {
           emit(RoleLoaded(
             activeRole: activeRole,
             availableRoles: availableRoles,
+            isOffline: false, // Sync succeeded - clear offline flag
           ));
 
           // Emit change event if role changed
           if (currentState.activeRole != activeRole) {
             _roleChangesController.add(activeRole);
           }
+        } else if (currentState.isOffline) {
+          // Data unchanged but we were offline - update to clear offline flag
+          emit(RoleLoaded(
+            activeRole: currentState.activeRole,
+            availableRoles: currentState.availableRoles,
+            isOffline: false, // Sync succeeded - clear offline flag
+          ));
         }
       }
     } catch (e) {
-      // Silently fail - we already have cached data
+      // Sync failed - mark as offline if we have cached data
+      final currentState = state;
+      if (currentState is RoleLoaded && !currentState.isOffline) {
+        emit(RoleLoaded(
+          activeRole: currentState.activeRole,
+          availableRoles: currentState.availableRoles,
+          isOffline: true, // Sync failed - set offline flag
+        ));
+      }
       print('Background role sync failed: $e');
     }
   }

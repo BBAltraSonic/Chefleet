@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/models/user_role.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/offline_banner.dart';
 import '../order/widgets/active_order_modal.dart';
 import '../order/blocs/active_orders_bloc.dart';
 
@@ -30,7 +31,12 @@ class _CustomerAppShellState extends State<CustomerAppShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: widget.child,
+      body: Column(
+        children: [
+          const OfflineBanner(),
+          Expanded(child: widget.child),
+        ],
+      ),
       floatingActionButton: const _CustomerFloatingActionButton(),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
@@ -115,11 +121,6 @@ class __CustomerFloatingActionButtonState
         final activeOrders = activeOrdersState.orders;
         final hasActiveOrders = activeOrders.isNotEmpty;
 
-        // Hide FAB if no active orders
-        if (!hasActiveOrders) {
-          return const SizedBox.shrink();
-        }
-
         // Determine FAB mode (Only Active Order Mode)
         final isOrderMode = true;
         
@@ -129,7 +130,7 @@ class __CustomerFloatingActionButtonState
         Color color = AppTheme.primaryColor;
         String? status;
 
-        if (isOrderMode) {
+        if (hasActiveOrders && isOrderMode) {
           // Get the most relevant order (e.g., the first one or the one needing attention)
           // For now, we take the first one.
           final order = activeOrders.first;
@@ -163,123 +164,130 @@ class __CustomerFloatingActionButtonState
           }
         }
 
-        return AnimatedBuilder(
-          animation: Listenable.merge([_pulseAnimation, _bounceAnimation]),
-          builder: (context, child) {
-            final scaleStatus = isOrderMode && status == 'ready' ? _pulseAnimation.value : 1.0;
-             final scaleBounce = _bounceAnimation.value;
-             final scale = scaleStatus * scaleBounce;
+        return AnimatedOpacity(
+          opacity: hasActiveOrders ? 1.0 : 0.0,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+          child: hasActiveOrders
+              ? AnimatedBuilder(
+                  animation: Listenable.merge([_pulseAnimation, _bounceAnimation]),
+                  builder: (context, child) {
+                    final scaleStatus = isOrderMode && status == 'ready' ? _pulseAnimation.value : 1.0;
+                    final scaleBounce = _bounceAnimation.value;
+                    final scale = scaleStatus * scaleBounce;
 
-            return Transform.scale(
-              scale: scale,
-              child: Container(
-                width: 60,
-                height: 60,
-                margin: const EdgeInsets.only(bottom: 16),
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  alignment: Alignment.center,
-                  children: [
-                    // Progress Indicator
-                    SizedBox(
-                      width: 60,
-                      height: 60,
-                      child: CircularProgressIndicator(
-                        value: progress,
-                        strokeWidth: 4,
-                        backgroundColor: Colors.grey[300],
-                        valueColor: AlwaysStoppedAnimation<Color>(color),
-                      ),
-                    ),
-                    
-                    // Main Button
-                    Container(
-                      width: 50, // Slightly smaller to fit inside progress
-                      height: 50,
-                      decoration: BoxDecoration(
-                        color: color,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: color.withOpacity(0.25),
-                            blurRadius: 8,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: () => _handleTap(context),
-                          borderRadius: BorderRadius.circular(25),
-                          child: Center(
-                            child: Icon(
-                              icon,
-                              size: 24,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    
-                    // Vendor Check Badge (If accepted/preparing/ready)
-                    if (status == 'accepted' || status == 'preparing' || status == 'ready')
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: Container(
-                          padding: const EdgeInsets.all(2),
-                          decoration: const BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.check_circle,
-                            size: 16,
-                            color: Colors.green,
-                          ),
-                        ),
-                      ),
-
-                    // Count Badge (Multiple Orders)
-                    if (activeOrders.length > 1)
-                      Positioned(
-                        top: -2,
-                        right: -2,
-                        child: Container(
-                          padding: const EdgeInsets.all(5),
-                          decoration: BoxDecoration(
-                            color: Colors.red,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: Colors.white,
-                              width: 2,
-                            ),
-                          ),
-                          constraints: const BoxConstraints(
-                            minWidth: 20,
-                            minHeight: 20,
-                          ),
-                          child: Center(
-                            child: Text(
-                              '${activeOrders.length}',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                height: 1.0,
+                    return Transform.scale(
+                      scale: scale,
+                      child: Container(
+                        width: 60,
+                        height: 60,
+                        margin: const EdgeInsets.only(bottom: 16),
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          alignment: Alignment.center,
+                          children: [
+                            // Progress Indicator
+                            SizedBox(
+                              width: 60,
+                              height: 60,
+                              child: CircularProgressIndicator(
+                                value: progress,
+                                strokeWidth: 4,
+                                backgroundColor: Colors.grey[300],
+                                valueColor: AlwaysStoppedAnimation<Color>(color),
                               ),
-                              textAlign: TextAlign.center,
                             ),
-                          ),
+                            
+                            // Main Button
+                            Container(
+                              width: 50, // Slightly smaller to fit inside progress
+                              height: 50,
+                              decoration: BoxDecoration(
+                                color: color,
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: color.withOpacity(0.25),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: () => _handleTap(context),
+                                  borderRadius: BorderRadius.circular(25),
+                                  child: Center(
+                                    child: Icon(
+                                      icon,
+                                      size: 24,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            
+                            // Vendor Check Badge (If accepted/preparing/ready)
+                            if (status == 'accepted' || status == 'preparing' || status == 'ready')
+                              Positioned(
+                                bottom: 0,
+                                right: 0,
+                                child: Container(
+                                  padding: const EdgeInsets.all(2),
+                                  decoration: const BoxDecoration(
+                                    color: Colors.white,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.check_circle,
+                                    size: 16,
+                                    color: Colors.green,
+                                  ),
+                                ),
+                              ),
+
+                            // Count Badge (Multiple Orders)
+                            if (activeOrders.length > 1)
+                              Positioned(
+                                top: -2,
+                                right: -2,
+                                child: Container(
+                                  padding: const EdgeInsets.all(5),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: Colors.white,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  constraints: const BoxConstraints(
+                                    minWidth: 20,
+                                    minHeight: 20,
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      '${activeOrders.length}',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                        height: 1.0,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
                       ),
-                  ],
-                ),
-              ),
-            );
-          },
+                    );
+                  },
+                )
+              : const SizedBox.shrink(),
         );
       },
     );

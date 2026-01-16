@@ -470,12 +470,22 @@ class _ActiveOrderModalState extends State<ActiveOrderModal> {
   /// Per Phase 4 of the navigation redesign, chat is ONLY accessible
   /// through order-specific routes (Active Orders, Order Detail, Order Confirmation).
   /// There is no global chat tab.
+  /// 
+  /// Phase 4 Fix: Uses postFrameCallback with context.mounted check
+  /// to prevent navigation after modal disposal (Issue #8).
   void _openChat(Map<String, dynamic> order) {
     final orderId = order['id'] as String;
     final status = order['status'] as String? ?? 'pending';
 
-    context.pop();
-    context.push('${CustomerRoutes.chat}/$orderId?orderStatus=$status');
+    // Close modal first
+    Navigator.of(context).pop();
+    
+    // Navigate after the frame completes and verify context is still mounted
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (context.mounted) {
+        context.push('${CustomerRoutes.chat}/$orderId?orderStatus=$status');
+      }
+    });
   }
 
   // Helper methods for enhanced order display

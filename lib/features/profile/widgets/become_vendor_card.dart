@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/blocs/role_bloc.dart';
 import '../../../core/blocs/role_event.dart';
 import '../../../core/blocs/role_state.dart';
@@ -22,12 +23,9 @@ class BecomeVendorCard extends StatelessWidget {
     return BlocBuilder<RoleBloc, RoleState>(
       builder: (context, state) {
         // Check if user already has vendor role
-        final hasVendorRole = state is RoleLoaded && 
-            state.availableRoles.contains(UserRole.vendor);
-        
-        // If user has vendor role, show switch option instead
-        if (hasVendorRole) {
-          return _buildSwitchToVendorCard(context, state as RoleLoaded);
+        if (state is RoleLoaded && 
+            state.availableRoles.contains(UserRole.vendor)) {
+          return _buildSwitchToVendorCard(context, state);
         }
 
         return _buildBecomeVendorCard(context);
@@ -156,7 +154,7 @@ class BecomeVendorCard extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () => context.push(VendorRoutes.quickTour),
+              onPressed: () => _handleBecomeVendor(context),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primaryGreen,
                 foregroundColor: Colors.white,
@@ -176,5 +174,65 @@ class BecomeVendorCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  /// Creates a vendor application and navigates to the quick tour.
+  /// 
+  /// This ensures the route guard allows access to vendor onboarding.
+  Future<void> _handleBecomeVendor(BuildContext context) async {
+    try {
+      // Show loading indicator
+      if (!context.mounted) return;
+      
+      // Create vendor application
+      final supabase = Supabase.instance.client;
+      final userId = supabase.auth.currentUser?.id;
+      
+      if (userId == null) {
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please sign in to become a vendor'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      // Check if application already exists
+      final existingApp = await supabase
+          .from('vendor_applications')
+          .select('id')
+          .eq('user_id', userId)
+          .maybeSingle();
+
+      // Create application if it doesn't exist
+      if (existingApp == null) {
+        await supabase.from('vendor_applications').insert({
+          'user_id': userId,
+          'status': 'pending',
+          'created_at': DateTime.now().toIso8601String(),
+        });
+      }
+
+      // Navigate to quick tour
+      if (!context.mounted) return;
+      context.push(VendorRoutes.quickTour);
+      
+    } catch (e) {
+      debugPrint('Error creating vendor application: $e');
+      if (!context.mounted) return;
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to start vendor application: $e'),
+          backgroundColor: Colors.red,
+          action: SnackBarAction(
+            label: 'Retry',
+            onPressed: () => _handleBecomeVendor(context),
+          ),
+        ),
+      );
+    }
   }
 }

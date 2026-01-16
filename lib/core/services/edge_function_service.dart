@@ -19,6 +19,19 @@ class Result<T> {
       failure(error!);
     }
   }
+  
+  /// Fold method for compatibility with Either-like pattern
+  /// Takes an error handler and a success handler
+  R fold<R>(
+    R Function(String error) onFailure,
+    R Function(T data) onSuccess,
+  ) {
+    if (isSuccess && data != null) {
+      return onSuccess(data!);
+    } else {
+      return onFailure(error ?? 'Unknown error');
+    }
+  }
 }
 
 /// Centralized service for calling Supabase edge functions with proper error handling
@@ -168,6 +181,19 @@ class EdgeFunctionService {
       body: {
         'bucket': bucket,
         'path': path,
+      },
+      parser: (data) => data,
+    );
+  }
+
+  /// Delete user account and all associated data
+  Future<Result<Map<String, dynamic>>> deleteAccount({
+    required String userId,
+  }) {
+    return invoke(
+      functionName: 'delete_account',
+      body: {
+        'user_id': userId,
       },
       parser: (data) => data,
     );

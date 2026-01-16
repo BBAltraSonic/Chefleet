@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:chefleet/core/diagnostics/diagnostic_domains.dart';
 import 'package:chefleet/core/diagnostics/diagnostic_harness.dart';
 import 'package:chefleet/core/diagnostics/diagnostic_severity.dart';
+import 'package:chefleet/core/services/error_message_mapper.dart';
 import '../../../core/repositories/order_repository.dart';
 import '../../auth/blocs/auth_bloc.dart';
 import 'order_event.dart';
@@ -324,30 +325,27 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
       );
 
     } catch (e) {
+      final userFriendlyError = ErrorMessageMapper.getUserFriendlyMessage(e);
       emit(state.copyWith(
         status: OrderStatus.error,
-        errorMessage: 'Failed to place order: $e',
+        errorMessage: userFriendlyError,
         isPlacingOrder: false,
       ));
       _logOrdering(
         'order.place.error',
         severity: DiagnosticSeverity.error,
-        payload: {'message': e.toString()},
+        payload: {'message': e.toString(), 'user_friendly': userFriendlyError},
       );
     }
   }
 
   void _onOrderFailed(OrderFailed event, Emitter<OrderState> emit) {
+    final userFriendlyError = ErrorMessageMapper.getUserFriendlyMessage(event.error);
     emit(state.copyWith(
       status: OrderStatus.error,
-      errorMessage: event.error,
+      errorMessage: userFriendlyError,
       isPlacingOrder: false,
     ));
-    _logOrdering(
-      'order.failure',
-      severity: DiagnosticSeverity.error,
-      payload: {'message': event.error},
-    );
   }
 
   void _onOrderRetried(OrderRetried event, Emitter<OrderState> emit) {

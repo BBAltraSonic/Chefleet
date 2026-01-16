@@ -71,7 +71,12 @@ class RoleSyncService {
           .from('users_public')
           .select('role, vendor_profile_id')
           .eq('user_id', userId)
-          .single();
+          .maybeSingle(); // Use maybeSingle to handle new users without profile
+
+      // No profile exists yet - new user needs to create profile
+      if (response == null) {
+        return (null, {UserRole.customer});
+      }
 
       final activeRoleString = response['role'] as String?;
       final activeRole = UserRole.tryFromString(activeRoleString);

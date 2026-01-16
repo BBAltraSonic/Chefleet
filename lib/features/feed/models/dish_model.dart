@@ -149,9 +149,9 @@ class Dish extends Equatable {
       'name': name,
       'description': description,
       'price': price, // DB uses numeric 'price' as primary (NOT NULL)
-      'price_cents': priceCents,
+      // price_cents is a generated column - don't include in toJson
       'preparation_time_minutes': prepTimeMinutes,
-      'is_available': available,
+      'available': available, // DB column is 'available', not 'is_available'
       'image_url': imageUrl,
       'category': category,
       'tags': tags,

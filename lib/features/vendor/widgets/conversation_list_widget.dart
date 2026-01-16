@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../blocs/vendor_chat_bloc.dart';
-import '../../../../core/constants/app_strings.dart';
+import '../../../core/constants/app_strings.dart';
 
 class ConversationListWidget extends StatelessWidget {
   final List<Map<String, dynamic>> conversations;

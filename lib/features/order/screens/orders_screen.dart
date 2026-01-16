@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'dart:async';
 import '../../../core/routes/app_routes.dart';
 import '../../../shared/utils/currency_formatter.dart';
+import '../../auth/blocs/auth_bloc.dart';
 import '../blocs/active_orders_bloc.dart';
 import '../widgets/order_skeleton_item.dart';
 import '../../orders/services/order_realtime_service.dart';
@@ -169,7 +170,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                               ),
                             ],
                           ),
-                          if (pickupCode != null && status == 'ready') ..[
+                          if (pickupCode != null && status == 'ready') ...[
                             const SizedBox(height: 4),
                             Row(
                               children: [
@@ -202,7 +203,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                     ),
                     
                     // QR Code Display (expanded)
-                    if (isExpanded && pickupCode != null) ..[
+                    if (isExpanded && pickupCode != null) ...[
                       const Divider(height: 1),
                       Padding(
                         padding: const EdgeInsets.all(16),

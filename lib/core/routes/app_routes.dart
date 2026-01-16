@@ -81,6 +81,7 @@ class SharedRoutes {
   SharedRoutes._();
 
   static const String splash = '/splash';
+  static const String loading = '/loading';
   static const String auth = '/auth';
   static const String roleSelection = '/role-selection';
   static const String profileCreation = '/profile-creation';
@@ -90,11 +91,13 @@ class SharedRoutes {
   static const List<String> guestAllowedRoutes = [
     auth,
     splash,
+    loading,
   ];
 
   /// Routes that don't require authentication
   static const List<String> publicRoutes = [
     splash,
+    loading,
     auth,
     roleSelection,
   ];

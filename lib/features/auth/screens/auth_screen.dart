@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../blocs/auth_bloc.dart';
+import '../widgets/auth_error_display.dart';
+import '../models/auth_error_type.dart';
 import '../../../shared/widgets/glass_container.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/routes/app_routes.dart';
@@ -147,267 +149,334 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
   }
 
   Widget _buildLoginForm(BuildContext context) {
-    return BlocListener<AuthBloc, AuthState>(
-      listener: (context, state) {
-        if (state.errorMessage != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.errorMessage!),
-              backgroundColor: Theme.of(context).colorScheme.error,
-            ),
-          );
-        }
-      },
-      child: Form(
-        key: _loginFormKey,
-        child: Column(
-          children: [
-            TextFormField(
-              controller: _loginEmailController,
-              keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(
-                labelText: 'Email',
-                prefixIcon: Icon(Icons.email_outlined),
-                border: OutlineInputBorder(),
-              ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter your email';
-                }
-                if (!value.contains('@')) {
-                  return 'Please enter a valid email';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _loginPasswordController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Password',
-                prefixIcon: Icon(Icons.lock_outlined),
-                border: OutlineInputBorder(),
-              ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter your password';
-                }
-                if (value.length < 6) {
-                  return 'Password must be at least 6 characters';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 8),
-            // Forgot Password Link
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton(
-                onPressed: () => context.push('/forgot-password'),
-                child: Text(
-                  'Forgot Password?',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            BlocBuilder<AuthBloc, AuthState>(
-              builder: (context, state) {
-                return SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: state.isLoading ? null : () => _handleLogin(context),
-                    child: state.isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Text('Login'),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 24),
-            // Social Login Divider
-            Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    height: 1,
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
-                  ),
-                ),
+    return BlocBuilder<AuthBloc, AuthState>(
+      builder: (context, state) {
+        return Form(
+          key: _loginFormKey,
+          child: Column(
+            children: [
+              if (state.errorMessage != null || state.errorType != null)
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Text(
-                    'OR',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: Container(
-                    height: 1,
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            // Google Sign-In Button
-            BlocBuilder<AuthBloc, AuthState>(
-              builder: (context, state) {
-                return SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: state.isLoading ? null : () {
-                      context.read<AuthBloc>().add(const AuthGoogleSignInRequested());
+                  padding: const EdgeInsets.only(bottom: 16.0),
+                  child: AuthErrorDisplay(
+                    type: state.errorType ?? AuthErrorType.unknown,
+                    customMessage: state.errorMessage,
+                    onDismiss: () => context.read<AuthBloc>().add(const AuthErrorOccurred('')),
+                    onRetry: () {
+                       context.read<AuthBloc>().add(const AuthErrorOccurred(''));
+                       _handleLogin(context);
                     },
-                    icon: Icon(
-                      Icons.g_mobiledata,
-                      size: 28,
+                    onSecondaryAction: () => context.push('/forgot-password'),
+                  ),
+                ),
+              TextFormField(
+                controller: _loginEmailController,
+                keyboardType: TextInputType.emailAddress,
+                enabled: !state.isLoading,
+                onChanged: (_) {
+                  if (state.errorMessage != null) {
+                    context.read<AuthBloc>().add(const AuthErrorOccurred(''));
+                  }
+                },
+                decoration: const InputDecoration(
+                  labelText: 'Email',
+                  prefixIcon: Icon(Icons.email_outlined),
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter your email';
+                  }
+                  if (!value.contains('@')) {
+                    return 'Please enter a valid email';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _loginPasswordController,
+                obscureText: true,
+                enabled: !state.isLoading,
+                onChanged: (_) {
+                  if (state.errorMessage != null) {
+                    context.read<AuthBloc>().add(const AuthErrorOccurred(''));
+                  }
+                },
+                decoration: const InputDecoration(
+                  labelText: 'Password',
+                  prefixIcon: Icon(Icons.lock_outlined),
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter your password';
+                  }
+                  if (value.length < 6) {
+                    return 'Password must be at least 6 characters';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 8),
+              // Forgot Password Link
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: state.isLoading ? null : () => context.push('/forgot-password'),
+                  child: Text(
+                    'Forgot Password?',
+                    style: TextStyle(
                       color: Theme.of(context).colorScheme.primary,
                     ),
-                    label: const Text('Continue with Google'),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      side: BorderSide(
-                        color: Theme.of(context).colorScheme.outline,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              if (state.isLoading)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8.0),
+                  child: Text(
+                    "Signing you in...",
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: state.isLoading ? null : () => _handleLogin(context),
+                  child: state.isLoading
+                      ? SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Theme.of(context).colorScheme.onPrimary,
+                          ),
+                        )
+                      : const Text('Login'),
+                ),
+              ),
+              const SizedBox(height: 24),
+              // Social Login Divider
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      height: 1,
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Text(
+                      'OR',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                       ),
                     ),
                   ),
-                );
-              },
-            ),
-          ],
-        ),
-      ),
+                  Expanded(
+                    child: Container(
+                      height: 1,
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              // Google Sign-In Button
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: state.isLoading ? null : () {
+                    context.read<AuthBloc>().add(const AuthGoogleSignInRequested());
+                  },
+                  icon: Icon(
+                    Icons.g_mobiledata,
+                    size: 28,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  label: const Text('Continue with Google'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    side: BorderSide(
+                      color: Theme.of(context).colorScheme.outline,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
   Widget _buildSignupForm(BuildContext context) {
-    return BlocListener<AuthBloc, AuthState>(
-      listener: (context, state) {
-        if (state.errorMessage != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.errorMessage!),
-              backgroundColor: Theme.of(context).colorScheme.error,
-            ),
-          );
-        }
+    return BlocBuilder<AuthBloc, AuthState>(
+      builder: (context, state) {
+        return Form(
+          key: _signupFormKey,
+          child: Column(
+            children: [
+              if (state.errorMessage != null || state.errorType != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16.0),
+                  child: AuthErrorDisplay(
+                    type: state.errorType ?? AuthErrorType.unknown,
+                    customMessage: state.errorMessage,
+                    onDismiss: () => context.read<AuthBloc>().add(const AuthErrorOccurred('')),
+                    onRetry: () {
+                       context.read<AuthBloc>().add(const AuthErrorOccurred(''));
+                       _handleSignup(context);
+                    },
+                    onSecondaryAction: state.errorType == AuthErrorType.emailExists 
+                        ? () {
+                            // Clear error and switch to login tab
+                            context.read<AuthBloc>().add(const AuthErrorOccurred(''));
+                            _tabController.animateTo(0);
+                            // Pre-fill email in login form
+                            _loginEmailController.text = _signupEmailController.text;
+                          }
+                        : null,
+                  ),
+                ),
+              TextFormField(
+                controller: _signupNameController,
+                enabled: !state.isLoading,
+                onChanged: (_) => setState(() {}),
+                decoration: const InputDecoration(
+                  labelText: 'Full Name',
+                  prefixIcon: Icon(Icons.person_outlined),
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter your name';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _signupEmailController,
+                keyboardType: TextInputType.emailAddress,
+                enabled: !state.isLoading,
+                onChanged: (value) {
+                   if (state.errorMessage != null) {
+                     context.read<AuthBloc>().add(const AuthErrorOccurred(''));
+                   }
+                   setState(() {});
+                },
+                decoration: InputDecoration(
+                  labelText: 'Email',
+                  prefixIcon: const Icon(Icons.email_outlined),
+                  border: const OutlineInputBorder(),
+                  suffixIcon: _signupEmailController.text.contains('@') && _signupEmailController.text.contains('.')
+                      ? const Icon(Icons.check_circle, color: Colors.green, size: 20)
+                      : null,
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter your email';
+                  }
+                  if (!value.contains('@')) {
+                    return 'Please enter a valid email';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _signupPasswordController,
+                obscureText: true,
+                enabled: !state.isLoading,
+                onChanged: (value) {
+                   if (state.errorMessage != null) {
+                     context.read<AuthBloc>().add(const AuthErrorOccurred(''));
+                   }
+                   setState(() {});
+                },
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                  prefixIcon: const Icon(Icons.lock_outlined),
+                  border: const OutlineInputBorder(),
+                  helperText: _signupPasswordController.text.isNotEmpty 
+                      ? 'At least 6 characters (${_signupPasswordController.text.length}/6)'
+                      : null,
+                  helperStyle: TextStyle(
+                    color: _signupPasswordController.text.length >= 6 ? Colors.green : Colors.grey,
+                  ),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a password';
+                  }
+                  if (value.length < 6) {
+                    return 'Password must be at least 6 characters';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'What brings you to Chefleet?',
+                style: Theme.of(context).textTheme.labelLarge,
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: ChoiceChip(
+                      label: const Text('Order Food'),
+                      selected: _selectedSignupRole == 'customer',
+                      onSelected: state.isLoading ? null : (selected) {
+                        setState(() => _selectedSignupRole = selected ? 'customer' : null);
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: ChoiceChip(
+                      label: const Text('Sell Food'),
+                      selected: _selectedSignupRole == 'vendor',
+                      onSelected: state.isLoading ? null : (selected) {
+                        setState(() => _selectedSignupRole = selected ? 'vendor' : null);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              if (state.isLoading)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8.0),
+                  child: Text(
+                    "Creating your account...",
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: (state.isLoading || _selectedSignupRole == null) ? null : () => _handleSignup(context),
+                  child: state.isLoading
+                      ? SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Theme.of(context).colorScheme.onPrimary,
+                          ),
+                        )
+                      : const Text('Sign Up'),
+                ),
+              ),
+            ],
+          ),
+        );
       },
-      child: Form(
-        key: _signupFormKey,
-        child: Column(
-          children: [
-            TextFormField(
-              controller: _signupNameController,
-              decoration: const InputDecoration(
-                labelText: 'Full Name',
-                prefixIcon: Icon(Icons.person_outlined),
-                border: OutlineInputBorder(),
-              ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter your name';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _signupEmailController,
-              keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(
-                labelText: 'Email',
-                prefixIcon: Icon(Icons.email_outlined),
-                border: OutlineInputBorder(),
-              ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter your email';
-                }
-                if (!value.contains('@')) {
-                  return 'Please enter a valid email';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _signupPasswordController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Password',
-                prefixIcon: Icon(Icons.lock_outlined),
-                border: OutlineInputBorder(),
-              ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter a password';
-                }
-                if (value.length < 6) {
-                  return 'Password must be at least 6 characters';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'What brings you to Chefleet?',
-              style: Theme.of(context).textTheme.labelLarge,
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: ChoiceChip(
-                    label: const Text('Order Food'),
-                    selected: _selectedSignupRole == 'customer',
-                    onSelected: (selected) {
-                      setState(() => _selectedSignupRole = selected ? 'customer' : null);
-                    },
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: ChoiceChip(
-                    label: const Text('Sell Food'),
-                    selected: _selectedSignupRole == 'vendor',
-                    onSelected: (selected) {
-                      setState(() => _selectedSignupRole = selected ? 'vendor' : null);
-                    },
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            BlocBuilder<AuthBloc, AuthState>(
-              builder: (context, state) {
-                return SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: (state.isLoading || _selectedSignupRole == null) ? null : () => _handleSignup(context),
-                    child: state.isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Text('Sign Up'),
-                  ),
-                );
-              },
-            ),
-          ],
-        ),
-      ),
     );
   }
 

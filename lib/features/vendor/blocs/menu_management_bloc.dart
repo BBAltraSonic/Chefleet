@@ -3,6 +3,7 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/constants/timing_constants.dart';
 import '../../feed/models/dish_model.dart';
 
 part 'menu_management_event.dart';
@@ -115,6 +116,7 @@ class MenuManagementBloc
         'name': event.dish.name,
         'description': event.dish.description,
         'price': event.dish.price,
+        // price_cents is a generated column computed from price - don't send it
         'category': event.dish.category,
         'image_url': event.dish.imageUrl,
         'available': event.dish.available,
@@ -164,6 +166,7 @@ class MenuManagementBloc
         'name': event.dish.name,
         'description': event.dish.description,
         'price': event.dish.price,
+        // price_cents is a generated column computed from price - don't send it
         'category': event.dish.category,
         'image_url': event.dish.imageUrl,
         'available': event.dish.available,
@@ -276,7 +279,7 @@ class MenuManagementBloc
   ) {
     // Debounce search to avoid excessive filtering during typing
     _searchDebouncer?.cancel();
-    _searchDebouncer = Timer(const Duration(milliseconds: 300), () {
+    _searchDebouncer = Timer(TimingConstants.searchDebounce, () {
       final filteredDishes = state.dishes.where((dish) {
         return dish.name.toLowerCase().contains(event.query.toLowerCase()) ||
             (dish.description.toLowerCase().contains(event.query.toLowerCase()) ?? false);

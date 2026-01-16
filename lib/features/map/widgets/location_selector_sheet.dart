@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_theme.dart';
+import '../../../core/constants/timing_constants.dart';
+import '../../../core/theme/app_theme.dart';
 
 import 'dart:async';
 import 'package:uuid/uuid.dart';
-import '../../../../core/services/google_places_service.dart';
+import '../../../core/services/google_places_service.dart';
 
 class LocationSelectorSheet extends StatefulWidget {
   const LocationSelectorSheet({
@@ -55,7 +56,7 @@ class _LocationSelectorSheetState extends State<LocationSelectorSheet> {
       return;
     }
 
-    _debounce = Timer(const Duration(milliseconds: 300), () {
+    _debounce = Timer(TimingConstants.searchDebounce, () {
       _fetchPredictions(query);
     });
   }
@@ -117,7 +118,10 @@ class _LocationSelectorSheetState extends State<LocationSelectorSheet> {
           _isLoading = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error selecting location: $e')),
+          SnackBar(
+            content: Text('Error selecting location: $e'),
+            duration: TimingConstants.snackbarError,
+          ),
         );
       }
     }

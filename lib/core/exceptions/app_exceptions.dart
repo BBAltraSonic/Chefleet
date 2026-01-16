@@ -48,3 +48,17 @@ class UnknownException extends AppException {
   @override
   String toString() => 'Unknown Error: $message';
 }
+
+class NavigationException extends AppException {
+  const NavigationException(
+    super.message, {
+    this.route,
+    this.stackTrace,
+  });
+
+  final String? route;
+  final StackTrace? stackTrace;
+
+  @override
+  String toString() => 'Navigation Error: $message${route != null ? ' (Route: $route)' : ''}';
+}

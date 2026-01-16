@@ -2,18 +2,48 @@
 class BootstrapResult {
   const BootstrapResult({
     required this.initialRoute,
-    this.shouldShowOnboarding = false,
+    this.error,
   });
 
   /// The initial route to navigate to after bootstrap completes.
   final String initialRoute;
 
-  /// Whether the onboarding flow should be shown.
-  final bool shouldShowOnboarding;
+  /// Error information if bootstrap failed.
+  final BootstrapError? error;
+  
+  /// Whether bootstrap completed with an error.
+  bool get hasError => error != null;
 
   @override
   String toString() =>
-      'BootstrapResult(initialRoute: $initialRoute, shouldShowOnboarding: $shouldShowOnboarding)';
+      'BootstrapResult(initialRoute: $initialRoute, error: $error)';
+}
+
+/// Error information for bootstrap failures.
+class BootstrapError {
+  const BootstrapError({
+    required this.message,
+    this.canRetry = false,
+  });
+  
+  /// Human-readable error message.
+  final String message;
+  
+  /// Whether the bootstrap process can be retried.
+  final bool canRetry;
+  
+  @override
+  String toString() => 'BootstrapError(message: $message, canRetry: $canRetry)';
+}
+
+/// Exception thrown when bootstrap exceeds maximum allowed time.
+class BootstrapTimeoutException implements Exception {
+  const BootstrapTimeoutException(this.message);
+  
+  final String message;
+  
+  @override
+  String toString() => 'BootstrapTimeoutException: $message';
 }
 
 
