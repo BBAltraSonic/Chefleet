@@ -1,6 +1,6 @@
 import 'dart:ui' as ui;
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../../core/theme/app_theme.dart';
 
@@ -16,13 +16,13 @@ enum VendorPinState {
 class AnimatedVendorMarker {
   static final Map<String, BitmapDescriptor> _cache = {};
 
-  /// Pin size configuration
-  static const double _normalSize = 48.0;
-  static const double _selectedSize = 64.0;
-  static const double _clusterSmallSize = 56.0;
-  static const double _clusterLargeSize = 80.0;
+  /// Pin size configuration - increased for better visibility
+  static const double _normalSize = 56.0;  // Increased from 48
+  static const double _selectedSize = 72.0;  // Increased from 64
+  static const double _clusterSmallSize = 64.0;  // Increased from 56
+  static const double _clusterLargeSize = 88.0;  // Increased from 80
 
-  /// Generate a vendor pin marker
+  /// Generate a vendor pin marker with error handling
   static Future<BitmapDescriptor> generateVendorPin({
     required VendorPinState state,
     String? vendorInitials,
@@ -34,18 +34,37 @@ class AnimatedVendorMarker {
       return _cache[cacheKey]!;
     }
 
-    final size = state == VendorPinState.selected ? _selectedSize : _normalSize;
-    final icon = await _createCanvasPin(
-      size: size,
-      state: state,
-      initials: vendorInitials,
-    );
+    try {
+      final size = state == VendorPinState.selected ? _selectedSize : _normalSize;
+      final icon = await _createCanvasPin(
+        size: size,
+        state: state,
+        initials: vendorInitials,
+      );
 
-    _cache[cacheKey] = icon;
-    return icon;
+      _cache[cacheKey] = icon;
+      return icon;
+    } catch (e, stackTrace) {
+      // Log error in debug mode
+      if (kDebugMode) {
+        print('⚠️ Error generating vendor marker: $e');
+        print('Stack trace: $stackTrace');
+      }
+      
+      // Fallback to default marker with appropriate color
+      final hue = state == VendorPinState.selected 
+          ? BitmapDescriptor.hueAzure
+          : state == VendorPinState.hasOrder
+              ? BitmapDescriptor.hueOrange
+              : state == VendorPinState.orderReady
+                  ? BitmapDescriptor.hueGreen
+                  : BitmapDescriptor.hueGreen;
+      
+      return BitmapDescriptor.defaultMarkerWithHue(hue);
+    }
   }
 
-  /// Generate a cluster marker with count
+  /// Generate a cluster marker with count and error handling
   static Future<BitmapDescriptor> generateClusterPin({
     required int count,
     bool isExpanded = false,
@@ -56,11 +75,28 @@ class AnimatedVendorMarker {
       return _cache[cacheKey]!;
     }
 
-    final size = count > 10 ? _clusterLargeSize : _clusterSmallSize;
-    final icon = await _createClusterCanvas(size: size, count: count);
+    try {
+      final size = count > 10 ? _clusterLargeSize : _clusterSmallSize;
+      final icon = await _createClusterCanvas(size: size, count: count);
 
-    _cache[cacheKey] = icon;
-    return icon;
+      _cache[cacheKey] = icon;
+      return icon;
+    } catch (e, stackTrace) {
+      // Log error in debug mode
+      if (kDebugMode) {
+        print('⚠️ Error generating cluster marker: $e');
+        print('Stack trace: $stackTrace');
+      }
+      
+      // Fallback to default colored marker
+      final hue = count <= 10
+          ? BitmapDescriptor.hueOrange
+          : count <= 50
+              ? BitmapDescriptor.hueYellow
+              : BitmapDescriptor.hueGreen;
+      
+      return BitmapDescriptor.defaultMarkerWithHue(hue);
+    }
   }
 
   /// Create canvas-based vendor pin
@@ -74,13 +110,13 @@ class AnimatedVendorMarker {
     final center = Offset(size / 2, size / 2);
     final radius = size / 2 - 4;
 
-    // Shadow
+    // Enhanced shadow for better visibility
     final shadowPaint = Paint()
-      ..color = Colors.black.withOpacity(0.25)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4.0);
+      ..color = Colors.black.withOpacity(0.35)  // Darker shadow
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6.0);  // More blur
     canvas.drawCircle(
-      Offset(center.dx + 2, center.dy + 3),
-      radius,
+      Offset(center.dx + 2, center.dy + 4),  // Slightly larger offset
+      radius + 2,  // Slightly larger shadow
       shadowPaint,
     );
 
@@ -204,11 +240,11 @@ class AnimatedVendorMarker {
     final center = Offset(size / 2, size / 2);
     final radius = size / 2 - 4;
 
-    // Shadow
+    // Enhanced shadow for cluster markers
     final shadowPaint = Paint()
-      ..color = Colors.black.withOpacity(0.2)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4.0);
-    canvas.drawCircle(Offset(center.dx + 2, center.dy + 2), radius, shadowPaint);
+      ..color = Colors.black.withOpacity(0.3)  // Darker shadow
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6.0);  // More blur
+    canvas.drawCircle(Offset(center.dx + 2, center.dy + 3), radius + 2, shadowPaint);
 
     // Gradient based on cluster size
     final baseColor = count <= 5

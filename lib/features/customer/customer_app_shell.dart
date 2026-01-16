@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/models/user_role.dart';
+import '../../core/routes/app_routes.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/offline_banner.dart';
 import '../order/widgets/active_order_modal.dart';
@@ -28,6 +30,18 @@ class CustomerAppShell extends StatefulWidget {
 }
 
 class _CustomerAppShellState extends State<CustomerAppShell> {
+  /// Check if FAB should be shown on current route
+  bool _shouldShowFAB(BuildContext context) {
+    final currentRoute = GoRouterState.of(context).matchedLocation;
+    final shouldShow = ![
+      CustomerRoutes.chat,    // Chat input would be blocked
+      CustomerRoutes.checkout, // Payment flow needs full attention
+    ].any((route) => currentRoute.startsWith(route));
+    
+    print('🔍 FAB Check: route=$currentRoute, shouldShow=$shouldShow');
+    return shouldShow;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -37,7 +51,9 @@ class _CustomerAppShellState extends State<CustomerAppShell> {
           Expanded(child: widget.child),
         ],
       ),
-      floatingActionButton: const _CustomerFloatingActionButton(),
+      floatingActionButton: _shouldShowFAB(context)
+          ? const _CustomerFloatingActionButton()
+          : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }

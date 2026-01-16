@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/blocs/role_bloc.dart';
+import '../../../core/blocs/role_state.dart';
+import '../../../core/models/user_role.dart';
 import '../../auth/blocs/auth_bloc.dart';
 import '../blocs/chat_bloc.dart';
 import '../widgets/chat_bubble.dart';
@@ -26,7 +29,6 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   final _scrollController = ScrollController();
   String _currentUserId = '';
   String? _currentGuestId;
-  String _currentUserRole = '';
 
   @override
   void initState() {
@@ -49,35 +51,12 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     
     if (authState.isGuest && authState.guestId != null) {
       _currentGuestId = authState.guestId;
-      _currentUserRole = 'buyer';
+      print('🔍 Chat: Guest mode - guestId: $_currentGuestId');
     } else if (currentUser != null) {
       _currentUserId = currentUser.id;
-      _determineUserRole();
-    }
-  }
-
-  Future<void> _determineUserRole() async {
-    if (_currentUserId.isEmpty) {
-      setState(() {
-        _currentUserRole = 'buyer';
-      });
-      return;
-    }
-    
-    try {
-      final vendorResponse = await Supabase.instance.client
-          .from('vendors')
-          .select('id')
-          .eq('owner_id', _currentUserId)
-          .maybeSingle();
-
-      setState(() {
-        _currentUserRole = vendorResponse != null ? 'vendor' : 'buyer';
-      });
-    } catch (e) {
-      setState(() {
-        _currentUserRole = 'buyer';
-      });
+      print('🔍 Chat: Authenticated - userId: $_currentUserId');
+    } else {
+      print('⚠️ Chat: No user ID found! Auth state: ${authState.runtimeType}');
     }
   }
 
@@ -106,10 +85,15 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   }
 
   bool _isMessageFromCurrentUser(Map<String, dynamic> message) {
-    if (_currentGuestId != null) {
-      return message['guest_sender_id'] == _currentGuestId;
-    }
-    return message['sender_id'] == _currentUserId;
+    final messageSenderId = message['sender_id'];
+    final messageGuestId = message['guest_sender_id'];
+    final isFromCurrentUser = _currentGuestId != null
+        ? messageGuestId == _currentGuestId
+        : messageSenderId == _currentUserId;
+    
+    print('🔍 Message Check: sender_id=$messageSenderId, guest_sender_id=$messageGuestId, currentUserId=$_currentUserId, currentGuestId=$_currentGuestId, isFromCurrentUser=$isFromCurrentUser');
+    
+    return isFromCurrentUser;
   }
 
   @override
@@ -243,9 +227,16 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
               ),
             ),
             // Quick replies section (above input)
-            BlocBuilder<ChatBloc, ChatState>(
-              builder: (context, state) {
-                if (_currentUserRole == 'vendor') {
+            BlocBuilder<RoleBloc, RoleState>(
+              builder: (context, roleState) {
+                // Only show quick replies when role is loaded
+                if (roleState is! RoleLoaded) {
+                  return const SizedBox.shrink();
+                }
+                
+                final isVendor = roleState.activeRole == UserRole.vendor;
+                
+                if (isVendor) {
                   return VendorQuickReplies(
                     orderId: widget.orderId,
                     orderStatus: widget.orderStatus,
@@ -259,10 +250,18 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
               },
             ),
             // Message input
-            ChatInput(
-              orderId: widget.orderId,
-              senderType: _currentUserRole,
-              onAttachmentTap: _handleAttachmentTap,
+            BlocBuilder<RoleBloc, RoleState>(
+              builder: (context, roleState) {
+                final senderType = roleState is RoleLoaded && roleState.activeRole == UserRole.vendor
+                    ? 'vendor'
+                    : 'buyer';
+                
+                return ChatInput(
+                  orderId: widget.orderId,
+                  senderType: senderType,
+                  onAttachmentTap: _handleAttachmentTap,
+                );
+              },
             ),
           ],
         ),
@@ -271,35 +270,41 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   }
 
   Widget _buildEmptyChatState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.chat_bubble_outline,
-            size: 64,
-            color: Colors.grey[400],
+    return BlocBuilder<RoleBloc, RoleState>(
+      builder: (context, roleState) {
+        final isVendor = roleState is RoleLoaded && roleState.activeRole == UserRole.vendor;
+        
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.chat_bubble_outline,
+                size: 64,
+                color: Colors.grey[400],
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Start the conversation',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                isVendor
+                    ? 'Send a message to coordinate with your customer'
+                    : 'Ask any questions about your order',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Colors.grey[500],
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
-          Text(
-            'Start the conversation',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              color: Colors.grey[600],
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            _currentUserRole == 'vendor'
-                ? 'Send a message to coordinate with your customer'
-                : 'Ask any questions about your order',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Colors.grey[500],
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 

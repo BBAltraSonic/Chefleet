@@ -6,6 +6,9 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/glass_container.dart';
+import '../../../shared/utils/performance_utils.dart';
+import '../../../shared/utils/haptic_feedback_helper.dart';
+import '../../../shared/utils/toast_helper.dart';
 import '../utils/map_styles.dart';
 import '../../feed/models/vendor_model.dart';
 import '../../feed/widgets/dish_card.dart';
@@ -15,6 +18,10 @@ import '../../dish/widgets/dish_modal.dart';
 import '../blocs/map_feed_bloc.dart';
 import '../widgets/category_filter_bar.dart';
 import '../widgets/personalized_header.dart';
+import '../widgets/map_controls_panel.dart';
+import '../widgets/map_location_button.dart';
+import '../widgets/map_gestures_tutorial.dart';
+import '../widgets/map_loading_overlay.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -26,6 +33,39 @@ class MapScreen extends StatefulWidget {
 class _MapScreenState extends State<MapScreen> {
   GoogleMapController? _mapController;
   final DraggableScrollableController _sheetController = DraggableScrollableController();
+  double _mapBearing = 0.0;
+  double _currentZoom = 14.0;
+  LocationButtonState _locationState = LocationButtonState.idle;
+  bool _isDarkMode = false;
+  bool _showTutorial = false;
+  
+  // Performance optimizations
+  late final Debouncer _zoomDebouncer;
+  late final Throttler _boundsThrottler;
+  late final PerformanceMonitor _performanceMonitor;
+  
+  @override
+  void initState() {
+    super.initState();
+    _zoomDebouncer = Debouncer(delay: const Duration(milliseconds: 300));
+    _boundsThrottler = Throttler(duration: const Duration(milliseconds: 500));
+    _performanceMonitor = PerformanceMonitor();
+    _checkTutorial();
+  }
+  
+  @override
+  void dispose() {
+    _zoomDebouncer.dispose();
+    _boundsThrottler.dispose();
+    super.dispose();
+  }
+  
+  Future<void> _checkTutorial() async {
+    final shouldShow = await MapGesturesTutorial.shouldShow();
+    if (mounted && shouldShow) {
+      setState(() => _showTutorial = true);
+    }
+  }
 
   @override
   void didChangeDependencies() {
@@ -35,22 +75,94 @@ class _MapScreenState extends State<MapScreen> {
 
   void _updateMapStyle() {
     if (_mapController == null) return;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = _isDarkMode || Theme.of(context).brightness == Brightness.dark;
     _mapController!.setMapStyle(isDark ? MapStyles.dark : MapStyles.light);
+  }
+
+  void _toggleMapStyle(bool isDark) {
+    setState(() {
+      _isDarkMode = isDark;
+    });
+    _updateMapStyle();
+  }
+
+  Future<void> _goToCurrentLocation() async {
+    setState(() => _locationState = LocationButtonState.loading);
+    HapticFeedbackHelper.lightImpact();
+    
+    // Request fresh location from BLoC
+    context.read<MapFeedBloc>().add(const MapLocationRequested());
+    
+    // Wait a moment for the BLoC to fetch the location
+    await Future.delayed(const Duration(milliseconds: 500));
+    
+    // Check if location was successfully obtained
+    final state = context.read<MapFeedBloc>().state;
+    
+    if (state.currentPosition != null && _mapController != null) {
+      final stopwatch = _performanceMonitor.start('location_navigation');
+      await _mapController!.animateCamera(
+        CameraUpdate.newLatLng(
+          LatLng(
+            state.currentPosition!.latitude,
+            state.currentPosition!.longitude,
+          ),
+        ),
+      );
+      _performanceMonitor.record('location_navigation', stopwatch);
+      
+      setState(() => _locationState = LocationButtonState.idle);
+      if (mounted) {
+        ToastHelper.showSuccess(context, 'Centered on your location');
+      }
+    } else {
+      // Location fetch failed or permission denied
+      setState(() => _locationState = LocationButtonState.error);
+      HapticFeedbackHelper.error();
+      if (mounted) {
+        final errorMsg = state.errorMessage?.contains('permission') == true
+            ? 'Location permission required'
+            : 'Location unavailable';
+        ToastHelper.showError(context, errorMsg);
+      }
+      await Future.delayed(const Duration(seconds: 2));
+      if (mounted) {
+        setState(() => _locationState = LocationButtonState.idle);
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) => MapFeedBloc()..add(const MapFeedInitialized()),
-      child: BlocBuilder<MapFeedBloc, MapFeedState>(
-        builder: (context, state) {
-          return Scaffold(
-            backgroundColor: AppTheme.backgroundColor,
-            body: Stack(
-              children: [
-                // 1. Map Layer
-                _buildMapLayer(context, state),
+      child: BlocListener<MapFeedBloc, MapFeedState>(
+        listenWhen: (previous, current) => 
+          previous.currentPosition != current.currentPosition && 
+          current.currentPosition != null,
+        listener: (context, state) async {
+          // When location is first obtained, animate camera to it
+          if (_mapController != null && state.currentPosition != null) {
+            debugPrint('📍 MapScreen: Animating camera to user location: ${state.currentPosition!.latitude}, ${state.currentPosition!.longitude}');
+            await _mapController!.animateCamera(
+              CameraUpdate.newLatLngZoom(
+                LatLng(
+                  state.currentPosition!.latitude,
+                  state.currentPosition!.longitude,
+                ),
+                14.0,
+              ),
+            );
+          }
+        },
+        child: BlocBuilder<MapFeedBloc, MapFeedState>(
+          builder: (context, state) {
+            return Scaffold(
+              backgroundColor: AppTheme.backgroundColor,
+              body: Stack(
+                children: [
+                  // 1. Map Layer
+                  _buildMapLayer(context, state),
 
                 // 2. Top Search Bar
                 _buildSearchBar(context),
@@ -58,27 +170,18 @@ class _MapScreenState extends State<MapScreen> {
                 // 3. Draggable Feed Sheet
                 _buildFeedSheet(context, state),
                 
-                // 4. Location Button
+                // 4. Map Controls Panel
                 Positioned(
                   right: 16,
-                  bottom: MediaQuery.of(context).size.height * 0.4 + 20,
-                  child: FloatingActionButton(
-                    mini: true,
-                    backgroundColor: Theme.of(context).cardTheme.color,
-                    child: const Icon(Icons.my_location),
-                    onPressed: () {
-                      // TODO: Implement location service check
-                      if (state.currentPosition != null && _mapController != null) {
-                        _mapController!.animateCamera(
-                          CameraUpdate.newLatLng(
-                            LatLng(
-                              state.currentPosition!.latitude,
-                              state.currentPosition!.longitude,
-                            ),
-                          ),
-                        );
-                      }
-                    },
+                  top: MediaQuery.of(context).padding.top + 80,
+                  child: MapControlsPanel(
+                    mapController: _mapController,
+                    currentZoom: _currentZoom,
+                    mapBearing: _mapBearing,
+                    isDarkMode: _isDarkMode,
+                    onLocationTap: _goToCurrentLocation,
+                    onStyleChange: _toggleMapStyle,
+                    locationState: _locationState,
                   ),
                 ),
 
@@ -91,9 +194,11 @@ class _MapScreenState extends State<MapScreen> {
                     child: VendorMiniCard(
                       vendor: state.selectedVendor!,
                       onClose: () {
+                        HapticFeedbackHelper.lightImpact();
                         context.read<MapFeedBloc>().add(const MapVendorDeselected());
                       },
                       onViewDetails: () {
+                        HapticFeedbackHelper.mediumImpact();
                         // TODO: Navigate to vendor details
                       },
                       dishCount: state.dishes
@@ -101,10 +206,27 @@ class _MapScreenState extends State<MapScreen> {
                           .length,
                     ),
                   ),
+                  
+                // 7. Loading Overlay
+                if (state.isLoading && state.vendors.isEmpty)
+                  const MapLoadingOverlay(
+                    message: 'Loading nearby vendors...',
+                    showSkeletonMarkers: true,
+                  ),
+                  
+                // 8. Tutorial Overlay
+                if (_showTutorial)
+                  MapGesturesTutorial(
+                    onComplete: () {
+                      setState(() => _showTutorial = false);
+                      HapticFeedbackHelper.success();
+                    },
+                  ),
               ],
             ),
           );
         },
+      ),
       ),
     );
   }
@@ -125,15 +247,32 @@ class _MapScreenState extends State<MapScreen> {
         _updateMapStyle();
       },
       onCameraMove: (position) {
-        context.read<MapFeedBloc>().add(MapZoomChanged(position.zoom));
+        setState(() {
+          _currentZoom = position.zoom;
+          _mapBearing = position.bearing;
+        });
+        // Debounce zoom events to reduce BLoC updates
+        _zoomDebouncer.call(() {
+          if (mounted) {
+            context.read<MapFeedBloc>().add(MapZoomChanged(position.zoom));
+          }
+        });
       },
       onCameraIdle: () async {
         if (_mapController != null && mounted) {
-          final bounds = await _mapController!.getVisibleRegion();
-          if (mounted) {
-            // ignore: use_build_context_synchronously
-            context.read<MapFeedBloc>().add(MapBoundsChanged(bounds));
-          }
+          final stopwatch = _performanceMonitor.start('bounds_update');
+          
+          // Throttle bounds updates for better performance
+          _boundsThrottler.call(() async {
+            if (_mapController != null && mounted) {
+              final bounds = await _mapController!.getVisibleRegion();
+              if (mounted) {
+                // ignore: use_build_context_synchronously
+                context.read<MapFeedBloc>().add(MapBoundsChanged(bounds));
+                _performanceMonitor.record('bounds_update', stopwatch);
+              }
+            }
+          });
         }
       },
       markers: Set<Marker>.from(state.markers.values),
@@ -385,6 +524,7 @@ class _MapScreenState extends State<MapScreen> {
                                   vendorName: vendor.displayName,
                                   distance: distance,
                                   onTap: () {
+                                    HapticFeedbackHelper.lightImpact();
                                     showModalBottomSheet(
                                       context: context,
                                       isScrollControlled: true,

@@ -6,6 +6,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../../core/constants/timing_constants.dart';
+import '../../../core/constants/app_constants.dart';
 import '../../../core/diagnostics/diagnostic_domains.dart';
 import '../../../core/diagnostics/diagnostic_harness.dart';
 import '../../../core/diagnostics/diagnostic_severity.dart';
@@ -42,6 +43,10 @@ class MapLocationChanged extends MapFeedEvent {
 
   @override
   List<Object?> get props => [position];
+}
+
+class MapLocationRequested extends MapFeedEvent {
+  const MapLocationRequested();
 }
 
 class MapBoundsChanged extends MapFeedEvent {
@@ -225,6 +230,7 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
         super(const MapFeedState()) {
     on<MapFeedInitialized>(_onInitialized);
     on<MapLocationChanged>(_onLocationChanged);
+    on<MapLocationRequested>(_onLocationRequested);
     on<MapBoundsChanged>(_onBoundsChanged);
     on<MapVendorSelected>(_onVendorSelected);
     on<MapVendorDeselected>(_onVendorDeselected);
@@ -349,11 +355,16 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
       debugPrint('📥 MapFeedBloc: Loading vendors and dishes...');
       await _loadVendorsAndDishes(emit);
       debugPrint('✅ MapFeedBloc: Loaded ${state.dishes.length} dishes, ${state.vendors.length} vendors');
+      debugPrint('📍 MapFeedBloc: Markers generated: ${state.markers.length}');
+      if (state.markers.isEmpty && state.vendors.isNotEmpty) {
+        debugPrint('⚠️ WARNING: No markers despite ${state.vendors.length} vendors - clustering may have failed');
+      }
       _logMap(
         'initialize.success',
         payload: {
           'vendors': state.vendors.length,
           'dishes': state.dishes.length,
+          'markers': state.markers.length,
         },
       );
 
@@ -402,6 +413,47 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
         errorMessage: 'Failed to load data for location: ${e.toString()}',
         isOffline: false,
       ));
+    }
+  }
+
+  Future<void> _onLocationRequested(
+    MapLocationRequested event,
+    Emitter<MapFeedState> emit,
+  ) async {
+    try {
+      debugPrint('🔍 MapFeedBloc: Location requested by user');
+      final position = await _getCurrentLocation();
+      
+      if (position != null) {
+        debugPrint('✅ MapFeedBloc: Location obtained: ${position.latitude}, ${position.longitude}');
+        emit(state.copyWith(currentPosition: position, errorMessage: null));
+        _logMap(
+          'location.success',
+          payload: {
+            'lat': position.latitude,
+            'lng': position.longitude,
+          },
+        );
+      } else {
+        debugPrint('⚠️ MapFeedBloc: Location is null - services may be disabled or permission denied');
+        emit(state.copyWith(
+          errorMessage: 'Location unavailable. Please check permissions.',
+        ));
+        _logMap(
+          'location.null',
+          severity: DiagnosticSeverity.warn,
+        );
+      }
+    } catch (e) {
+      debugPrint('❌ MapFeedBloc: Location error: $e');
+      emit(state.copyWith(
+        errorMessage: 'Failed to get location: ${e.toString()}',
+      ));
+      _logMap(
+        'location.error',
+        severity: DiagnosticSeverity.error,
+        payload: {'message': e.toString()},
+      );
     }
   }
 
@@ -704,9 +756,23 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
             // Prioritize bounds-based filtering to support panning
             // This ensures users can see vendors by moving the map
             if (bounds != null) {
+              // Add buffer to bounds so vendors just outside visible area still show dishes
+              // Buffer size scales with zoom level - larger buffer when zoomed in
+              const double bufferDegrees = 0.01; // ~1km buffer at equator
+              final expandedBounds = LatLngBounds(
+                southwest: LatLng(
+                  bounds.southwest.latitude - bufferDegrees,
+                  bounds.southwest.longitude - bufferDegrees,
+                ),
+                northeast: LatLng(
+                  bounds.northeast.latitude + bufferDegrees,
+                  bounds.northeast.longitude + bufferDegrees,
+                ),
+              );
+              
               return _isPointInBounds(
                 LatLng(vendor.latitude, vendor.longitude),
-                bounds,
+                expandedBounds,
               );
             } else if (state.currentPosition != null) {
               return _isWithinRadius(
@@ -721,9 +787,13 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
           }).toList();
 
       debugPrint('✅ MapFeedBloc: Filtered to ${vendors.length} vendors');
+      if (bounds != null) {
+        debugPrint('📍 MapFeedBloc: Bounds filtering with ~1km buffer zone');
+        debugPrint('   Original bounds: SW(${bounds.southwest.latitude.toStringAsFixed(4)}, ${bounds.southwest.longitude.toStringAsFixed(4)}) - NE(${bounds.northeast.latitude.toStringAsFixed(4)}, ${bounds.northeast.longitude.toStringAsFixed(4)})');
+      }
       _logMap(
         'vendors.loaded',
-        payload: {'count': vendors.length},
+        payload: {'count': vendors.length, 'hasBuffer': bounds != null},
       );
 
       // Load dishes from these vendors
@@ -731,6 +801,8 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
         final vendorIds = vendors.map((v) => v.id).toList();
 
         debugPrint('🔄 MapFeedBloc: Fetching dishes from ${vendors.length} vendors...');
+        debugPrint('📝 MapFeedBloc: Vendor IDs: ${vendorIds.join(", ")}');
+        
         final dishesResponse = await _supabaseClient
             .from('dishes')
             .select('*')
@@ -740,6 +812,11 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
             .range(0, _pageSize - 1);
 
         debugPrint('📦 MapFeedBloc: Received ${dishesResponse.length} dishes from database');
+        
+        if (dishesResponse.isEmpty) {
+          debugPrint('⚠️ MapFeedBloc: No dishes returned from database for these vendors');
+          debugPrint('💡 MapFeedBloc: Check if vendors have dishes with available=true');
+        }
 
         final dishes = dishesResponse
             .map((json) => Dish.fromJson(json))
@@ -777,6 +854,14 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
                 return dish.name.toLowerCase().contains(state.selectedCategory.toLowerCase());
               }).toList();
 
+        debugPrint('🎯 MapFeedBloc: Category filter: "${state.selectedCategory}"');
+        debugPrint('🍽️ MapFeedBloc: Total dishes: ${dishes.length}, After filter: ${displayDishes.length}');
+        
+        if (displayDishes.isEmpty && dishes.isNotEmpty) {
+          debugPrint('⚠️ MapFeedBloc: All dishes filtered out by category "${state.selectedCategory}"');
+          debugPrint('💡 MapFeedBloc: Consider changing category to "All" or check dish tags');
+        }
+
         emit(state.copyWith(
           vendors: vendors,
           dishes: displayDishes,
@@ -787,10 +872,10 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
           errorMessage: null,
         ));
 
-        // Trigger clustering update if bounds are available
-        if (bounds != null) {
-          _updateClustering(emit);
-        }
+        // Always trigger clustering update after loading vendors
+        // If bounds aren't set yet, clustering will generate markers when bounds arrive
+        debugPrint('🎨 MapFeedBloc: Triggering clustering for ${vendors.length} vendors');
+        _updateClustering(emit);
       } else {
         debugPrint('⚠️ MapFeedBloc: No vendors found, emitting empty state');
         emit(state.copyWith(
@@ -853,10 +938,9 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
           errorMessage: 'Network unavailable. Showing cached data.',
         ));
 
-        // Trigger clustering update for cached data
-        if (bounds != null) {
-          _updateClustering(emit);
-        }
+        // Always trigger clustering update for cached data
+        debugPrint('🎨 MapFeedBloc: Triggering clustering for ${cachedVendors.length} cached vendors');
+        _updateClustering(emit);
       } else {
         emit(state.copyWith(
           errorMessage: 'Network unavailable and no cached data available.',
@@ -978,19 +1062,38 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
   }
 
   void _updateClustering(Emitter<MapFeedState> emit) {
-    if (state.vendors.isEmpty || state.mapBounds == null) {
+    if (state.vendors.isEmpty) {
       if (kDebugMode) {
-        debugPrint('⚠️ MapFeedBloc._updateClustering: Early return - vendors=${state.vendors.length}, hasBounds=${state.mapBounds != null}');
+        debugPrint('⚠️ MapFeedBloc._updateClustering: Early return - no vendors');
         _logMap(
           'clustering.skipped',
           severity: DiagnosticSeverity.warn,
-          payload: {
-            'vendorCount': state.vendors.length,
-            'hasBounds': state.mapBounds != null,
-          },
+          payload: {'vendorCount': 0},
         );
       }
       return;
+    }
+
+    // If no bounds set yet, create default bounds from current position or fallback
+    LatLngBounds effectiveBounds;
+    if (state.mapBounds == null) {
+      // Use current position or default location to create initial bounds
+      final center = state.currentPosition != null
+          ? LatLng(state.currentPosition!.latitude, state.currentPosition!.longitude)
+          : AppConstants.defaultLocationSouthAfrica;
+      
+      // Create a reasonable default bounds (approximately 20km x 20km area)
+      const double boundsRadius = 0.1; // roughly 10km in degrees
+      effectiveBounds = LatLngBounds(
+        southwest: LatLng(center.latitude - boundsRadius, center.longitude - boundsRadius),
+        northeast: LatLng(center.latitude + boundsRadius, center.longitude + boundsRadius),
+      );
+      
+      if (kDebugMode) {
+        debugPrint('📍 MapFeedBloc._updateClustering: Using default bounds around ${center.latitude}, ${center.longitude}');
+      }
+    } else {
+      effectiveBounds = state.mapBounds!;
     }
 
     if (kDebugMode) {
@@ -1002,8 +1105,8 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
           'vendorCount': state.vendors.length,
           'zoomLevel': state.zoomLevel,
           'boundsCenter': {
-            'lat': (state.mapBounds!.northeast.latitude + state.mapBounds!.southwest.latitude) / 2,
-            'lng': (state.mapBounds!.northeast.longitude + state.mapBounds!.southwest.longitude) / 2,
+            'lat': (effectiveBounds.northeast.latitude + effectiveBounds.southwest.latitude) / 2,
+            'lng': (effectiveBounds.northeast.longitude + effectiveBounds.southwest.longitude) / 2,
           },
         },
       );
@@ -1018,7 +1121,7 @@ class MapFeedBloc extends AppBloc<MapFeedEvent, MapFeedState> {
           debugPrint('🎨 MapFeedBloc: Generating markers...');
         }
         final markers = await _clusterManager.getMarkers(
-          state.mapBounds!,
+          effectiveBounds,
           state.zoomLevel,
           state.selectedVendor?.id,
         );

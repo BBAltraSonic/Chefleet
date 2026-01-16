@@ -111,13 +111,13 @@ class ChatBubble extends StatelessWidget {
                     ),
                   ),
                 ),
-                if (isFromCurrentUser) ...[
-                  const SizedBox(width: 8),
-                  _buildRoleBadge(context),
-                ],
               ],
             ),
           ),
+          if (isFromCurrentUser) ...[
+            const SizedBox(width: 8),
+            _buildRoleBadge(context),
+          ],
         ],
       ),
     );

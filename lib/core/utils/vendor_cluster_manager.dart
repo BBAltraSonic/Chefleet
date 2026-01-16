@@ -126,6 +126,7 @@ class VendorMarkerCreator implements cm.ClusterMarkerCreator<Vendor> {
   Marker createClusterMarker(List<QuadTreeItem<Vendor>> items, LatLng position, double zoomLevel, cm.ClusterSize size) {
     final clusterId = 'cluster_${items.map((item) => item.id).join('_')}';
 
+    // Use fallback sync icon initially (will be replaced by async version)
     return Marker(
       markerId: MarkerId(clusterId),
       position: position,
@@ -136,8 +137,41 @@ class VendorMarkerCreator implements cm.ClusterMarkerCreator<Vendor> {
             ? items.map((item) => item.data.name).take(2).join(', ')
             : 'Tap to zoom in and see all vendors',
       ),
+      anchor: const Offset(0.5, 0.5), // Center anchor for clusters
       onTap: () {
         // This will be handled by the BLoC
+      },
+    );
+  }
+  
+  /// Create animated cluster marker asynchronously
+  Future<Marker> createAnimatedClusterMarker(
+    List<QuadTreeItem<Vendor>> items,
+    LatLng position,
+    double zoomLevel,
+    cm.ClusterSize size,
+  ) async {
+    final clusterId = 'cluster_${items.map((item) => item.id).join('_')}';
+    
+    // Generate animated cluster icon
+    final icon = await AnimatedVendorMarker.generateClusterPin(
+      count: items.length,
+      isExpanded: false,
+    );
+
+    return Marker(
+      markerId: MarkerId(clusterId),
+      position: position,
+      icon: icon,
+      infoWindow: InfoWindow(
+        title: '${items.length} Food Vendors',
+        snippet: items.length <= 3
+            ? items.map((item) => item.data.name).take(2).join(', ')
+            : 'Tap to zoom in and see all vendors',
+      ),
+      anchor: const Offset(0.5, 0.5),
+      onTap: () {
+        // Handled by BLoC
       },
     );
   }
@@ -146,10 +180,7 @@ class VendorMarkerCreator implements cm.ClusterMarkerCreator<Vendor> {
   Marker createSingleMarker(QuadTreeItem<Vendor> item, double zoomLevel) {
     final vendor = item.data;
     
-    // Determine pin state based on vendor status
-    VendorPinState pinState = VendorPinState.normal;
-    // Note: Order status would be passed via state in real implementation
-    
+    // Use fallback default marker (will be replaced by animated version in getMarkers)
     return Marker(
       markerId: MarkerId(vendor.id),
       position: LatLng(vendor.latitude, vendor.longitude),

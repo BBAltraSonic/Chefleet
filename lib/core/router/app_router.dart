@@ -38,6 +38,10 @@ import '../../features/vendor/screens/vendor_onboarding_screen.dart';
 import '../../features/vendor/screens/vendor_quick_tour_screen.dart';
 import '../../features/vendor/screens/vendor_chat_screen.dart';
 
+// Chat BLoCs
+import '../../features/chat/blocs/chat_bloc.dart';
+import '../../features/vendor/blocs/vendor_chat_bloc.dart';
+
 // Models
 import '../../features/feed/models/dish_model.dart';
 
@@ -230,9 +234,15 @@ class AppRouter {
               builder: (context, state) {
                 final orderId = state.pathParameters['orderId']!;
                 final orderStatus = state.uri.queryParameters['orderStatus'] ?? 'pending';
-                return ChatDetailScreen(
-                  orderId: orderId,
-                  orderStatus: orderStatus,
+                return BlocProvider(
+                  create: (context) => ChatBloc(
+                    supabaseClient: Supabase.instance.client,
+                    authBloc: context.read<AuthBloc>(),
+                  ),
+                  child: ChatDetailScreen(
+                    orderId: orderId,
+                    orderStatus: orderStatus,
+                  ),
                 );
               },
             ),
@@ -240,7 +250,13 @@ class AppRouter {
             // Chat List
             GoRoute(
               path: CustomerRoutes.chat,
-              builder: (context, state) => const ChatListScreen(),
+              builder: (context, state) => BlocProvider(
+                create: (context) => ChatBloc(
+                  supabaseClient: Supabase.instance.client,
+                  authBloc: context.read<AuthBloc>(),
+                ),
+                child: const ChatListScreen(),
+              ),
             ),
             
             // Profile
@@ -428,7 +444,12 @@ class AppRouter {
           ),
           builder: (context, state) {
             final orderId = state.pathParameters['orderId']!;
-            return VendorChatScreen(orderId: orderId);
+            return BlocProvider(
+              create: (context) => VendorChatBloc(
+                supabaseClient: Supabase.instance.client,
+              ),
+              child: VendorChatScreen(orderId: orderId),
+            );
           },
         ),
         
