@@ -276,7 +276,7 @@ class _SearchFilterBarState extends State<SearchFilterBar>
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(
                 labelText: 'Min Price',
-                prefixText: '\$',
+                prefixText: 'R',
               ),
             ),
             const SizedBox(height: 16),
@@ -285,7 +285,7 @@ class _SearchFilterBarState extends State<SearchFilterBar>
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(
                 labelText: 'Max Price',
-                prefixText: '\$',
+                prefixText: 'R',
               ),
             ),
           ],

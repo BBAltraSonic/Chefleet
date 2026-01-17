@@ -539,7 +539,7 @@ class _DishEditScreenState extends State<DishEditScreen> {
                           controller: _priceController,
                           decoration: const InputDecoration(
                             labelText: 'Price *',
-                            prefixText: '\$',
+                            prefixText: 'R',
                             border: OutlineInputBorder(),
                           ),
                           keyboardType: TextInputType.number,

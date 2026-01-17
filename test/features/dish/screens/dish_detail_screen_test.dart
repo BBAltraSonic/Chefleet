@@ -110,7 +110,7 @@ void main() {
       expect(find.text('Test Dish'), findsOneWidget);
 
       // Check for price
-      expect(find.text('\$12.99'), findsOneWidget);
+      expect(find.text('R12.99'), findsOneWidget);
 
       // Check for vendor name
       expect(find.text('Test Vendor'), findsOneWidget);

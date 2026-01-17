@@ -18,7 +18,9 @@ class MenuItemCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final name = item['name'] as String? ?? AppStrings.unknownItem;
     final description = item['description'] as String? ?? '';
-    final price = (item['price'] as num?)?.toDouble() ?? 0.0;
+    // Database stores price in cents (INTEGER), convert to rands for display
+    final priceCents = (item['price'] as num?)?.toDouble() ?? 0.0;
+    final price = priceCents;
     final isAvailable = item['available'] as bool? ?? true;
     final imageUrl = item['image_url'] as String?;
 

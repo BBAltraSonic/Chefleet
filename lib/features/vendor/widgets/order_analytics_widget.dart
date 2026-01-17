@@ -133,7 +133,7 @@ class _OrderAnalyticsWidgetState extends State<OrderAnalyticsWidget>
               Expanded(
                 child: _buildMetricCard(
                   AppStrings.totalRevenue,
-                  CurrencyFormatter.format(totalRevenue / 100),
+                  CurrencyFormatter.format(totalRevenue.toDouble()),
                   Icons.attach_money,
                   Colors.green,
                 ),
@@ -148,7 +148,7 @@ class _OrderAnalyticsWidgetState extends State<OrderAnalyticsWidget>
               Expanded(
                 child: _buildMetricCard(
                   AppStrings.avgOrderValue,
-                  CurrencyFormatter.format(averageOrderValue / 100), // Should divide by 100? Assuming stored in cents
+                  CurrencyFormatter.format(averageOrderValue),
                   Icons.trending_up,
                   Colors.purple,
                 ),
@@ -377,7 +377,7 @@ class _OrderAnalyticsWidgetState extends State<OrderAnalyticsWidget>
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  CurrencyFormatter.format(revenue / 100),
+                  CurrencyFormatter.format(revenue.toDouble()),
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
@@ -548,7 +548,7 @@ class _OrderAnalyticsWidgetState extends State<OrderAnalyticsWidget>
                     title: Text(name),
                     subtitle: Text('$orderCount orders'),
                     trailing: Text(
-                      CurrencyFormatter.format(revenue / 100),
+                      CurrencyFormatter.format(revenue.toDouble()),
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                   );
@@ -589,7 +589,7 @@ class _OrderAnalyticsWidgetState extends State<OrderAnalyticsWidget>
                   children: [
                     Expanded(child: Text(entry.key)),
                     Text(
-                      CurrencyFormatter.format(entry.value / 100),
+                      CurrencyFormatter.format(entry.value.toDouble()),
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ],

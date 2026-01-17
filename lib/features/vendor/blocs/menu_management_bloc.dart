@@ -115,7 +115,7 @@ class MenuManagementBloc
         'vendor_id': vendorId,
         'name': event.dish.name,
         'description': event.dish.description,
-        'price': event.dish.priceCents, // DB expects INTEGER cents (e.g., 15000 for R150.00)
+        'price': event.dish.priceCents / 100.0, // DB expects NUMERIC units (e.g., 150.00 for R150.00), price_cents is generated
         'category': event.dish.category,
         'image_url': event.dish.imageUrl,
         'available': event.dish.available,
@@ -164,7 +164,7 @@ class MenuManagementBloc
       final dishData = {
         'name': event.dish.name,
         'description': event.dish.description,
-        'price': event.dish.priceCents, // DB expects INTEGER cents (e.g., 15000 for R150.00)
+        'price': event.dish.priceCents / 100.0, // DB expects NUMERIC units (e.g., 150.00 for R150.00), price_cents is generated
         'category': event.dish.category,
         'image_url': event.dish.imageUrl,
         'available': event.dish.available,

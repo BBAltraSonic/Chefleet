@@ -399,8 +399,8 @@ void main() {
         expect(find.text('Classic pizza with tomato and mozzarella'), findsOneWidget);
 
         // Verify prices are displayed
-        expect(find.text('\$14.99'), findsOneWidget);
-        expect(find.text('\$12.99'), findsOneWidget);
+        expect(find.text('R14.99'), findsOneWidget);
+        expect(find.text('R12.99'), findsOneWidget);
 
         // Verify vendor name is shown
         expect(find.text('Test Restaurant'), findsOneWidget);

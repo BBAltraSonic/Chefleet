@@ -110,10 +110,8 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
 
         final vendorData = dishResponse['vendors'] as Map<String, dynamic>;
         
-        // Database stores price as INTEGER in cents (e.g., 15000 for R150.00)
-        // Supabase returns INTEGER as num, so safely convert to int then decimal
-        final priceCents = (dishResponse['price'] as num).toInt();
-        final priceDecimal = priceCents / 100.0;
+        // Database stores price as NUMERIC units (e.g., 150.00 for R150.00)
+        final priceDecimal = (dishResponse['price'] as num).toDouble();
         
         // Add new item with real data
         final newItem = OrderItem(

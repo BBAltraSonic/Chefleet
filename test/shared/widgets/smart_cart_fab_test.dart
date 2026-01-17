@@ -53,7 +53,7 @@ void main() {
 
       // Should show expanded view with text
       expect(find.text('View Cart'), findsOneWidget);
-      expect(find.text('\$42.50'), findsOneWidget);
+      expect(find.text('R42.50'), findsOneWidget);
     });
 
     testWidgets('displays correct item count badge',
@@ -82,7 +82,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Should show formatted price
-      expect(find.text('\$123.45'), findsOneWidget);
+      expect(find.text('R123.45'), findsOneWidget);
     });
 
     testWidgets('calls onTap when pressed', (WidgetTester tester) async {
@@ -212,7 +212,7 @@ void main() {
 
       // Should display large numbers correctly
       expect(find.text('99'), findsOneWidget);
-      expect(find.text('\$999.99'), findsOneWidget);
+      expect(find.text('R999.99'), findsOneWidget);
     });
 
     testWidgets('handles zero price', (WidgetTester tester) async {
@@ -225,8 +225,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Should show $0.00
-      expect(find.textContaining('\$0'), findsOneWidget);
+      // Should show R0.00
+      expect(find.textContaining('R0'), findsOneWidget);
     });
 
     testWidgets('uses correct colors', (WidgetTester tester) async {
@@ -304,7 +304,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Should format with 2 decimal places
-      expect(find.text('\$19.99'), findsOneWidget);
+      expect(find.text('R19.99'), findsOneWidget);
     });
 
     testWidgets('animation duration is correct', (WidgetTester tester) async {

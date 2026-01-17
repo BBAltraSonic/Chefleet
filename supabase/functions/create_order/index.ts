@@ -225,15 +225,20 @@ Deno.serve(async (req) => {
       throw new Error(`Failed to create order: ${orderError.message}`)
     }
 
-    // Create order items
-    const orderItems = validatedItems.map(item => ({
-      order_id: order.id,
-      dish_id: item.dish_id,
-      quantity: item.quantity,
-      unit_price: item.price_cents / 100.0,
-      dish_price_cents: item.price_cents,
-      special_instructions: item.special_instructions
-    }))
+    // Create order items with dish preparation time and category snapshot
+    const orderItems = validatedItems.map(item => {
+      const dish = dishMap.get(item.dish_id)!
+      return {
+        order_id: order.id,
+        dish_id: item.dish_id,
+        quantity: item.quantity,
+        unit_price: item.price_cents / 100.0,
+        dish_price_cents: item.price_cents,
+        special_instructions: item.special_instructions,
+        preparation_time_minutes: dish.preparation_time_minutes || 15,
+        dish_category: dish.category || null
+      }
+    })
 
     const { error: itemsError } = await supabase
       .from('order_items')

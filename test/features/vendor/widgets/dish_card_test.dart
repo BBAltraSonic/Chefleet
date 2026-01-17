@@ -69,7 +69,7 @@ void main() {
       expect(find.text('A delicious test burger'), findsOneWidget);
 
       // Check if price is displayed
-      expect(find.text('\$12.99'), findsOneWidget);
+      expect(find.text('R12.99'), findsOneWidget);
 
       // Check if category is displayed
       expect(find.text('Main Course'), findsOneWidget);

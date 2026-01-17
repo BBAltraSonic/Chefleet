@@ -278,7 +278,18 @@ class CartBloc extends Bloc<CartEvent, CartState> with HydratedMixin {
   @override
   CartState? fromJson(Map<String, dynamic> json) {
     try {
-      return CartState.fromJson(json);
+      final state = CartState.fromJson(json);
+      
+      // Migration: Clear cart if it contains items with old incorrect prices
+      // Prices < R1.00 (100 cents) indicate legacy decimal format that needs clearing
+      final hasLegacyPrices = state.items.any((item) => item.dish.priceCents < 100);
+      
+      if (hasLegacyPrices) {
+        // Return empty cart to force fresh data from database
+        return const CartState();
+      }
+      
+      return state;
     } catch (_) {
       return null;
     }

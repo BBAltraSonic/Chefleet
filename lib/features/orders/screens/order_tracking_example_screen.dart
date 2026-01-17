@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../blocs/order_management_bloc.dart';
 import '../widgets/pickup_code_qr_widget.dart';
 import '../models/order_model.dart';
+import '../../../shared/utils/currency_formatter.dart';
 
 /// Example screen demonstrating all three UX improvements:
 /// 1. Real-time order updates (no polling)
@@ -147,7 +148,7 @@ class _OrderStatusCard extends StatelessWidget {
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             Text(
-              'Total: \$${order.totalAmount.toStringAsFixed(2)}',
+              'Total: ${CurrencyFormatter.format(order.totalAmount)}',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             if (order.estimatedFulfillmentTime != null) ...[

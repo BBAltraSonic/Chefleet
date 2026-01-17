@@ -141,7 +141,7 @@ void main() {
 
       // 1. Verify dish details are loaded
       expect(find.text('Spicy Thai Basil Fried Rice'), findsOneWidget);
-      expect(find.text('\$12.99'), findsOneWidget);
+      expect(find.text('R12.99'), findsOneWidget);
       expect(find.text('Bangkok Street Eats'), findsOneWidget);
 
       // 2. Increase quantity
